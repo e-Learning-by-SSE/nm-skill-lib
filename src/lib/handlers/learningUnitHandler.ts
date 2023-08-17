@@ -1,4 +1,4 @@
-import { LearningUnit } from '../data';
+import { LearningUnit } from '../data/learningUnit';
 
 export interface LuHandler {
   /**

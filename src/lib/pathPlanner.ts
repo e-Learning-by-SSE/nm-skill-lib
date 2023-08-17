@@ -1,6 +1,5 @@
 import { Graph as GraphLib, alg } from '@dagrejs/graphlib';
-import { Skill, Node, Edge, Graph } from './data';
-import { SkillHandler, LuHandler } from './handlers';
+import { SkillHandler, Node, LuHandler, Skill, Edge, Graph } from '..';
 
 export class GraphAlgorithm {
   /**
