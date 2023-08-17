@@ -1,7 +1,7 @@
 import { Graph as GraphLib, alg } from '@dagrejs/graphlib';
 import { SkillHandler, Node, LuHandler, Skill, Edge, Graph } from '..';
 
-export class GraphAlgorithm {
+export class PathPlanner {
   /**
    * The internally used library, should not be exported (principle of information hiding)
    */
@@ -13,7 +13,7 @@ export class GraphAlgorithm {
     private luHandler: LuHandler
   ) {}
 
-  public async computeGraphForSkill(
+  private async computeGraphForSkill(
     initialSkill: Skill,
     includeLearningUnits: boolean,
     emptySkill?: Skill
@@ -101,7 +101,8 @@ export class GraphAlgorithm {
     return this.buildReturnGraph();
   }
 
-  public isAcyclic() {
+  public isAcyclic(initialSkill: Skill) {
+    this.computeGraphForSkill(initialSkill, true);
     return alg.isAcyclic(this.graph);
   }
 

@@ -5,3 +5,4 @@ export * from './lib/data/skill';
 export * from './lib/data/graph';
 export * from './lib/data/node';
 export * from './lib/data/edge';
+export * from './lib/pathPlanner';
