@@ -9,6 +9,7 @@
   },
   "private": true,
   "dependencies": {
+    "@dagrejs/graphlib": "^2.1.13",
     "axios": "^1.0.0",
     "tslib": "^2.3.0"
   },
