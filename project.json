@@ -1,5 +1,5 @@
 {
-  "name": "skills",
+  "name": "skills-pathfinder",
   "$schema": "node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "src",
   "projectType": "application",
@@ -10,7 +10,7 @@
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
-        "outputPath": "dist/skills",
+        "outputPath": "dist/skills-pathfinder",
         "format": ["cjs"],
         "bundle": false,
         "main": "src/index.ts",
@@ -40,14 +40,14 @@
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "skills:build"
+        "buildTarget": "skills-pathfinder:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "skills:build:development"
+          "buildTarget": "skills-pathfinder:build:development"
         },
         "production": {
-          "buildTarget": "skills:build:production"
+          "buildTarget": "skills-pathfinder:build:production"
         }
       }
     },
@@ -75,3 +75,4 @@
   },
   "tags": []
 }
+
