@@ -1,6 +1,6 @@
 import { LearningUnitProvider, SkillProvider } from "./dataProviders";
 import { PathPlanner } from "./pathPlanner";
-import { LearningUnit, Skill } from "./types";
+import { LearningUnit, Skill, Graph } from "./types";
 
 describe("Path Planer", () => {
 	let dataHandler: TestDataHandler;
@@ -35,6 +35,11 @@ describe("Path Planer", () => {
 		{ id: "lu:2", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"] },
 		{ id: "lu:3", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"] }
 	].sort((a, b) => a.id.localeCompare(b.id));
+	const straightPathOfLus2: LearningUnit[] = [
+		{ id: "lu:4", requiredSkills: [], teachingGoals: ["sk:4"] },
+		{ id: "lu:5", requiredSkills: ["sk:4"], teachingGoals: ["sk:5"] },
+		{ id: "lu:6", requiredSkills: ["sk:5"], teachingGoals: ["sk:6"] }
+	].sort((a, b) => a.id.localeCompare(b.id));
 
 	beforeEach(() => {
 		dataHandler = new TestDataHandler();
@@ -50,10 +55,7 @@ describe("Path Planer", () => {
 			const graph = await planer.getConnectedGraphForSkill(firstMap[0], false);
 
 			// Assert: All skills of the first map are returned
-			const nodeIDs = graph.nodes.map(node => node.id).sort((a, b) => a.localeCompare(b));
-			const nodeElements = graph.nodes
-				.map(node => node.element)
-				.sort((a, b) => a.id.localeCompare(b.id));
+			const [nodeIDs, nodeElements] = extractElements(graph);
 			// Compare IDs
 			expect(nodeIDs).toEqual(firstMap.map(skill => skill.id));
 			// Compare elements
@@ -68,10 +70,7 @@ describe("Path Planer", () => {
 			const graph = await planer.getConnectedGraphForSkill(thirdMapHierarchy[0], false);
 
 			// Assert: All skills of the third map are returned
-			const nodeIDs = graph.nodes.map(node => node.id).sort((a, b) => a.localeCompare(b));
-			const nodeElements = graph.nodes
-				.map(node => node.element)
-				.sort((a, b) => a.id.localeCompare(b.id));
+			const [nodeIDs, nodeElements] = extractElements(graph);
 			// Compare IDs
 			expect(nodeIDs).toEqual(thirdMapHierarchy.map(skill => skill.id));
 			// Compare elements
@@ -89,10 +88,7 @@ describe("Path Planer", () => {
 			const graph = await planer.getConnectedGraphForSkill(firstMap[0], false);
 
 			// Assert: All skills of the first map are returned
-			const nodeIDs = graph.nodes.map(node => node.id).sort((a, b) => a.localeCompare(b));
-			const nodeElements = graph.nodes
-				.map(node => node.element)
-				.sort((a, b) => a.id.localeCompare(b.id));
+			const [nodeIDs, nodeElements] = extractElements(graph);
 			// Compare IDs
 			expect(nodeIDs).toEqual(firstMap.map(skill => skill.id));
 			// Compare elements
@@ -109,10 +105,7 @@ describe("Path Planer", () => {
 			const graph = await planer.getConnectedGraphForSkill(firstMap[0], true);
 
 			// Assert: All skills of the first map are returned
-			const nodeIDs = graph.nodes.map(node => node.id).sort((a, b) => a.localeCompare(b));
-			const nodeElements = graph.nodes
-				.map(node => node.element)
-				.sort((a, b) => a.id.localeCompare(b.id));
+			const [nodeIDs, nodeElements] = extractElements(graph);
 			// Compare IDs
 			expect(nodeIDs).toEqual(firstMap.map(skill => skill.id));
 			// Compare elements
@@ -130,24 +123,56 @@ describe("Path Planer", () => {
 			const graph = await planer.getConnectedGraphForSkill(firstMap[0], true);
 
 			// Assert: All skills of the first map and all LUs of the straight path are returned
+			const [nodeIDs, nodeElements] = extractElements(graph);
+			const [expectedIDs, expectedElements] = sortExpectedElements([
+				...firstMap,
+				...straightPathOfLus
+			]);
 			// Compare IDs
-			const nodeIDs = graph.nodes.map(node => node.id).sort((a, b) => a.localeCompare(b));
-			const expectedIDs = [
-				...firstMap.map(skill => skill.id),
-				...straightPathOfLus.map(lu => lu.id)
-			].sort((a, b) => a.localeCompare(b));
 			expect(nodeIDs).toEqual(expectedIDs);
 			// Compare elements
-			const nodeElements = graph.nodes
-				.map(node => node.element)
-				.sort((a, b) => a.id.localeCompare(b.id));
-			const expectedElements = [...firstMap, ...straightPathOfLus].sort((a, b) =>
-				a.id.localeCompare(b.id)
+			expect(nodeElements).toEqual(expectedElements);
+		});
+
+		it("Skills & LearningUnits of multiple repositories; no nested skills -> return only connected elements", async () => {
+			// Test data preparation
+			dataHandler.init(
+				[...firstMap, ...secondMap, ...thirdMapHierarchy],
+				[...straightPathOfLus, ...straightPathOfLus2]
 			);
+
+			// Test: Compute graph
+			const graph = await planer.getConnectedGraphForSkill(firstMap[0], true);
+
+			// Assert: All skills of the first map and all LUs of straightPathOfLus1 are returned
+			// straightPathOfLus2 is not connected and must not be returned
+			const [nodeIDs, nodeElements] = extractElements(graph);
+			const [expectedIDs, expectedElements] = sortExpectedElements([
+				...firstMap,
+				...straightPathOfLus
+			]);
+			// Compare IDs
+			expect(nodeIDs).toEqual(expectedIDs);
+			// Compare elements
 			expect(nodeElements).toEqual(expectedElements);
 		});
 	});
 });
+
+function extractElements(graph: Graph): [string[], (Skill | LearningUnit)[]] {
+	const nodeIDs = graph.nodes.map(node => node.id).sort((a, b) => a.localeCompare(b));
+	const nodeElements = graph.nodes
+		.map(node => node.element)
+		.sort((a, b) => a.id.localeCompare(b.id));
+	return [nodeIDs, nodeElements];
+}
+
+function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
+	expectedElements = expectedElements.sort((a, b) => a.id.localeCompare(b.id));
+	const expectedIDs = expectedElements.map(element => element.id);
+
+	return [expectedIDs, expectedElements];
+}
 
 class TestDataHandler implements LearningUnitProvider, SkillProvider {
 	private skillMaps: Map<string, Skill[]> = new Map<string, Skill[]>();
