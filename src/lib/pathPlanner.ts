@@ -84,8 +84,6 @@ export class PathPlanner {
 	private async populateGraphWithLearningUnits(): Promise<void> {
 		const lus = await this.luProvider.getLearningUnitsBySkills(Array.from(this.skillIds));
 
-		// TODO SE: Clarify the purpose of this commented code. If unnecessary, remove.
-
 		lus.forEach(lu => {
 			this.graph.setNode("lu" + lu.id, lu);
 			lu.requiredSkills.forEach(req => {
