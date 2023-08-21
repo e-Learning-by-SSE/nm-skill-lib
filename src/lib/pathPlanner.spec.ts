@@ -1,4 +1,4 @@
-import { LearningUnit, Skill, Graph, LearningUnitProvider } from "./types";
+import { LearningUnit, Skill, LearningUnitProvider, Graph } from "./types";
 import { getConnectedGraphForLearningUnit, getConnectedGraphForSkill } from "./pathPlanner";
 
 describe("Path Planer", () => {
@@ -210,7 +210,6 @@ function extractElements(graph: Graph): [string[], (Skill | LearningUnit)[]] {
 function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 	expectedElements = expectedElements.sort((a, b) => a.id.localeCompare(b.id));
 	const expectedIDs = expectedElements.map(element => element.id);
-
 	return [expectedIDs, expectedElements];
 }
 
