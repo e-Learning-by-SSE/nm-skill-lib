@@ -1,6 +1,17 @@
 /* eslint-disable */
 export default {
   displayName: 'skills',
+  jest: {
+    moduleFileExtensions: ['js', 'json', 'ts'],
+    rootDir: 'src',
+    testRegex: '.*\\.spec\\.ts$',
+    transform: {
+      '^.+\\.(t|j)s$': 'ts-jest',
+    },
+    collectCoverageFrom: ['**/*.(t|j)s'],
+    testEnvironment: 'node',
+  },
+
   preset: './jest.preset.js',
   testEnvironment: 'node',
   transform: {
