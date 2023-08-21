@@ -1,135 +1,104 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
-import { LearningUnitProvider, SkillProvider } from "./dataProviders";
-import { Edge, Graph, Skill, Node } from "./types";
+import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
 
 /**
- * PathPlanner class for generating graphs of skills and learning units, and finding paths between them.
+ * Returns a connected graph for the given set of skills.
+ * @param skills The set of skills to include in the graph.
+ * @returns A Promise that resolves to the connected graph.
  */
-export class PathPlanner {
-	private graph: GraphLib;
-	private skillIds: Set<string>;
+export async function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Promise<Graph> {
+	const graph = await populateGraphWithSkills(skills);
+	return buildReturnGraph(graph);
+}
 
-	/**
-	 * Creates a new PathPlanner instance.
-	 * @param skillProvider The SkillHandler instance to use for loading skills.
-	 * @param luProvider The LuHandler instance to use for loading learning units.
-	 */
-	constructor(private skillProvider: SkillProvider, private luProvider: LearningUnitProvider) {
-		this.graph = new GraphLib({ directed: true, multigraph: true });
-		this.skillIds = new Set<string>();
-	}
+/**
+ * Returns a connected graph for the given set of skills and learning unit provider.
+ * @param luProvider The learning unit provider to use for populating the graph.
+ * @param skills The set of skills to include in the graph.
+ * @returns A Promise that resolves to the connected graph.
+ */
+export async function getConnectedGraphForLearningUnit(
+	luProvider: LearningUnitProvider,
+	skills: ReadonlyArray<Skill>
+): Promise<Graph> {
+	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
+		skills.map(skill => skill.id)
+	);
+	const graph = await populateGraphWithLearningUnits(skills, learningUnits);
+	return buildReturnGraph(graph);
+}
 
-	/**
-	 * Generates a graph of skills and learning units connected to the given skill.
-	 * @param skill The initial skill to start the graph from.
-	 * @param includeLearningUnits Whether to include learning units in the graph.
-	 * @returns A Promise that resolves to the generated graph.
-	 */
-	public async getConnectedGraphForSkill(
-		skill: Skill,
-		includeLearningUnits: boolean
-	): Promise<Graph> {
-		await this.populateGraphWithSkills(skill);
-		if (includeLearningUnits) await this.populateGraphWithLearningUnits();
-		return this.buildReturnGraph();
-	}
+/**
+ * Returns whether the given set of skills forms an acyclic graph.
+ * @param skills The set of skills to check.
+ * @returns A Promise that resolves to a boolean indicating whether the graph is acyclic.
+ */
+export async function isAcyclic(skills: ReadonlyArray<Skill>): Promise<boolean> {
+	const graph = await populateGraphWithSkills(skills);
+	return alg.isAcyclic(graph);
+}
 
-	/**
-	 * Checks if the graph of skills and learning units connected to the given skill is acyclic.
-	 * @param initialSkill The initial skill to start the graph from.
-	 * @returns A Promise that resolves to a boolean indicating whether the graph is acyclic.
-	 */
-	public async isAcyclic(initialSkill: Skill): Promise<boolean> {
-		await this.populateGraphWithSkills(initialSkill);
-		await this.populateGraphWithLearningUnits();
-		return alg.isAcyclic(this.graph);
-	}
+/**
+ * Returns the path from the root node to the given skill in the graph.
+ * @param skills The set of skills to include in the graph.
+ * @param pathTarget The skill to find the path for.
+ * @returns A Promise that resolves to an array of node IDs representing the path.
+ */
+export async function pathForSkill(
+	skills: ReadonlyArray<Skill>,
+	pathTarget: Skill // TODO what to do here?
+): Promise<ReadonlyArray<string>> {
+	const emptySkill: Skill = {
+		id: ":::empty::node::representing::no::knowledge / required skill:::",
+		nestedSkills: [],
+		repositoryId: ""
+	};
 
-	/**
-	 * Finds the path of learning units required to reach the given skill.
-	 * @param goal The skill to find the path to.
-	 * @returns A Promise that resolves to an array of learning unit IDs representing the path.
-	 */
-	public async pathForSkill(goal: Skill, knowledge?: ReadonlyArray<Skill>): Promise<string[]> {
-		const emptySkill: Skill = {
-			id: ":::empty::node::representing::no::knowledge / required skill:::",
-			nestedSkills: [],
-			repositoryId: ""
-		};
-		await this.populateGraphWithSkills(goal, emptySkill);
-		await this.populateGraphWithLearningUnits(emptySkill);
+	const graph = await populateGraphWithSkills([...skills, emptySkill]);
+	return alg
+		.preorder(graph, ["sk" + emptySkill.id])
+		.filter(nodeId => nodeId.startsWith("lu"))
+		.map(nodeId => nodeId.slice(2));
+}
 
-		// Connect starting node to all known skills
-		if (knowledge) {
-			knowledge.forEach(skill => {
-				this.graph.setEdge("sk" + emptySkill.id, "sk" + skill.id);
-			});
-		}
+async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
+	const graph = new GraphLib({ directed: true, multigraph: true });
 
-		// Use Dijkstra's algorithm to find the shortest path from starting node
-		const paths = alg.dijkstra(this.graph, "sk" + emptySkill.id);
-		console.log(paths);
-		const nodeIDs: string[] = [];
-		let currentNode = "sk" + goal.id;
-		do {
-			nodeIDs.push(currentNode);
-			const path = paths[currentNode];
-			currentNode = path.predecessor;
-		} while (currentNode !== "sk" + emptySkill.id);
-
-		// Return only IDs of LearningUnits
-		// Consider reverse order (dijkstra returns a path starting from the goal)
-		return nodeIDs
-			.filter(nodeId => nodeId.startsWith("lu"))
-			.map(nodeId => nodeId.slice(2))
-			.reverse();
-	}
-
-	private async populateGraphWithSkills(initialSkill: Skill, emptySkill?: Skill): Promise<void> {
-		const allSkills = await this.skillProvider.getSkillsByRepository(initialSkill.repositoryId);
-
-		// Optionally add an empty skill to the graph
-		if (emptySkill) {
-			this.graph.setNode("sk" + emptySkill.id, emptySkill);
-		}
-
-		allSkills.forEach(skill => {
-			this.skillIds.add(skill.id);
-			this.graph.setNode("sk" + skill.id, skill);
-			skill.nestedSkills.forEach(child => {
-				this.skillIds.add(child);
-				this.graph.setEdge("sk" + skill.id, "sk" + child);
-			});
+	skills.forEach(skill => {
+		graph.setNode("sk" + skill.id, skill);
+		skill.nestedSkills.forEach(child => {
+			graph.setEdge("sk" + skill.id, "sk" + child);
 		});
-	}
+	});
+	return graph;
+}
 
-	private async populateGraphWithLearningUnits(emptySkill?: Skill): Promise<void> {
-		const lus = await this.luProvider.getLearningUnitsBySkills(Array.from(this.skillIds));
-
-		lus.forEach(lu => {
-			this.graph.setNode("lu" + lu.id, lu);
-			if (emptySkill && lu.requiredSkills.length === 0) {
-				this.graph.setEdge("sk" + emptySkill.id, "lu" + lu.id);
-			}
-			lu.requiredSkills.forEach(req => {
-				this.graph.setEdge("sk" + req, "lu" + lu.id);
-			});
-
-			lu.teachingGoals.forEach(goal => {
-				this.graph.setEdge("lu" + lu.id, "sk" + goal);
-			});
-		});
-	}
-
-	private buildReturnGraph(): Graph {
-		const nodeList: Node[] = this.graph.nodes().map(nodeId => {
-			const label = this.graph.node(nodeId);
-			return { id: nodeId.slice(2), element: label };
+async function populateGraphWithLearningUnits(
+	skills: ReadonlyArray<Skill>,
+	learningUnits: ReadonlyArray<LearningUnit>
+): Promise<GraphLib> {
+	const graph = await populateGraphWithSkills(skills);
+	learningUnits.forEach(lu => {
+		graph.setNode("lu" + lu.id, lu);
+		lu.requiredSkills.forEach(req => {
+			graph.setEdge("sk" + req, "lu" + lu.id);
 		});
 
-		const edgeList: Edge[] = this.graph.edges().map(element => {
-			return { from: element.v.slice(2), to: element.w.slice(2) };
+		lu.teachingGoals.forEach(goal => {
+			graph.setEdge("lu" + lu.id, "sk" + goal);
 		});
-		return { nodes: nodeList, edges: edgeList };
-	}
+	});
+	return graph;
+}
+
+function buildReturnGraph(graph: GraphLib): Graph {
+	const nodeList: Node[] = graph.nodes().map(nodeId => {
+		const label = graph.node(nodeId);
+		return { id: nodeId.slice(2), element: label };
+	});
+
+	const edgeList: Edge[] = graph.edges().map(element => {
+		return { from: element.v.slice(2), to: element.w.slice(2) };
+	});
+	return { nodes: nodeList, edges: edgeList };
 }

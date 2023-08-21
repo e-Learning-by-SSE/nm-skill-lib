@@ -1,11 +1,7 @@
-import { LearningUnitProvider, SkillProvider } from "./dataProviders";
-import { PathPlanner } from "./pathPlanner";
-import { LearningUnit, Skill, Graph } from "./types";
+import { LearningUnit, Skill, Graph, LearningUnitProvider } from "./types";
+import { getConnectedGraphForLearningUnit, getConnectedGraphForSkill } from "./pathPlanner";
 
 describe("Path Planer", () => {
-	let dataHandler: TestDataHandler;
-	let planer: PathPlanner;
-
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
 	// Skills sorted by IDs to simplify comparisons during tests
 	// Flat map
@@ -46,18 +42,13 @@ describe("Path Planer", () => {
 		{ id: "lu:9", requiredSkills: ["sk:9"], teachingGoals: ["sk:8"] }
 	].sort((a, b) => a.id.localeCompare(b.id));
 
-	beforeEach(() => {
-		dataHandler = new TestDataHandler();
-		planer = new PathPlanner(dataHandler, dataHandler);
-	});
-
 	describe("getConnectedGraphForSkill - Skills Only", () => {
 		it("Only skills available; no nested skills -> return all skills of the same map", async () => {
 			// Test data preparation
 			dataHandler.init([...firstMap, ...secondMap, ...thirdMapHierarchy], []);
 
 			// Test: Compute graph
-			const graph = await planer.getConnectedGraphForSkill(firstMap[0], false);
+			const graph = await getConnectedGraphForSkill(firstMap);
 
 			// Assert: All skills of the first map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -72,7 +63,7 @@ describe("Path Planer", () => {
 			dataHandler.init([...firstMap, ...secondMap, ...thirdMapHierarchy], []);
 
 			// Test: Compute graph
-			const graph = await planer.getConnectedGraphForSkill(thirdMapHierarchy[0], false);
+			const graph = await getConnectedGraphForSkill(thirdMapHierarchy);
 
 			// Assert: All skills of the third map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -90,7 +81,7 @@ describe("Path Planer", () => {
 			);
 
 			// Test: Compute graph
-			const graph = await planer.getConnectedGraphForSkill(firstMap[0], false);
+			const graph = await getConnectedGraphForSkill(firstMap);
 
 			// Assert: All skills of the first map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -107,7 +98,7 @@ describe("Path Planer", () => {
 			dataHandler.init([...firstMap, ...secondMap, ...thirdMapHierarchy], []);
 
 			// Test: Compute graph
-			const graph = await planer.getConnectedGraphForSkill(firstMap[0], true);
+			const graph = await getConnectedGraphForSkill(firstMap);
 
 			// Assert: All skills of the first map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -125,7 +116,7 @@ describe("Path Planer", () => {
 			);
 
 			// Test: Compute graph
-			const graph = await planer.getConnectedGraphForSkill(firstMap[0], true);
+			const graph = await getConnectedGraphForLearningUnit(dataHandler, firstMap);
 
 			// Assert: All skills of the first map and all LUs of the straight path are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -147,7 +138,7 @@ describe("Path Planer", () => {
 			);
 
 			// Test: Compute graph
-			const graph = await planer.getConnectedGraphForSkill(firstMap[0], true);
+			const graph = await getConnectedGraphForLearningUnit(dataHandler, firstMap);
 
 			// Assert: All skills of the first map and all LUs of straightPathOfLus1 are returned
 			// straightPathOfLus2 is not connected and must not be returned
@@ -223,7 +214,7 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 	return [expectedIDs, expectedElements];
 }
 
-class TestDataHandler implements LearningUnitProvider, SkillProvider {
+class TestDataHandler implements LearningUnitProvider {
 	private skillMaps: Map<string, Skill[]> = new Map<string, Skill[]>();
 	private learningUnits: LearningUnit[] = [];
 
@@ -243,13 +234,11 @@ class TestDataHandler implements LearningUnitProvider, SkillProvider {
 		this.learningUnits = learningUnits;
 	}
 
-	getSkillsByRepository(repositoryId: string): Promise<Skill[]> {
-		return Promise.resolve(this.skillMaps.get(repositoryId));
-	}
-
-	getLearningUnitsBySkills(skillIds: string[]): Promise<LearningUnit[]> {
+	getLearningUnitsBySkillIds(skillIds: string[]): Promise<LearningUnit[]> {
 		return Promise.resolve(
 			this.learningUnits.filter(lu => lu.teachingGoals.some(goal => skillIds.includes(goal)))
 		);
 	}
 }
+
+const dataHandler = new TestDataHandler();
