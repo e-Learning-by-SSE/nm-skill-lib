@@ -1,4 +1,4 @@
-import { LearningUnit, Skill, LearningUnitProvider, Graph } from "./types";
+import { LearningUnit, Skill, Graph, LearningUnitProvider } from "./types";
 import { getConnectedGraphForLearningUnit, getConnectedGraphForSkill } from "./pathPlanner";
 
 describe("Path Planer", () => {
@@ -212,7 +212,6 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 	const expectedIDs = expectedElements.map(element => element.id);
 	return [expectedIDs, expectedElements];
 }
-
 class TestDataHandler implements LearningUnitProvider {
 	private skillMaps: Map<string, Skill[]> = new Map<string, Skill[]>();
 	private learningUnits: LearningUnit[] = [];
