@@ -20,6 +20,7 @@ describe('Path Planer', () => {
     { id: '5', repositoryId: '2', nestedSkills: [] },
     { id: '6', repositoryId: '2', nestedSkills: [] },
   ].sort((a, b) => a.id.localeCompare(b.id));
+  // Skills with nested skills
   const thirdMapHierarchy: Skill[] = [
     { id: '7', repositoryId: '3', nestedSkills: ['8'] },
     { id: '8', repositoryId: '3', nestedSkills: [] },
@@ -28,6 +29,10 @@ describe('Path Planer', () => {
     { id: '11', repositoryId: '3', nestedSkills: [] },
     { id: '12', repositoryId: '3', nestedSkills: [] },
   ].sort((a, b) => a.id.localeCompare(b.id));
+  // LearningUnits
+  const learningUnits: LearningUnit[] = [
+    { id: '1', teachingGoals: ['1'], requiredSkills: [] },
+  ];
 
   beforeEach(() => {
     dataHandler = new TestDataHandler();
