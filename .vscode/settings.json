@@ -1,0 +1,9 @@
+{
+	"cSpell.language": "en,de-de",
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": true
+	},
+	"editor.formatOnPaste": false
+}

@@ -1,27 +1,26 @@
-
 export type Graph = {
-  nodes: Node[];
-  edges: Edge[];
+	nodes: Node[];
+	edges: Edge[];
 };
 
 export type Skill = {
-  id: string;
-  repositoryId: string;
-  nestedSkills: string[];
+	id: string;
+	repositoryId: string;
+	nestedSkills: string[];
 };
 
 export type Edge = {
-  from: string;
-  to: string;
+	from: string;
+	to: string;
 };
 
 export type LearningUnit = {
-  id: string;
-  requiredSkills: string[];
-  teachingGoals: string[];
+	id: string;
+	requiredSkills: string[];
+	teachingGoals: string[];
 };
 
 export type Node = {
-  id: string;
-  element: Skill | LearningUnit;
+	id: string;
+	element: Skill | LearningUnit;
 };
