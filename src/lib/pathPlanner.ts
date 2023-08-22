@@ -41,26 +41,48 @@ export class PathPlanner {
 	 */
 	public async isAcyclic(initialSkill: Skill): Promise<boolean> {
 		await this.populateGraphWithSkills(initialSkill);
+		await this.populateGraphWithLearningUnits();
 		return alg.isAcyclic(this.graph);
 	}
 
 	/**
 	 * Finds the path of learning units required to reach the given skill.
-	 * @param skill The skill to find the path to.
+	 * @param goal The skill to find the path to.
 	 * @returns A Promise that resolves to an array of learning unit IDs representing the path.
 	 */
-	public async pathForSkill(skill: Skill): Promise<string[]> {
+	public async pathForSkill(goal: Skill, knowledge?: ReadonlyArray<Skill>): Promise<string[]> {
 		const emptySkill: Skill = {
 			id: ":::empty::node::representing::no::knowledge / required skill:::",
 			nestedSkills: [],
 			repositoryId: ""
 		};
-		await this.populateGraphWithSkills(skill, emptySkill);
+		await this.populateGraphWithSkills(goal, emptySkill);
+		await this.populateGraphWithLearningUnits(emptySkill);
 
-		return alg
-			.preorder(this.graph, ["sk" + emptySkill.id])
+		// Connect starting node to all known skills
+		if (knowledge) {
+			knowledge.forEach(skill => {
+				this.graph.setEdge("sk" + emptySkill.id, "sk" + skill.id);
+			});
+		}
+
+		// Use Dijkstra's algorithm to find the shortest path from starting node
+		const paths = alg.dijkstra(this.graph, "sk" + emptySkill.id, null, null);
+		console.log(paths);
+		const nodeIDs: string[] = [];
+		let currentNode = "sk" + goal.id;
+		do {
+			nodeIDs.push(currentNode);
+			const path = paths[currentNode];
+			currentNode = path.predecessor;
+		} while (currentNode !== "sk" + emptySkill.id);
+
+		// Return only IDs of LearningUnits
+		// Consider reverse order (dijkstra returns a path starting from the goal)
+		return nodeIDs
 			.filter(nodeId => nodeId.startsWith("lu"))
-			.map(nodeId => nodeId.slice(2));
+			.map(nodeId => nodeId.slice(2))
+			.reverse();
 	}
 
 	private async populateGraphWithSkills(initialSkill: Skill, emptySkill?: Skill): Promise<void> {
@@ -81,11 +103,14 @@ export class PathPlanner {
 		});
 	}
 
-	private async populateGraphWithLearningUnits(): Promise<void> {
+	private async populateGraphWithLearningUnits(emptySkill?: Skill): Promise<void> {
 		const lus = await this.luProvider.getLearningUnitsBySkills(Array.from(this.skillIds));
 
 		lus.forEach(lu => {
 			this.graph.setNode("lu" + lu.id, lu);
+			if (emptySkill && lu.requiredSkills.length === 0) {
+				this.graph.setEdge("sk" + emptySkill.id, "lu" + lu.id);
+			}
 			lu.requiredSkills.forEach(req => {
 				this.graph.setEdge("sk" + req, "lu" + lu.id);
 			});

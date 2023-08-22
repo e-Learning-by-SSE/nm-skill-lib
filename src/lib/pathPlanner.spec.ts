@@ -157,6 +157,34 @@ describe("Path Planer", () => {
 			expect(nodeElements).toEqual(expectedElements);
 		});
 	});
+
+	describe("pathForSkill", () => {
+		it("No knowledge; only 1 map; no nested skills", async () => {
+			// Test data preparation
+			dataHandler.init([...firstMap], [...straightPathOfLus]);
+
+			// Test: Compute path
+			const path = await planer.pathForSkill(firstMap[2]);
+
+			// Assert: Path should be: 1 -> 2 -> 3
+			const expectedIDs = straightPathOfLus
+				.map(lu => lu.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(path).toEqual(expectedIDs);
+		});
+
+		it("Intermediate knowledge; only 1 map; no nested skills", async () => {
+			// Test data preparation
+			dataHandler.init([...firstMap], [...straightPathOfLus]);
+
+			// Test: Compute path
+			const path = await planer.pathForSkill(firstMap[2], [firstMap[1]]);
+
+			// Assert: Path should be: 3 (as 2 is already known)
+			const expectedIDs = [straightPathOfLus[2].id];
+			expect(path).toEqual(expectedIDs);
+		});
+	});
 });
 
 function extractElements(graph: Graph): [string[], (Skill | LearningUnit)[]] {
