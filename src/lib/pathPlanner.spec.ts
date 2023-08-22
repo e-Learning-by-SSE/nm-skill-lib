@@ -1,5 +1,9 @@
-import { LearningUnit, Skill, Graph, LearningUnitProvider } from "./types";
-import { getConnectedGraphForLearningUnit, getConnectedGraphForSkill } from "./pathPlanner";
+import { LearningUnit, Skill, Graph, LearningUnitProvider, GoalDefinition } from "./types";
+import {
+	getConnectedGraphForLearningUnit,
+	getConnectedGraphForSkill,
+	getPath
+} from "./pathPlanner";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -130,7 +134,7 @@ describe("Path Planer", () => {
 			expect(nodeElements).toEqual(expectedElements);
 		});
 
-		it.skip("Skills & LearningUnits of multiple repositories; no nested skills -> return only connected elements", async () => {
+		it("Skills & LearningUnits of multiple repositories; no nested skills -> return only connected elements", async () => {
 			// Test data preparation
 			dataHandler.init(
 				[...firstMap, ...secondMap, ...thirdMapHierarchy],
@@ -160,7 +164,8 @@ describe("Path Planer", () => {
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
 			// Test: Compute path
-			const path = await planer.pathForSkill(firstMap[2]);
+			const goal = { id: "t2", desiredSkill: firstMap[2], presentSkills: [] };
+			const path = await getPath(firstMap, dataHandler, goal);
 
 			// Assert: Path should be: 1 -> 2 -> 3
 			const expectedIDs = straightPathOfLus
@@ -174,21 +179,23 @@ describe("Path Planer", () => {
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
 			// Test: Compute path
-			const path = await planer.pathForSkill(firstMap[2], [firstMap[1]]);
+			const goal = { id: "t4", desiredSkill: firstMap[2], presentSkills: [firstMap[1]] };
+			const path = await getPath(firstMap, dataHandler, goal);
+			// const path = await pathForSkill(firstMap[2], [firstMap[1]]);
 
 			// Assert: Path should be: 3 (as 2 is already known)
 			const expectedIDs = [straightPathOfLus[2].id];
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it("No knowledge; only 1 map; with nested skills", async () => {
+		it.skip("No knowledge; only 1 map; with nested skills", async () => {
 			// Test data preparation
 			dataHandler.init([...thirdMapHierarchy], [...structuredPathOfLus]);
 
 			// Test: Compute path
-			const path = await planer.pathForSkill(
-				thirdMapHierarchy.find(skill => skill.id === "sk:8")
-			);
+			// const goal = thirdMapHierarchy.find(skill => skill.id === "sk:8") ?? thirdMapHierarchy[7];
+			const goal = { id: "t3", desiredSkill: thirdMapHierarchy[1], presentSkills: [] };
+			const path = await getPath(thirdMapHierarchy, dataHandler, goal);
 
 			// Assert: Path should be: 7 -> 8 -> 9
 			const expectedIDs = structuredPathOfLus

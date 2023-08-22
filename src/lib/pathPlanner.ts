@@ -1,5 +1,5 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
-import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
+import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider, GoalDefinition } from "./types";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -41,24 +41,46 @@ export async function isAcyclic(skills: ReadonlyArray<Skill>): Promise<boolean> 
 /**
  * Returns the path from the root node to the given skill in the graph.
  * @param skills The set of skills to include in the graph.
- * @param pathTarget The skill to find the path for.
+ * @param luProvider The learning unit provider to use for populating the graph.
+ * @param goalDef The goal definition to use for finding the path.
  * @returns A Promise that resolves to an array of node IDs representing the path.
  */
-export async function pathForSkill(
+export async function getPath(
 	skills: ReadonlyArray<Skill>,
-	pathTarget: Skill // TODO what to do here?
+	luProvider: LearningUnitProvider,
+	goalDef: GoalDefinition
 ): Promise<ReadonlyArray<string>> {
-	const emptySkill: Skill = {
+	const dummyStartingSkill: Skill = {
 		id: ":::empty::node::representing::no::knowledge / required skill:::",
 		nestedSkills: [],
 		repositoryId: ""
 	};
+	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
+		skills.map(skill => skill.id)
+	);
+	const graph = await populateGraphWithLearningUnits(
+		[dummyStartingSkill, ...skills],
+		learningUnits
+	);
+	graph.setEdge("sk" + dummyStartingSkill.id, "lu" + learningUnits[0].id);
+	goalDef.presentSkills.forEach(skill => {
+		graph.setEdge("sk" + dummyStartingSkill.id, "sk" + skill.id);
+	});
+	const paths = alg.dijkstra(graph, "sk" + dummyStartingSkill.id, null, null);
+	const nodeIDs: string[] = [];
+	let currentNode = "sk" + goalDef.desiredSkill.id;
+	do {
+		nodeIDs.push(currentNode);
+		const path = paths[currentNode];
+		currentNode = path.predecessor;
+	} while (currentNode !== "sk" + dummyStartingSkill.id);
 
-	const graph = await populateGraphWithSkills([...skills, emptySkill]);
-	return alg
-		.preorder(graph, ["sk" + emptySkill.id])
+	return nodeIDs
 		.filter(nodeId => nodeId.startsWith("lu"))
-		.map(nodeId => nodeId.slice(2));
+		.map(nodeId => nodeId.slice(2))
+		.reverse();
+	// Return only IDs of LearningUnits
+	// Consider reverse order (dijkstra returns a path starting from the goal)
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
