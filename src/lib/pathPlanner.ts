@@ -89,7 +89,7 @@ function findShortestPath(graph: GraphLib, startNode: string, endNode: string): 
 	return nodeIDs
 		.filter(nodeId => nodeId.startsWith("lu"))
 		.map(nodeId => nodeId.slice(2))
-		.reverse(); // (dijkstra returns path from |start -> goal|)
+		.reverse(); // (dijkstra returns path from |goal -> start|)
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
