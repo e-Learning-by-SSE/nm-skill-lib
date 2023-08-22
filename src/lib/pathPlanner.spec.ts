@@ -1,4 +1,4 @@
-import { LearningUnit, Skill, Graph, LearningUnitProvider, GoalDefinition } from "./types";
+import { LearningUnit, Skill, Graph, LearningUnitProvider } from "./types";
 import {
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
@@ -164,8 +164,11 @@ describe("Path Planer", () => {
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
 			// Test: Compute path
-			const goal = { id: "t2", desiredSkill: firstMap[2], presentSkills: [] };
-			const path = await getPath(firstMap, dataHandler, goal);
+			const path = await getPath({
+				skills: firstMap,
+				luProvider: dataHandler,
+				desiredSkill: firstMap[2]
+			});
 
 			// Assert: Path should be: 1 -> 2 -> 3
 			const expectedIDs = straightPathOfLus
@@ -179,9 +182,12 @@ describe("Path Planer", () => {
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
 			// Test: Compute path
-			const goal = { id: "t4", desiredSkill: firstMap[2], presentSkills: [firstMap[1]] };
-			const path = await getPath(firstMap, dataHandler, goal);
-			// const path = await pathForSkill(firstMap[2], [firstMap[1]]);
+			const path = await getPath({
+				skills: firstMap,
+				luProvider: dataHandler,
+				desiredSkill: firstMap[2],
+				ownedSkill: [firstMap[1]]
+			});
 
 			// Assert: Path should be: 3 (as 2 is already known)
 			const expectedIDs = [straightPathOfLus[2].id];
@@ -193,9 +199,11 @@ describe("Path Planer", () => {
 			dataHandler.init([...thirdMapHierarchy], [...structuredPathOfLus]);
 
 			// Test: Compute path
-			// const goal = thirdMapHierarchy.find(skill => skill.id === "sk:8") ?? thirdMapHierarchy[7];
-			const goal = { id: "t3", desiredSkill: thirdMapHierarchy[1], presentSkills: [] };
-			const path = await getPath(thirdMapHierarchy, dataHandler, goal);
+			const path = await getPath({
+				skills: thirdMapHierarchy,
+				luProvider: dataHandler,
+				desiredSkill: thirdMapHierarchy[1]
+			});
 
 			// Assert: Path should be: 7 -> 8 -> 9
 			const expectedIDs = structuredPathOfLus
