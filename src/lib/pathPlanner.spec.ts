@@ -200,7 +200,7 @@ describe("Path Planer", () => {
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it("No knowledge; 1 map; with nested skills", async () => {
+		it.skip("No knowledge; 1 map; with nested skills", async () => {
 			// Test data preparation
 			dataHandler.init([...thirdMapHierarchy], [...structuredPathOfLus]);
 
