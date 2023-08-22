@@ -34,17 +34,23 @@ describe("Path Planer", () => {
 		{ id: "lu:1", requiredSkills: [], teachingGoals: ["sk:1"] },
 		{ id: "lu:2", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"] },
 		{ id: "lu:3", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"] }
-	].sort((a, b) => a.id.localeCompare(b.id));
+	];
 	const straightPathOfLus2: LearningUnit[] = [
 		{ id: "lu:4", requiredSkills: [], teachingGoals: ["sk:4"] },
 		{ id: "lu:5", requiredSkills: ["sk:4"], teachingGoals: ["sk:5"] },
 		{ id: "lu:6", requiredSkills: ["sk:5"], teachingGoals: ["sk:6"] }
-	].sort((a, b) => a.id.localeCompare(b.id));
+	];
+	// lu:7 and lu:8 must be learned to understand sk:9 (which is group of sk:10 and sk:11)
 	const structuredPathOfLus: LearningUnit[] = [
 		{ id: "lu:7", requiredSkills: [], teachingGoals: ["sk:10"] },
 		{ id: "lu:8", requiredSkills: [], teachingGoals: ["sk:11"] },
 		{ id: "lu:9", requiredSkills: ["sk:9"], teachingGoals: ["sk:8"] }
-	].sort((a, b) => a.id.localeCompare(b.id));
+	];
+	const multipleRequirementsOfLu: LearningUnit[] = [
+		{ id: "lu:10", requiredSkills: [], teachingGoals: ["sk:1"] },
+		{ id: "lu:11", requiredSkills: [], teachingGoals: ["sk:2"] },
+		{ id: "lu:12", requiredSkills: ["sk:1", "sk:2"], teachingGoals: ["sk:3"] }
+	];
 
 	describe("getConnectedGraphForSkill - Skills Only", () => {
 		it("Only skills available; no nested skills -> return all skills of the same map", async () => {
@@ -159,7 +165,7 @@ describe("Path Planer", () => {
 	});
 
 	describe("pathForSkill", () => {
-		it("No knowledge; only 1 map; no nested skills", async () => {
+		it("No knowledge; 1 map; no nested skills", async () => {
 			// Test data preparation
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
@@ -177,7 +183,7 @@ describe("Path Planer", () => {
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it("Intermediate knowledge; only 1 map; no nested skills", async () => {
+		it("Intermediate knowledge; 1 map; no nested skills", async () => {
 			// Test data preparation
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
@@ -194,7 +200,7 @@ describe("Path Planer", () => {
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it.skip("No knowledge; only 1 map; with nested skills", async () => {
+		it("No knowledge; 1 map; with nested skills", async () => {
 			// Test data preparation
 			dataHandler.init([...thirdMapHierarchy], [...structuredPathOfLus]);
 
@@ -202,11 +208,29 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMapHierarchy,
 				luProvider: dataHandler,
-				desiredSkill: thirdMapHierarchy[1]
+				desiredSkill: thirdMapHierarchy.filter(skill => skill.id === "sk:9")[0]
 			});
 
-			// Assert: Path should be: 7 -> 8 -> 9
+			// Assert: Path should be: (7 & 8) -> 9
 			const expectedIDs = structuredPathOfLus
+				.map(lu => lu.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(path).toEqual(expectedIDs);
+		});
+
+		it.skip("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU", async () => {
+			// Test data preparation
+			dataHandler.init([...firstMap], [...multipleRequirementsOfLu]);
+
+			// Test: Compute path
+			const path = await getPath({
+				skills: firstMap,
+				luProvider: dataHandler,
+				desiredSkill: firstMap.filter(skill => skill.id === "sk:3")[0]
+			});
+
+			// Assert: Path should be: (10 & 11) -> 12
+			const expectedIDs = multipleRequirementsOfLu
 				.map(lu => lu.id)
 				.sort((a, b) => a.localeCompare(b));
 			expect(path).toEqual(expectedIDs);
