@@ -72,21 +72,24 @@ export async function getPath({
 	ownedSkill.forEach(skill => {
 		graph.setEdge("sk" + dummyStartingSkill.id, "sk" + skill.id);
 	});
-	const paths = alg.dijkstra(graph, "sk" + dummyStartingSkill.id, null, null);
+
+	return findShortestPath(graph, "sk" + dummyStartingSkill.id, "sk" + desiredSkill.id);
+}
+
+function findShortestPath(graph: GraphLib, startNode: string, endNode: string): string[] {
+	const paths = alg.dijkstra(graph, startNode, null, null);
 	const nodeIDs: string[] = [];
-	let currentNode = "sk" + desiredSkill.id;
+	let currentNode = endNode;
 	do {
 		nodeIDs.push(currentNode);
 		const path = paths[currentNode];
 		currentNode = path.predecessor;
-	} while (currentNode !== "sk" + dummyStartingSkill.id);
+	} while (currentNode !== startNode);
 
 	return nodeIDs
 		.filter(nodeId => nodeId.startsWith("lu"))
 		.map(nodeId => nodeId.slice(2))
-		.reverse();
-	// Return only IDs of LearningUnits
-	// Consider reverse order (dijkstra returns a path starting from the goal)
+		.reverse(); // (dijkstra returns path from |start -> goal|)
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
