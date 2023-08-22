@@ -68,6 +68,7 @@ export class PathPlanner {
 
 		// Use Dijkstra's algorithm to find the shortest path from starting node
 		const paths = alg.dijkstra(this.graph, "sk" + emptySkill.id);
+		console.log(paths);
 		const nodeIDs: string[] = [];
 		let currentNode = "sk" + goal.id;
 		do {
