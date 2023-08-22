@@ -32,9 +32,3 @@ export interface LearningUnitProvider {
 	 */
 	getLearningUnitsBySkillIds(skillIds: string[]): Promise<LearningUnit[]>;
 }
-
-export type GoalDefinition = {
-	id: string;
-	desiredSkill: Skill;
-	presentSkills: Skill[];
-};

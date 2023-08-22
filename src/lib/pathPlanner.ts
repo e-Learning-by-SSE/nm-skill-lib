@@ -1,5 +1,5 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
-import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider, GoalDefinition } from "./types";
+import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -45,11 +45,17 @@ export async function isAcyclic(skills: ReadonlyArray<Skill>): Promise<boolean> 
  * @param goalDef The goal definition to use for finding the path.
  * @returns A Promise that resolves to an array of node IDs representing the path.
  */
-export async function getPath(
-	skills: ReadonlyArray<Skill>,
-	luProvider: LearningUnitProvider,
-	goalDef: GoalDefinition
-): Promise<ReadonlyArray<string>> {
+export async function getPath({
+	skills,
+	luProvider,
+	desiredSkill,
+	ownedSkill = []
+}: {
+	skills: ReadonlyArray<Skill>;
+	luProvider: LearningUnitProvider;
+	desiredSkill: Skill;
+	ownedSkill?: Skill[];
+}): Promise<ReadonlyArray<string>> {
 	const dummyStartingSkill: Skill = {
 		id: ":::empty::node::representing::no::knowledge / required skill:::",
 		nestedSkills: [],
@@ -63,12 +69,12 @@ export async function getPath(
 		learningUnits
 	);
 	graph.setEdge("sk" + dummyStartingSkill.id, "lu" + learningUnits[0].id);
-	goalDef.presentSkills.forEach(skill => {
+	ownedSkill.forEach(skill => {
 		graph.setEdge("sk" + dummyStartingSkill.id, "sk" + skill.id);
 	});
 	const paths = alg.dijkstra(graph, "sk" + dummyStartingSkill.id, null, null);
 	const nodeIDs: string[] = [];
-	let currentNode = "sk" + goalDef.desiredSkill.id;
+	let currentNode = "sk" + desiredSkill.id;
 	do {
 		nodeIDs.push(currentNode);
 		const path = paths[currentNode];
