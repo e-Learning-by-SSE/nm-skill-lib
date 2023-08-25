@@ -25,10 +25,8 @@ class State {
 	}
 
 	private checkGroupedSkills(skills: ReadonlyArray<Skill>) {
-		let itr = 0;
 		let changed = false;
 		do {
-			console.log("Iteration: " + itr++);
 			changed = false;
 			changed = changed || this.checkIfChildrenAreSubsumedByParents(skills);
 			changed = changed || this.checkIfParentsAreSubsumedByChildren(skills);
