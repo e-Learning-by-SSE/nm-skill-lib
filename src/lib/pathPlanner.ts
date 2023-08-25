@@ -49,16 +49,16 @@ export async function isAcyclic(skills: ReadonlyArray<Skill>): Promise<boolean> 
 export async function getPath({
 	skills,
 	luProvider,
-	desiredSkill,
+	desiredSkills,
 	ownedSkill = []
 }: {
 	skills: ReadonlyArray<Skill>;
 	luProvider: LearningUnitProvider;
-	desiredSkill: Skill;
+	desiredSkills: Skill[];
 	ownedSkill?: Skill[];
 }): Promise<ReadonlyArray<string>> {
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
-	return findOptimalLearningPath(ownedSkill, [desiredSkill], skills, lus).map(lu => lu.id);
+	return findOptimalLearningPath(ownedSkill, desiredSkills, skills, lus)?.map(lu => lu.id) ?? [];
 }
 // export async function getPath({
 // 	skills,
