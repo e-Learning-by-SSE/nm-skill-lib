@@ -1,5 +1,6 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
+import { findOptimalLearningPath } from "./fastDownward";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -56,25 +57,39 @@ export async function getPath({
 	desiredSkill: Skill;
 	ownedSkill?: Skill[];
 }): Promise<ReadonlyArray<string>> {
-	const dummyStartingSkill: Skill = {
-		id: ":::empty::node::representing::no::knowledge / required skill:::",
-		nestedSkills: [],
-		repositoryId: ""
-	};
-	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
-		skills.map(skill => skill.id)
-	);
-	const graph = await populateGraphWithLearningUnits(
-		[dummyStartingSkill, ...skills],
-		learningUnits
-	);
-	graph.setEdge("sk" + dummyStartingSkill.id, "lu" + learningUnits[0].id);
-	ownedSkill.forEach(skill => {
-		graph.setEdge("sk" + dummyStartingSkill.id, "sk" + skill.id);
-	});
-
-	return findShortestPath(graph, "sk" + dummyStartingSkill.id, "sk" + desiredSkill.id);
+	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
+	return findOptimalLearningPath(ownedSkill, [desiredSkill], skills, lus).map(lu => lu.id);
 }
+// export async function getPath({
+// 	skills,
+// 	luProvider,
+// 	desiredSkill,
+// 	ownedSkill = []
+// }: {
+// 	skills: ReadonlyArray<Skill>;
+// 	luProvider: LearningUnitProvider;
+// 	desiredSkill: Skill;
+// 	ownedSkill?: Skill[];
+// }): Promise<ReadonlyArray<string>> {
+// 	const dummyStartingSkill: Skill = {
+// 		id: ":::empty::node::representing::no::knowledge / required skill:::",
+// 		nestedSkills: [],
+// 		repositoryId: ""
+// 	};
+// 	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
+// 		skills.map(skill => skill.id)
+// 	);
+// 	const graph = await populateGraphWithLearningUnits(
+// 		[dummyStartingSkill, ...skills],
+// 		learningUnits
+// 	);
+// 	graph.setEdge("sk" + dummyStartingSkill.id, "lu" + learningUnits[0].id);
+// 	ownedSkill.forEach(skill => {
+// 		graph.setEdge("sk" + dummyStartingSkill.id, "sk" + skill.id);
+// 	});
+
+// 	return findShortestPath(graph, "sk" + dummyStartingSkill.id, "sk" + desiredSkill.id);
+// }
 
 function findShortestPath(graph: GraphLib, startNode: string, endNode: string): string[] {
 	const paths = alg.dijkstra(graph, startNode, null, null);
