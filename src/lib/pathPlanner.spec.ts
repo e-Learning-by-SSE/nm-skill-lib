@@ -165,7 +165,7 @@ describe("Path Planer", () => {
 	});
 
 	describe("pathForSkill", () => {
-		it("No knowledge; 1 map; no nested skills", async () => {
+		it("No knowledge; 1 map; no nested skills; 1 goal", async () => {
 			// Test data preparation
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
@@ -173,7 +173,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				luProvider: dataHandler,
-				desiredSkill: firstMap[2]
+				desiredSkills: [firstMap[2]]
 			});
 
 			// Assert: Path should be: 1 -> 2 -> 3
@@ -183,7 +183,7 @@ describe("Path Planer", () => {
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it("Intermediate knowledge; 1 map; no nested skills", async () => {
+		it("Intermediate knowledge; 1 map; no nested skills; 1 goal", async () => {
 			// Test data preparation
 			dataHandler.init([...firstMap], [...straightPathOfLus]);
 
@@ -191,7 +191,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				luProvider: dataHandler,
-				desiredSkill: firstMap[2],
+				desiredSkills: [firstMap[2]],
 				ownedSkill: [firstMap[1]]
 			});
 
@@ -200,7 +200,7 @@ describe("Path Planer", () => {
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it("No knowledge; 1 map; with nested skills", async () => {
+		it("No knowledge; 1 map; with nested skills; 1 goal", async () => {
 			// Test data preparation
 			dataHandler.init([...thirdMapHierarchy], [...structuredPathOfLus]);
 
@@ -208,7 +208,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMapHierarchy,
 				luProvider: dataHandler,
-				desiredSkill: thirdMapHierarchy.filter(skill => skill.id === "sk:8")[0]
+				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8")
 			});
 
 			// Assert: Path should be: (7 & 8) -> 9
@@ -218,7 +218,7 @@ describe("Path Planer", () => {
 			expect(path).toEqual(expectedIDs);
 		});
 
-		it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU", async () => {
+		it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU; 1 goal", async () => {
 			// Test data preparation
 			dataHandler.init([...firstMap], [...multipleRequirementsOfLu]);
 
@@ -226,11 +226,37 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				luProvider: dataHandler,
-				desiredSkill: firstMap.filter(skill => skill.id === "sk:3")[0]
+				desiredSkills: firstMap.filter(skill => skill.id === "sk:3")
 			});
 
 			// Assert: Path should be: (10 & 11) -> 12
 			const expectedIDs = multipleRequirementsOfLu
+				.map(lu => lu.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(path).toEqual(expectedIDs);
+		});
+
+		it("No knowledge; 2 maps; with nested skills; multiple requirements for 1 LU; 2 goals", async () => {
+			// Test data preparation
+			dataHandler.init(
+				[...firstMap, ...thirdMapHierarchy],
+				[...multipleRequirementsOfLu, ...structuredPathOfLus]
+			);
+
+			// Test: Compute path
+			const path = await getPath({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				luProvider: dataHandler,
+				desiredSkills: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8")
+				]
+			});
+
+			// Assert: Path contain LUs from two paths:
+			// Path 1: (10 & 11) -> 12
+			// Path 2: (7 & 8) -> 9
+			const expectedIDs = [...multipleRequirementsOfLu, ...structuredPathOfLus]
 				.map(lu => lu.id)
 				.sort((a, b) => a.localeCompare(b));
 			expect(path).toEqual(expectedIDs);
