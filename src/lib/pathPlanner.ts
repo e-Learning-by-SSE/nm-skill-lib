@@ -1,6 +1,6 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
-import { findOptimalLearningPath } from "./fastDownward";
+import { findOptimalLearningPath } from "./fastDownward/fastDownward";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -59,52 +59,6 @@ export async function getPath({
 }): Promise<ReadonlyArray<string>> {
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
 	return findOptimalLearningPath(ownedSkill, desiredSkills, skills, lus)?.map(lu => lu.id) ?? [];
-}
-// export async function getPath({
-// 	skills,
-// 	luProvider,
-// 	desiredSkill,
-// 	ownedSkill = []
-// }: {
-// 	skills: ReadonlyArray<Skill>;
-// 	luProvider: LearningUnitProvider;
-// 	desiredSkill: Skill;
-// 	ownedSkill?: Skill[];
-// }): Promise<ReadonlyArray<string>> {
-// 	const dummyStartingSkill: Skill = {
-// 		id: ":::empty::node::representing::no::knowledge / required skill:::",
-// 		nestedSkills: [],
-// 		repositoryId: ""
-// 	};
-// 	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
-// 		skills.map(skill => skill.id)
-// 	);
-// 	const graph = await populateGraphWithLearningUnits(
-// 		[dummyStartingSkill, ...skills],
-// 		learningUnits
-// 	);
-// 	graph.setEdge("sk" + dummyStartingSkill.id, "lu" + learningUnits[0].id);
-// 	ownedSkill.forEach(skill => {
-// 		graph.setEdge("sk" + dummyStartingSkill.id, "sk" + skill.id);
-// 	});
-
-// 	return findShortestPath(graph, "sk" + dummyStartingSkill.id, "sk" + desiredSkill.id);
-// }
-
-function findShortestPath(graph: GraphLib, startNode: string, endNode: string): string[] {
-	const paths = alg.dijkstra(graph, startNode, null, null);
-	const nodeIDs: string[] = [];
-	let currentNode = endNode;
-	do {
-		nodeIDs.push(currentNode);
-		const path = paths[currentNode];
-		currentNode = path.predecessor;
-	} while (currentNode !== startNode);
-
-	return nodeIDs
-		.filter(nodeId => nodeId.startsWith("lu"))
-		.map(nodeId => nodeId.slice(2))
-		.reverse(); // (dijkstra returns path from |goal -> start|)
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
