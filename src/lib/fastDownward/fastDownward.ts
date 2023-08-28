@@ -49,7 +49,10 @@ function search<LU extends LearningUnit>(
 			const path: LU[] = [];
 			let node = currentNode;
 			while (node.parent !== null) {
-				path.unshift(node.action);
+				const lu = node.action;
+				if (lu) {
+					path.unshift(node.action);
+				}
 				node = node.parent;
 			}
 			return path;
