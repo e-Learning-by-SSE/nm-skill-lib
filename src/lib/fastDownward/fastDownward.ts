@@ -1,40 +1,40 @@
 import { LearningUnit, Skill } from "../types";
 import { State } from "./state";
-import { Operator, Node, HeuristicFunction, CostFunction } from "./types";
+import { Node, HeuristicFunction, CostFunction } from "./types";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
  */
-function availableOperators(currentState: State, lus: LearningUnit[]) {
-	const reachableLus = lus.filter(lu =>
+function availableOperators<LU extends LearningUnit>(currentState: State, lus: LU[]) {
+	const learnableLus = lus.filter(lu =>
 		lu.requiredSkills.every(skill =>
 			currentState.learnedSkills.some(learnedSkill => learnedSkill === skill)
 		)
 	);
 
 	// Avoid operators that are already in the current state
-	// Ideally we would check that the LEarningUnits are not learned twice
-	// However, we can also check that we always learn at leas one new skill
-	const usefulLus = reachableLus.filter(lu =>
+	// Ideally we would check that the LearningUnits are not learned twice
+	// However, we can also check that we always learn at least one new skill
+	const usefulLus = learnableLus.filter(lu =>
 		lu.teachingGoals.some(
 			skill => !currentState.learnedSkills.some(learnedSkill => learnedSkill === skill)
 		)
 	);
 
-	return usefulLus.map(lu => new Operator(lu));
+	return usefulLus;
 }
 
 // Implemented state-space search algorithm based on FAST-DOWNWARD algorithm.
 // See: https://roboticseabass.com/2022/07/19/task-planning-in-robotics/
-function search(
+function search<LU extends LearningUnit>(
 	initialState: State,
 	goal: Skill[],
 	skills: ReadonlyArray<Skill>,
-	lus: LearningUnit[],
-	fnCost: CostFunction,
+	lus: LU[],
+	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction
-): Operator[] | null {
-	const openList: Node[] = [
+): LU[] | null {
+	const openList: Node<LU>[] = [
 		new Node(initialState, null, null, 0, fnHeuristic(initialState, goal))
 	];
 	const closedSet: State[] = [];
@@ -46,7 +46,7 @@ function search(
 		/* Check if currentNode.state is the goal state */
 		if (currentNode.state.goalFulfilled(goal)) {
 			// Build and return the path
-			const path: Operator[] = [];
+			const path: LU[] = [];
 			let node = currentNode;
 			while (node.parent !== null) {
 				path.unshift(node.action);
@@ -60,7 +60,7 @@ function search(
 		// Generate successors and add them to openList
 		for (const operator of availableOperators(currentNode.state, lus)) {
 			const newState = currentNode.state.deriveState(operator, skills);
-			const newNode = new Node(
+			const newNode = new Node<LU>(
 				newState,
 				operator,
 				currentNode,
@@ -89,11 +89,27 @@ function search(
 	return null; // No solution found
 }
 
-export function findOptimalLearningPath(
+/**
+ * Searches for an optimal path to learn the desired Skills (goal) based on the given knowledge.
+ *
+ * By extending LU (must also be considered at the cost function and the heuristic) the algorithm
+ * can be adapted to work with different LearningUnit types.
+ *
+ * @param knowledge The skills that are already known by the learner.
+ * @param goal The skills that should be learned.
+ * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param lus The set of all LearningUnits.
+ * @param fnConst Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
+ * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
+ * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
+ */
+export function findOptimalLearningPath<LU extends LearningUnit>(
 	knowledge: Skill[],
 	goal: Skill[],
 	skills: ReadonlyArray<Skill>,
-	lus: LearningUnit[]
+	lus: LU[],
+	fnConst?: CostFunction<LU>,
+	fnHeuristic?: HeuristicFunction
 ) {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const initialState = new State(
@@ -103,13 +119,15 @@ export function findOptimalLearningPath(
 
 	// Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
 	// Maybe replaced by a more sophisticated cost function
-	const fnConst: CostFunction = (prev, op) => prev.cost + 1;
+	if (!fnConst) {
+		fnConst = (prev, op) => prev.cost + 1;
+	}
 
 	// Default heuristic function: Always return 0
 	// Maybe replaced by a more sophisticated heuristic function
-	const fnHeuristic: HeuristicFunction = state => 0;
+	if (!fnHeuristic) {
+		fnHeuristic = state => 0;
+	}
 
-	return search(initialState, goal, skills, lus, fnConst, fnHeuristic)?.map(
-		step => step.learningUnit
-	);
+	return search(initialState, goal, skills, lus, fnConst, fnHeuristic);
 }
