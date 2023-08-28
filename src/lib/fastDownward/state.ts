@@ -4,7 +4,7 @@ import { Skill, LearningUnit } from "../types";
  * Removes duplicate elements from the given array.
  * Based on: https://stackoverflow.com/a/1584377
  */
-function arrayUnique(array) {
+function arrayUnique(array: string[]) {
 	var a = array.concat();
 	for (var i = 0; i < a.length; ++i) {
 		for (var j = i + 1; j < a.length; ++j) {

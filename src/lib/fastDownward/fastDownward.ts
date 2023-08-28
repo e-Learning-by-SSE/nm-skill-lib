@@ -35,7 +35,7 @@ function search<LU extends LearningUnit>(
 	fnHeuristic: HeuristicFunction
 ): LU[] | null {
 	const openList: Node<LU>[] = [
-		new Node(initialState, null, null, 0, fnHeuristic(initialState, goal))
+		new Node<LU>(initialState, null, null, 0, fnHeuristic(initialState, goal))
 	];
 	const closedSet: State[] = [];
 
