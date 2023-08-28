@@ -61,7 +61,14 @@ export async function getPath({
 	ownedSkill?: Skill[];
 }): Promise<ReadonlyArray<string>> {
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
-	return findOptimalLearningPath(ownedSkill, desiredSkills, skills, lus)?.map(lu => lu.id) ?? [];
+	return (
+		findOptimalLearningPath({
+			knowledge: ownedSkill,
+			goal: desiredSkills,
+			skills: skills,
+			lus: lus
+		})?.map(lu => lu.id) ?? []
+	);
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {

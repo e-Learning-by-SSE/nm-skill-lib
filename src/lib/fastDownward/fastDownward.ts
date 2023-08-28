@@ -106,14 +106,21 @@ function search<LU extends LearningUnit>(
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
-export function findOptimalLearningPath<LU extends LearningUnit>(
-	knowledge: Skill[],
-	goal: Skill[],
-	skills: ReadonlyArray<Skill>,
-	lus: LU[],
-	fnConst?: CostFunction<LU>,
-	fnHeuristic?: HeuristicFunction
-) {
+export function findOptimalLearningPath<LU extends LearningUnit>({
+	knowledge,
+	goal,
+	skills,
+	lus,
+	fnCost,
+	fnHeuristic
+}: {
+	knowledge: Skill[];
+	goal: Skill[];
+	skills: ReadonlyArray<Skill>;
+	lus: LU[];
+	fnCost?: CostFunction<LU>;
+	fnHeuristic?: HeuristicFunction;
+}) {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const initialState = new State(
 		knowledge.map(skill => skill.id),
@@ -122,8 +129,8 @@ export function findOptimalLearningPath<LU extends LearningUnit>(
 
 	// Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
 	// Maybe replaced by a more sophisticated cost function
-	if (!fnConst) {
-		fnConst = (prev, op) => prev.cost + 1;
+	if (!fnCost) {
+		fnCost = (prev, op) => prev.cost + 1;
 	}
 
 	// Default heuristic function: Always return 0
@@ -132,5 +139,5 @@ export function findOptimalLearningPath<LU extends LearningUnit>(
 		fnHeuristic = state => 0;
 	}
 
-	return search(initialState, goal, skills, lus, fnConst, fnHeuristic);
+	return search(initialState, goal, skills, lus, fnCost, fnHeuristic);
 }
