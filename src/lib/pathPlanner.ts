@@ -34,8 +34,11 @@ export async function getConnectedGraphForLearningUnit(
  * @param skills The set of skills to check.
  * @returns A Promise that resolves to a boolean indicating whether the graph is acyclic.
  */
-export async function isAcyclic(skills: ReadonlyArray<Skill>): Promise<boolean> {
-	const graph = await populateGraphWithSkills(skills);
+export async function isAcyclic(
+	skills: ReadonlyArray<Skill>,
+	learningUnits: ReadonlyArray<LearningUnit>
+): Promise<boolean> {
+	const graph = await populateGraphWithLearningUnits(skills, learningUnits);
 	return alg.isAcyclic(graph);
 }
 
