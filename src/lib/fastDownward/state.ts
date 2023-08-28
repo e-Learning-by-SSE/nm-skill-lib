@@ -1,5 +1,4 @@
-import { Skill } from "../types";
-import { Operator } from "./types";
+import { Skill, LearningUnit } from "../types";
 
 /**
  * Removes duplicate elements from the given array.
@@ -16,13 +15,22 @@ function arrayUnique(array) {
 	return a;
 }
 
+/**
+ * Represents the state of the search tree.
+ * The state is defined by the set of skills that have been learned so far along an explored path.
+ */
 export class State {
 	public learnedSkills: string[];
+	// Used to compare two states for equality
+	// Should save time by avoiding repeated string concatenations
+	private asString: string;
 
 	constructor(learnedSkills: string[], skills: ReadonlyArray<Skill>) {
 		this.learnedSkills = learnedSkills;
 		this.checkGroupedSkills(skills);
+		// Sort for equality check and to speed up creation of derived states
 		this.learnedSkills.sort();
+		this.asString = this.learnedSkills.join(",");
 	}
 
 	private checkGroupedSkills(skills: ReadonlyArray<Skill>) {
@@ -81,10 +89,8 @@ export class State {
 		);
 	}
 
-	deriveState(operator: Operator, skills: ReadonlyArray<Skill>) {
-		const mergedSkills = arrayUnique(
-			this.learnedSkills.concat(operator.learningUnit.teachingGoals)
-		);
+	deriveState(operator: LearningUnit, skills: ReadonlyArray<Skill>) {
+		const mergedSkills = arrayUnique(this.learnedSkills.concat(operator.teachingGoals));
 		return new State(mergedSkills, skills);
 	}
 
@@ -95,6 +101,6 @@ export class State {
 	 * @returns true if the states are equal, false otherwise.
 	 */
 	equal(other: State) {
-		return this.learnedSkills.join(",") === other.learnedSkills.join(",");
+		return this.asString === other.asString;
 	}
 }
