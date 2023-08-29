@@ -89,7 +89,7 @@ function search<LU extends LearningUnit>(
 		}
 	}
 
-	return null; // No solution found
+	return null;
 }
 
 /**
@@ -102,7 +102,7 @@ function search<LU extends LearningUnit>(
  * @param goal The skills that should be learned.
  * @param skills The set of all skills (independent of what was already learned and what should be learned).
  * @param lus The set of all LearningUnits.
- * @param fnConst Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
+ * @param fnCost Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
