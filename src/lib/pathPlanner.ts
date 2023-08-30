@@ -63,12 +63,14 @@ export async function getPath({
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
 
 	return (
-		findOptimalLearningPath({
-			knowledge: ownedSkill,
-			goal: desiredSkills,
-			skills: skills,
-			lus: lus
-		})?.map(lu => lu.id) ?? []
+		(
+			await findOptimalLearningPath({
+				knowledge: ownedSkill,
+				goal: desiredSkills,
+				skills: skills,
+				lus: lus
+			})
+		)?.map(lu => lu.id) ?? []
 	);
 }
 
