@@ -21,12 +21,14 @@ function arrayUnique(array: string[]) {
  */
 export class State {
 	public learnedSkills: string[];
+
 	// Used to compare two states for equality
 	// Should save time by avoiding repeated string concatenations
 	private asString: string;
 
 	constructor(learnedSkills: string[], skills: ReadonlyArray<Skill>) {
 		this.learnedSkills = learnedSkills;
+
 		this.checkGroupedSkills(skills);
 		// Sort for equality check and to speed up creation of derived states
 		this.learnedSkills.sort();

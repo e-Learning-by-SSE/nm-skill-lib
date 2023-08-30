@@ -1,41 +1,42 @@
 import { LearningUnit, Skill } from "../types";
 import { State } from "./state";
-import { Node, HeuristicFunction, CostFunction } from "./types";
+import { SearchNode, HeuristicFunction, CostFunction, LUProvider } from "./types";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
  */
-function availableOperators<LU extends LearningUnit>(currentState: State, lus: LU[]) {
-	const learnableLus = lus.filter(lu =>
-		lu.requiredSkills.every(skill =>
-			currentState.learnedSkills.some(learnedSkill => learnedSkill === skill)
-		)
-	);
-
+async function availableActions<LU extends LearningUnit>(
+	currentState: State,
+	luProvider: LUProvider<LU>
+) {
 	// Avoid operators that are already in the current state
 	// Ideally we would check that the LearningUnits are not learned twice
 	// However, we can also check that we always learn at least one new skill
-	const usefulLus = learnableLus.filter(lu =>
-		lu.teachingGoals.some(
-			skill => !currentState.learnedSkills.some(learnedSkill => learnedSkill === skill)
-		)
+	const usefulLus = (await luProvider.loadLearnableCandidates(currentState.learnedSkills)).filter(
+		lu =>
+			lu.teachingGoals.some(
+				skill => !currentState.learnedSkills.some(learnedSkill => learnedSkill === skill)
+			)
 	);
 
-	return usefulLus;
+	// Do not suggest learning units that do not teach any unknown skills
+	return usefulLus.filter(lu =>
+		lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill))
+	);
 }
 
 // Implemented state-space search algorithm based on FAST-DOWNWARD algorithm.
 // See: https://roboticseabass.com/2022/07/19/task-planning-in-robotics/
-function search<LU extends LearningUnit>(
+async function search<LU extends LearningUnit>(
 	initialState: State,
 	goal: Skill[],
 	skills: ReadonlyArray<Skill>,
-	lus: LU[],
+	luProvider: LUProvider<LU>,
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction
-): LU[] | null {
-	const openList: Node<LU>[] = [
-		new Node<LU>(initialState, null, null, 0, fnHeuristic(initialState, goal))
+): Promise<LU[] | null> {
+	const openList: SearchNode<LU>[] = [
+		new SearchNode<LU>(initialState, null, null, 0, fnHeuristic(initialState, goal))
 	];
 	const closedSet: State[] = [];
 
@@ -61,13 +62,13 @@ function search<LU extends LearningUnit>(
 		closedSet.push(currentNode.state);
 
 		// Generate successors and add them to openList
-		for (const operator of availableOperators(currentNode.state, lus)) {
-			const newState = currentNode.state.deriveState(operator, skills);
-			const newNode = new Node<LU>(
+		for (const lu of await availableActions(currentNode.state, luProvider)) {
+			const newState = currentNode.state.deriveState(lu, skills);
+			const newNode = new SearchNode<LU>(
 				newState,
-				operator,
+				lu,
 				currentNode,
-				fnCost(currentNode, operator),
+				fnCost(currentNode, lu),
 				fnHeuristic(newState, goal)
 			);
 
@@ -111,13 +112,15 @@ export function findOptimalLearningPath<LU extends LearningUnit>({
 	goal,
 	skills,
 	lus,
+	luProvider,
 	fnCost,
 	fnHeuristic
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
 	skills: ReadonlyArray<Skill>;
-	lus: LU[];
+	lus?: LU[];
+	luProvider?: LUProvider<LU>;
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction;
 }) {
@@ -139,5 +142,19 @@ export function findOptimalLearningPath<LU extends LearningUnit>({
 		fnHeuristic = state => 0;
 	}
 
-	return search(initialState, goal, skills, lus, fnCost, fnHeuristic);
+	// Convert array of provided learningUnits if no provider was specified
+	if (!luProvider) {
+		if (!lus || lus.length === 0) {
+			throw new Error("Either a LUProvider or a set of LearningUnits must be provided.");
+		}
+		luProvider = {
+			// Return all LearningUnit for which all requirements are fulfilled
+			loadLearnableCandidates: async (learnedSkillIds: string[]) =>
+				lus.filter(lu =>
+					lu.requiredSkills.every(prerequisite => learnedSkillIds.includes(prerequisite))
+				)
+		};
+	}
+
+	return search(initialState, goal, skills, luProvider, fnCost, fnHeuristic);
 }
