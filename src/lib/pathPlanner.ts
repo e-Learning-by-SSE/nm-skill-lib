@@ -1,8 +1,7 @@
 import { Graph as GraphLib, alg, Edge as GraphEdge } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
 import { findOptimalLearningPath } from "./fastDownward/fastDownward";
-import { findOptimalLearningPathReverse } from "./fastDownwardReverse/fastDownwardReverse";
-import { CostFunction, HeuristicFunction } from "./fastDownward/types";
+import { HeuristicFunction } from "./fastDownward/types";
 import { DistanceMap } from "./fastDownward/distanceMap";
 
 /**
