@@ -212,10 +212,10 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Path should be: (7 & 8) -> 9
-			const expectedIDs = structuredPathOfLus
-				.map(lu => lu.id)
-				.sort((a, b) => a.localeCompare(b));
-			expect(path).toEqual(expectedIDs);
+			expectPath(path, [
+				["lu:7", "lu:8", "lu:9"],
+				["lu:8", "lu:7", "lu:9"]
+			]);
 		});
 
 		it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU; 1 goal", async () => {
@@ -230,10 +230,14 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Path should be: (10 & 11) -> 12
-			const expectedIDs = multipleRequirementsOfLu
-				.map(lu => lu.id)
-				.sort((a, b) => a.localeCompare(b));
-			expect(path).toEqual(expectedIDs);
+			// const expectedIDs = multipleRequirementsOfLu
+			// 	.map(lu => lu.id)
+			// 	.sort((a, b) => a.localeCompare(b));
+			// expect(path).toEqual(expectedIDs);
+			expectPath(path, [
+				["lu:10", "lu:11", "lu:12"],
+				["lu:11", "lu:10", "lu:12"]
+			]);
 		});
 
 		it("No knowledge; 2 maps; with nested skills; multiple requirements for 1 LU; 2 goals", async () => {
@@ -256,10 +260,23 @@ describe("Path Planer", () => {
 			// Assert: Path contain LUs from two paths:
 			// Path 1: (10 & 11) -> 12
 			// Path 2: (7 & 8) -> 9
-			const expectedIDs = [...multipleRequirementsOfLu, ...structuredPathOfLus]
-				.map(lu => lu.id)
-				.sort((a, b) => a.localeCompare(b));
-			expect(path).toEqual(expectedIDs);
+			expectPath(path, [
+				// Path 1, Path 2
+				["lu:10", "lu:11", "lu:12", "lu:7", "lu:8", "lu:9"],
+				["lu:11", "lu:10", "lu:12", "lu:7", "lu:8", "lu:9"],
+				["lu:10", "lu:11", "lu:12", "lu:8", "lu:7", "lu:9"],
+				["lu:11", "lu:10", "lu:12", "lu:8", "lu:7", "lu:9"],
+				// Path 2, Path 1
+				["lu:7", "lu:8", "lu:9", "lu:10", "lu:11", "lu:12"],
+				["lu:8", "lu:7", "lu:9", "lu:10", "lu:11", "lu:12"],
+				["lu:7", "lu:8", "lu:9", "lu:11", "lu:10", "lu:12"],
+				["lu:8", "lu:7", "lu:9", "lu:11", "lu:10", "lu:12"],
+				// Mixed paths (not complete, add if necessary)
+				["lu:7", "lu:8", "lu:10", "lu:11", "lu:9", "lu:12"],
+				["lu:7", "lu:8", "lu:11", "lu:10", "lu:9", "lu:12"],
+				["lu:8", "lu:7", "lu:10", "lu:11", "lu:9", "lu:12"],
+				["lu:8", "lu:7", "lu:11", "lu:10", "lu:9", "lu:12"]
+			]);
 		});
 	});
 });
@@ -277,6 +294,21 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 	const expectedIDs = expectedElements.map(element => element.id);
 	return [expectedIDs, expectedElements];
 }
+
+function expectPath(path: ReadonlyArray<string>, expectedPaths: string[][]) {
+	const pathIsValid = expectedPaths.some(expectedPath => {
+		const pathIsEqual = path.every((id, index) => id === expectedPath[index]);
+		return pathIsEqual;
+	});
+
+	if (!pathIsValid) {
+		// Return one wrong result
+		expect(path).toEqual(expectedPaths[0]);
+	} else {
+		expect(pathIsValid).toBe(true);
+	}
+}
+
 class TestDataHandler implements LearningUnitProvider {
 	private skillMaps: Map<string, Skill[]> = new Map<string, Skill[]>();
 	private learningUnits: LearningUnit[] = [];

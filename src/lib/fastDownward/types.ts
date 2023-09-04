@@ -28,7 +28,11 @@ export type CostFunction<LU extends LearningUnit> = (
  * Heuristic function to estimate the cost of reaching the goal from a given state.
  * Must not overestimate the cost, but can underestimate it.
  */
-export type HeuristicFunction = (state: State, goal: Skill[]) => number;
+export type HeuristicFunction<LU extends LearningUnit> = (
+	state: State,
+	goal: Skill[],
+	operation: LU
+) => number;
 
 /**
  * Provider that loads all LearningUnits that can be learned based on the given knowledge.
