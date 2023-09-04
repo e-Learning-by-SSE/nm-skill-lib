@@ -33,10 +33,10 @@ async function search<LU extends LearningUnit>(
 	skills: ReadonlyArray<Skill>,
 	luProvider: LUProvider<LU>,
 	fnCost: CostFunction<LU>,
-	fnHeuristic: HeuristicFunction
+	fnHeuristic: HeuristicFunction<LU>
 ): Promise<LU[] | null> {
 	const openList: SearchNode<LU>[] = [
-		new SearchNode<LU>(initialState, null, null, 0, fnHeuristic(initialState, goal))
+		new SearchNode<LU>(initialState, null, null, 0, 0) //fnHeuristic(initialState, goal)
 	];
 	const closedSet: State[] = [];
 
@@ -69,8 +69,13 @@ async function search<LU extends LearningUnit>(
 				lu,
 				currentNode,
 				fnCost(currentNode, lu),
-				fnHeuristic(newState, goal)
+				fnHeuristic(newState, goal, lu)
 			);
+
+			// Skip states that cannot reach the goal
+			if (newNode.cost === Infinity || newNode.heuristic === Infinity) {
+				continue;
+			}
 
 			// Skip states that are already analyzed
 			if (closedSet.some(state => state.equal(newState))) {
@@ -122,7 +127,7 @@ export function findOptimalLearningPath<LU extends LearningUnit>({
 	lus?: LU[];
 	luProvider?: LUProvider<LU>;
 	fnCost?: CostFunction<LU>;
-	fnHeuristic?: HeuristicFunction;
+	fnHeuristic?: HeuristicFunction<LU>;
 }) {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const initialState = new State(

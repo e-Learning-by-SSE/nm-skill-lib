@@ -1,6 +1,9 @@
-import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
+import { Graph as GraphLib, alg, Edge as GraphEdge } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
 import { findOptimalLearningPath } from "./fastDownward/fastDownward";
+import { findOptimalLearningPathReverse } from "./fastDownwardReverse/fastDownwardReverse";
+import { CostFunction, HeuristicFunction } from "./fastDownward/types";
+import { DistanceMap } from "./fastDownward/distanceMap";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -62,16 +65,31 @@ export async function getPath({
 }): Promise<ReadonlyArray<string>> {
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
 
+	const distances = new DistanceMap(skills, lus);
+	// console.log(distances.toString());
+
+	const fnHeuristic: HeuristicFunction<LearningUnit> = (state, goal: Skill[], lu) => {
+		const min = distances.getDistances(
+			lu.id,
+			desiredSkills.map(skill => skill.id)
+		);
+		return min;
+	};
+
 	return (
 		(
 			await findOptimalLearningPath({
 				knowledge: ownedSkill,
 				goal: desiredSkills,
 				skills: skills,
-				lus: lus
+				lus: lus,
+				fnHeuristic: fnHeuristic
 			})
 		)?.map(lu => lu.id) ?? []
 	);
+
+	// const path = findOptimalLearningPathReverse(ownedSkill, desiredSkills, skills, lus);
+	// return path?.map(lu => lu.id) ?? [];
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
@@ -86,11 +104,28 @@ async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<Gr
 	return graph;
 }
 
+async function populateGraphWithSkillsAndReverse(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
+	const graph = new GraphLib({ directed: true, multigraph: true });
+
+	skills.forEach(skill => {
+		graph.setNode("sk" + skill.id, skill);
+		skill.nestedSkills.forEach(child => {
+			const childName = "sk" + child;
+			graph.setEdge("sk" + skill.id, childName);
+			graph.setEdge(childName, "sk" + skill.id);
+		});
+	});
+	return graph;
+}
+
 async function populateGraphWithLearningUnits(
 	skills: ReadonlyArray<Skill>,
-	learningUnits: ReadonlyArray<LearningUnit>
+	learningUnits: ReadonlyArray<LearningUnit>,
+	reverse = false
 ): Promise<GraphLib> {
-	const graph = await populateGraphWithSkills(skills);
+	const graph = reverse
+		? await populateGraphWithSkills(skills)
+		: await populateGraphWithSkillsAndReverse(skills);
 	learningUnits.forEach(lu => {
 		graph.setNode("lu" + lu.id, lu);
 		lu.requiredSkills.forEach(req => {
