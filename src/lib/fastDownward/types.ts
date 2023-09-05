@@ -27,12 +27,12 @@ export type CostFunction<LU extends LearningUnit> = (
 /**
  * Heuristic function to estimate the cost of reaching the goal from a given state.
  * Must not overestimate the cost, but can underestimate it.
+ * Infinity indicates that the goal cannot be reached at all and the step should be skipped.
+ * @param goal The (open) goal to reach, i.e., the skills that should be learned and are not yet learned.
+ * @param operation The LearningUnit that should be analyzed if it brings the user closer to the goal.
+ * @returns The estimated cost of reaching the goal, between 0 and Infinity.
  */
-export type HeuristicFunction<LU extends LearningUnit> = (
-	state: State,
-	goal: Skill[],
-	operation: LU
-) => number;
+export type HeuristicFunction<LU extends LearningUnit> = (goal: Skill[], operation: LU) => number;
 
 /**
  * Provider that loads all LearningUnits that can be learned based on the given knowledge.
