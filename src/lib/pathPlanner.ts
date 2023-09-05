@@ -67,10 +67,10 @@ export async function getPath({
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
 
 	const distances = new DistanceMap(skills, lus);
-	const fnHeuristic: HeuristicFunction<LearningUnit> = (state, goal: Skill[], lu) => {
+	const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
 		const min = distances.getDistances(
 			lu.id,
-			desiredSkills.map(skill => skill.id)
+			goal.map(skill => skill.id)
 		);
 		return min;
 	};
