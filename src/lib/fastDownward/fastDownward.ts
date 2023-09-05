@@ -63,19 +63,21 @@ async function search<LU extends LearningUnit>(
 
 		// Generate successors and add them to openList
 		for (const lu of await availableActions(currentNode.state, luProvider)) {
-			const newState = currentNode.state.deriveState(lu, skills);
-			const newNode = new SearchNode<LU>(
-				newState,
-				lu,
-				currentNode,
-				fnCost(currentNode, lu),
-				fnHeuristic(newState, goal, lu)
-			);
+			const cost = fnCost(currentNode, lu);
+			// Should be: fnHeuristic(newState, goal, lu), but state is currently ignored in heuristic function
+			const openGoals =
+				goal.length > 1
+					? goal.filter(skill => !currentNode.state.learnedSkills.includes(skill.id))
+					: goal;
+			const heuristic = fnHeuristic(currentNode.state, openGoals, lu);
 
 			// Skip states that cannot reach the goal
-			if (newNode.cost === Infinity || newNode.heuristic === Infinity) {
+			if (cost === Infinity || heuristic === Infinity) {
 				continue;
 			}
+
+			const newState = currentNode.state.deriveState(lu, skills);
+			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, heuristic);
 
 			// Skip states that are already analyzed
 			if (closedSet.some(state => state.equal(newState))) {
