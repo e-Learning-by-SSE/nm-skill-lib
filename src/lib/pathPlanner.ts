@@ -62,11 +62,11 @@ export async function getPath({
 	desiredSkills: Skill[];
 	ownedSkill?: Skill[];
 }): Promise<ReadonlyArray<string>> {
+	const startTime = new Date().getTime();
+
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
 
 	const distances = new DistanceMap(skills, lus);
-	// console.log(distances.toString());
-
 	const fnHeuristic: HeuristicFunction<LearningUnit> = (state, goal: Skill[], lu) => {
 		const min = distances.getDistances(
 			lu.id,
@@ -75,7 +75,7 @@ export async function getPath({
 		return min;
 	};
 
-	return (
+	const path =
 		(
 			await findOptimalLearningPath({
 				knowledge: ownedSkill,
@@ -84,11 +84,12 @@ export async function getPath({
 				lus: lus,
 				fnHeuristic: fnHeuristic
 			})
-		)?.map(lu => lu.id) ?? []
-	);
+		)?.map(lu => lu.id) ?? [];
 
-	// const path = findOptimalLearningPathReverse(ownedSkill, desiredSkills, skills, lus);
-	// return path?.map(lu => lu.id) ?? [];
+	const duration = new Date().getTime() - startTime;
+	console.log(`Path planning took ${duration}ms`);
+
+	return path;
 }
 
 async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
