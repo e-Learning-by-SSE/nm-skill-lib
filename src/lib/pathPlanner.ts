@@ -1,7 +1,7 @@
 import { Graph as GraphLib, alg, Edge as GraphEdge } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
 import { findOptimalLearningPath } from "./fastDownward/fastDownward";
-import { HeuristicFunction } from "./fastDownward/types";
+import { CostFunction, HeuristicFunction } from "./fastDownward/types";
 import { DistanceMap } from "./fastDownward/distanceMap";
 
 /**
@@ -21,7 +21,7 @@ export async function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): P
  * @returns A Promise that resolves to the connected graph.
  */
 export async function getConnectedGraphForLearningUnit(
-	luProvider: LearningUnitProvider,
+	luProvider: LearningUnitProvider<LearningUnit>,
 	skills: ReadonlyArray<Skill>
 ): Promise<Graph> {
 	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
@@ -51,22 +51,24 @@ export async function isAcyclic(
  * @param goalDef The goal definition to use for finding the path.
  * @returns A Promise that resolves to an array of node IDs representing the path.
  */
-export async function getPath({
+export async function getPath<LU extends LearningUnit>({
 	skills,
 	luProvider,
 	desiredSkills,
-	ownedSkill = []
+	ownedSkill = [],
+	fnCost
 }: {
 	skills: ReadonlyArray<Skill>;
-	luProvider: LearningUnitProvider;
+	luProvider: LearningUnitProvider<LU>;
 	desiredSkills: Skill[];
 	ownedSkill?: Skill[];
+	fnCost?: CostFunction<LU>;
 }): Promise<ReadonlyArray<string>> {
 	const startTime = new Date().getTime();
 
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
 
-	const distances = new DistanceMap(skills, lus);
+	const distances = new DistanceMap(skills, lus, fnCost);
 	const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
 		const min = distances.getDistances(
 			lu.id,
@@ -82,6 +84,7 @@ export async function getPath({
 				goal: desiredSkills,
 				skills: skills,
 				lus: lus,
+				fnCost: fnCost,
 				fnHeuristic: fnHeuristic
 			})
 		)?.map(lu => lu.id) ?? [];

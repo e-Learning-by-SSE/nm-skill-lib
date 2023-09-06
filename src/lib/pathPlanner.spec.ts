@@ -4,6 +4,7 @@ import {
 	getConnectedGraphForSkill,
 	getPath
 } from "./pathPlanner";
+import { CostFunction } from "./fastDownward/types";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -19,6 +20,13 @@ describe("Path Planer", () => {
 		{ id: "sk:4", repositoryId: "2", nestedSkills: [] },
 		{ id: "sk:5", repositoryId: "2", nestedSkills: [] },
 		{ id: "sk:6", repositoryId: "2", nestedSkills: [] }
+	].sort((a, b) => a.id.localeCompare(b.id));
+	// Flat map, but longer (no conflict with Map1 as they are from a different repository)
+	const thirdMap: Skill[] = [
+		{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
+		{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
+		{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
+		{ id: "sk:4", repositoryId: "3", nestedSkills: [] }
 	].sort((a, b) => a.id.localeCompare(b.id));
 	// Skills with nested skills
 	const thirdMapHierarchy: Skill[] = [
@@ -50,6 +58,16 @@ describe("Path Planer", () => {
 		{ id: "lu:10", requiredSkills: [], teachingGoals: ["sk:1"] },
 		{ id: "lu:11", requiredSkills: [], teachingGoals: ["sk:2"] },
 		{ id: "lu:12", requiredSkills: ["sk:1", "sk:2"], teachingGoals: ["sk:3"] }
+	];
+	// Alternative languages (de is shorter than en)
+	const alternativeLanguagesOfLus: (LearningUnit & { lang: string })[] = [
+		{ id: "lu:13:de", requiredSkills: [], teachingGoals: ["sk:1"], lang: "de" },
+		{ id: "lu:14:de", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], lang: "de" },
+		{ id: "lu:15:de", requiredSkills: ["sk:2"], teachingGoals: ["sk:3", "sk:4"], lang: "de" },
+		{ id: "lu:13:en", requiredSkills: [], teachingGoals: ["sk:1"], lang: "en" },
+		{ id: "lu:14:en", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], lang: "en" },
+		{ id: "lu:15:en", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"], lang: "en" },
+		{ id: "lu:16:en", requiredSkills: ["sk:3"], teachingGoals: ["sk:4"], lang: "en" }
 	];
 
 	describe("getConnectedGraphForSkill - Skills Only", () => {
@@ -230,10 +248,6 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Path should be: (10 & 11) -> 12
-			// const expectedIDs = multipleRequirementsOfLu
-			// 	.map(lu => lu.id)
-			// 	.sort((a, b) => a.localeCompare(b));
-			// expect(path).toEqual(expectedIDs);
 			expectPath(path, [
 				["lu:10", "lu:11", "lu:12"],
 				["lu:11", "lu:10", "lu:12"]
@@ -278,6 +292,31 @@ describe("Path Planer", () => {
 				["lu:8", "lu:7", "lu:11", "lu:10", "lu:9", "lu:12"]
 			]);
 		});
+
+		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction", async () => {
+			// Test data preparation
+			dataHandler.init([...thirdMap], [...alternativeLanguagesOfLus]);
+
+			const fnCost: CostFunction<LearningUnit & { lang: string }> = lu => {
+				// Simulate that only english units can be understood, all others should be avoided
+				return lu.lang === "en" ? 1 : Infinity;
+			};
+
+			// Test: Compute path
+			const path = await getPath({
+				skills: thirdMap,
+				luProvider: dataHandler,
+				desiredSkills: thirdMap.filter(skill => skill.id === "sk:4"),
+				fnCost: fnCost
+			});
+
+			// Assert: Path should be: lu:13:en -> lu:14:en -> lu:14:en -> lu:15:en
+			const expectedIDs = alternativeLanguagesOfLus
+				.filter(lu => lu.lang === "en")
+				.map(lu => lu.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(path).toEqual(expectedIDs);
+		});
 	});
 });
 
@@ -309,7 +348,7 @@ function expectPath(path: ReadonlyArray<string>, expectedPaths: string[][]) {
 	}
 }
 
-class TestDataHandler implements LearningUnitProvider {
+class TestDataHandler implements LearningUnitProvider<LearningUnit> {
 	private skillMaps: Map<string, Skill[]> = new Map<string, Skill[]>();
 	private learningUnits: LearningUnit[] = [];
 
