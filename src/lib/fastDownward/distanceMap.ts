@@ -1,14 +1,23 @@
 import { LearningUnit, Skill } from "../types";
 import { Graph as GraphLib, alg, Edge as GraphEdge } from "@dagrejs/graphlib";
+import { CostFunction } from "./types";
 
 export class DistanceMap<LU extends LearningUnit> {
 	private distances: Map<string, Map<string, number>>;
 
-	constructor(skills: ReadonlyArray<Skill>, learningUnits: ReadonlyArray<LU>) {
-		this.computeMap(skills, learningUnits);
+	constructor(
+		skills: ReadonlyArray<Skill>,
+		learningUnits: ReadonlyArray<LU>,
+		fnCost?: CostFunction<LU>
+	) {
+		this.computeMap(skills, learningUnits, fnCost);
 	}
 
-	private computeMap(skills: ReadonlyArray<Skill>, learningUnits: ReadonlyArray<LU>) {
+	private computeMap(
+		skills: ReadonlyArray<Skill>,
+		learningUnits: ReadonlyArray<LU>,
+		fnCost?: CostFunction<LU>
+	) {
 		const graph = new GraphLib({ directed: true, multigraph: true });
 
 		skills.forEach(skill => {
@@ -31,8 +40,13 @@ export class DistanceMap<LU extends LearningUnit> {
 		});
 
 		function dijkstraWeightFn(edge: GraphEdge) {
-			// Weight only edges starting at a learning unit => +1 for learning a new unit
+			// Weight only edges starting at a learning unit
 			if (edge.v.startsWith("lu")) {
+				// Use cost function if provided to rate cost of learning unit otherwise +1 for extending the path by one more unit
+				if (fnCost) {
+					// O(graph.node) = |V| => call this function only if a cost function is provided
+					return fnCost(graph.node(edge.v));
+				}
 				return 1;
 			}
 			return 0;

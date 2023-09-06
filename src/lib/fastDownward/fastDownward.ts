@@ -63,7 +63,7 @@ async function search<LU extends LearningUnit>(
 
 		// Generate successors and add them to openList
 		for (const lu of await availableActions(currentNode.state, luProvider)) {
-			const cost = fnCost(currentNode, lu);
+			const cost = currentNode.cost + fnCost(lu);
 			const openGoals =
 				goal.length > 1
 					? goal.filter(skill => !currentNode.state.learnedSkills.includes(skill.id))
@@ -139,7 +139,7 @@ export function findOptimalLearningPath<LU extends LearningUnit>({
 	// Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
 	// Maybe replaced by a more sophisticated cost function
 	if (!fnCost) {
-		fnCost = (prev, op) => prev.cost + 1;
+		fnCost = op => 1;
 	}
 
 	// Default heuristic function: Always return 0

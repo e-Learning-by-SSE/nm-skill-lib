@@ -19,10 +19,7 @@ export class SearchNode<LU extends LearningUnit> {
 /**
  * Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
  */
-export type CostFunction<LU extends LearningUnit> = (
-	previous: SearchNode<LU>,
-	operation: LU
-) => number;
+export type CostFunction<LU extends LearningUnit> = (operation: LU) => number;
 
 /**
  * Heuristic function to estimate the cost of reaching the goal from a given state.
