@@ -26,7 +26,8 @@ describe("Path Planer", () => {
 		{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
 		{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
 		{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
-		{ id: "sk:4", repositoryId: "3", nestedSkills: [] }
+		{ id: "sk:4", repositoryId: "3", nestedSkills: [] },
+		{ id: "sk:5", repositoryId: "3", nestedSkills: [] }
 	].sort((a, b) => a.id.localeCompare(b.id));
 	// Skills with nested skills
 	const thirdMapHierarchy: Skill[] = [
@@ -68,6 +69,17 @@ describe("Path Planer", () => {
 		{ id: "lu:14:en", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], lang: "en" },
 		{ id: "lu:15:en", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"], lang: "en" },
 		{ id: "lu:16:en", requiredSkills: ["sk:3"], teachingGoals: ["sk:4"], lang: "en" }
+	];
+	// Two alternative paths with different costs
+	const alternativeCostsOfLus: (LearningUnit & { cost: number })[] = [
+		// 1st alternative path, cost: 7
+		{ id: "lu:17", requiredSkills: [], teachingGoals: ["sk:1"], cost: 1 },
+		{ id: "lu:18", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], cost: 1 },
+		{ id: "lu:19", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"], cost: 5 },
+		// 2nd alternative path, cost: 5
+		{ id: "lu:20", requiredSkills: [], teachingGoals: ["sk:4"], cost: 3 },
+		{ id: "lu:21", requiredSkills: ["sk:4"], teachingGoals: ["sk:5"], cost: 1 },
+		{ id: "lu:22", requiredSkills: ["sk:5"], teachingGoals: ["sk:3"], cost: 1 }
 	];
 
 	describe("getConnectedGraphForSkill - Skills Only", () => {
@@ -316,6 +328,27 @@ describe("Path Planer", () => {
 				.map(lu => lu.id)
 				.sort((a, b) => a.localeCompare(b));
 			expect(path).toEqual(expectedIDs);
+		});
+
+		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction; Cheap path becomes expensive at the end", async () => {
+			// Test data preparation
+			dataHandler.init([...thirdMap], [...alternativeCostsOfLus]);
+
+			const fnCost: CostFunction<LearningUnit & { cost: number }> = lu => {
+				// Simulate that the LearningUnits have any properties which are more expensive for a learner
+				return lu.cost;
+			};
+
+			// Test: Compute path
+			const path = await getPath({
+				skills: thirdMap,
+				luProvider: dataHandler,
+				desiredSkills: thirdMap.filter(skill => skill.id === "sk:3"),
+				fnCost: fnCost
+			});
+
+			// Assert: Path should be: lu:20 -> lu:21 -> lu:22
+			expect(path).toEqual(["lu:20", "lu:21", "lu:22"]);
 		});
 	});
 });
