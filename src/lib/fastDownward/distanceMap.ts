@@ -60,8 +60,6 @@ export class DistanceMap<LU extends LearningUnit> {
 				const goalNodes: Map<string, number> = new Map();
 				for (const [goalNode, node] of Object.entries(value)) {
 					const name = goalNode.slice(2);
-					// if (goalNode.startsWith("lu") || goals.some(skill => skill.id === name)) {
-					// if (goals.some(skill => skill.id === name)) {
 					if (goalNode.startsWith("sk")) {
 						goalNodes.set(name, node.distance);
 					}
@@ -81,13 +79,18 @@ export class DistanceMap<LU extends LearningUnit> {
 		return Math.min(...distances);
 	}
 
+	/**
+	 * Returns a string representation of the distance map for debugging purposes.
+	 * @returns The heuristic values from all learning units to all skills.
+	 */
 	toString(): string {
 		let str = "";
 		for (const [unit, distanceInfo] of this.distances.entries()) {
 			str += `${unit}:\n`;
 			const entries = [...distanceInfo.entries()].sort((a, b) => (a[0] > b[0] ? 1 : -1));
 			for (const [goal, distance] of entries) {
-				if (distance < Infinity || goal.startsWith("2504")) {
+				if (distance < Infinity) {
+					// || goal.startsWith("2504")
 					str += `  ${goal}: ${distance}\n`;
 				}
 			}
