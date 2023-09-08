@@ -6,8 +6,10 @@
 		"start": "nx serve",
 		"build": "nx build",
 		"test": "jest --runInBand",
+		"test:jenkins": "env JEST_JUNIT_OUTPUT_FILE=output/test/junit.xml jest --runInBand --ci --reporters=default --reporters=jest-junit --runInBand --coverage --coverageDirectory=output/test/coverage",
 		"prettier:check": "prettier --check **/*",
-		"prettier:write": "prettier --write 'src/**/*.{ts,tsx}'"
+		"prettier:write": "prettier --write 'src/**/*.{ts,tsx}'",
+		"lint:ci": "eslint src test --ext .ts,.tsx --format checkstyle --output-file output/eslint/eslint.xml || exit 0"
 	},
 	"private": true,
 	"dependencies": {
