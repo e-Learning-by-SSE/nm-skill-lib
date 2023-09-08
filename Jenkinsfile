@@ -36,7 +36,7 @@ pipeline {
 
                 stage('Build and Lint') {
                     steps {
-                        sh 'npm run build'
+                        sh 'npm run build:jenkins'
                         warnError('Linting failed') {
                             sh 'npm run lint:ci'
                         }

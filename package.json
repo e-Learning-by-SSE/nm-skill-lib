@@ -5,6 +5,7 @@
 	"scripts": {
 		"start": "nx serve",
 		"build": "nx build",
+		"build:jenkins": "nx build --skip-nx-cache",
 		"test": "jest --runInBand",
 		"test:jenkins": "env JEST_JUNIT_OUTPUT_FILE=output/test/junit.xml jest --runInBand --ci --reporters=default --reporters=jest-junit --runInBand --coverage --coverageDirectory=output/test/coverage",
 		"prettier:check": "prettier --check **/*",
