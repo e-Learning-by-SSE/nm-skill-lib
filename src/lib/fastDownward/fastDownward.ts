@@ -41,7 +41,7 @@ async function search<LU extends LearningUnit>(
 	const closedSet: State[] = [];
 
 	while (openList.length > 0) {
-		openList.sort((a, b) => a.cost + a.heuristic - (b.cost + b.heuristic));
+		openList.sort((a, b) => a.heuristic - b.heuristic);
 		const currentNode = openList.shift()!;
 
 		/* Check if currentNode.state is the goal state */
@@ -76,7 +76,7 @@ async function search<LU extends LearningUnit>(
 			}
 
 			const newState = currentNode.state.deriveState(lu, skills);
-			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, heuristic);
+			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
 			// Skip states that are already analyzed
 			if (closedSet.some(state => state.equal(newState))) {
@@ -88,6 +88,7 @@ async function search<LU extends LearningUnit>(
 			if (existingNode) {
 				if (newNode.cost < existingNode.cost) {
 					existingNode.cost = newNode.cost;
+					existingNode.heuristic = newNode.heuristic;
 					existingNode.parent = newNode.parent;
 				}
 			} else {

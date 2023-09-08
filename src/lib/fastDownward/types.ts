@@ -12,7 +12,7 @@ export class SearchNode<LU extends LearningUnit> {
 		public action: LU | null,
 		public parent: SearchNode<LU> | null,
 		public cost: number, // Cost from the start node
-		public heuristic: number // Heuristic value
+		public heuristic: number // Heuristic total cost (real cost to current state + estimated cost to goal)
 	) {}
 }
 
