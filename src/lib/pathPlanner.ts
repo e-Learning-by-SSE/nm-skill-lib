@@ -1,6 +1,6 @@
-import { Graph as GraphLib, alg, Edge as GraphEdge } from "@dagrejs/graphlib";
+import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
-import { findOptimalLearningPath } from "./fastDownward/fastDownward";
+import { findGreedyLearningPath, findOptimalLearningPath } from "./fastDownward/fastDownward";
 import { CostFunction, HeuristicFunction } from "./fastDownward/types";
 import { DistanceMap } from "./fastDownward/distanceMap";
 
@@ -77,9 +77,20 @@ export async function getPath<LU extends LearningUnit>({
 		return min;
 	};
 
+	// const path =
+	// 	(
+	// 		await findOptimalLearningPath({
+	// 			knowledge: ownedSkill,
+	// 			goal: desiredSkills,
+	// 			skills: skills,
+	// 			lus: lus,
+	// 			fnCost: fnCost,
+	// 			fnHeuristic: fnHeuristic
+	// 		})
+	// 	)?.map(lu => lu.id) ?? [];
 	const path =
 		(
-			await findOptimalLearningPath({
+			await findGreedyLearningPath({
 				knowledge: ownedSkill,
 				goal: desiredSkills,
 				skills: skills,
