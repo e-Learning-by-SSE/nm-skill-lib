@@ -1,6 +1,10 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
-import { findGreedyLearningPath, findOptimalLearningPath } from "./fastDownward/fastDownward";
+import {
+	findGreedyLearningPath,
+	findLearningPath,
+	findOptimalLearningPath
+} from "./fastDownward/fastDownward";
 import { CostFunction, HeuristicFunction } from "./fastDownward/types";
 import { DistanceMap } from "./fastDownward/distanceMap";
 
@@ -56,12 +60,14 @@ export async function getPath<LU extends LearningUnit>({
 	luProvider,
 	desiredSkills,
 	ownedSkill = [],
+	optimalSolution = false,
 	fnCost
 }: {
 	skills: ReadonlyArray<Skill>;
 	luProvider: LearningUnitProvider<LU>;
 	desiredSkills: Skill[];
 	ownedSkill?: Skill[];
+	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
 }): Promise<ReadonlyArray<string>> {
 	const startTime = new Date().getTime();
@@ -77,24 +83,14 @@ export async function getPath<LU extends LearningUnit>({
 		return min;
 	};
 
-	// const path =
-	// 	(
-	// 		await findOptimalLearningPath({
-	// 			knowledge: ownedSkill,
-	// 			goal: desiredSkills,
-	// 			skills: skills,
-	// 			lus: lus,
-	// 			fnCost: fnCost,
-	// 			fnHeuristic: fnHeuristic
-	// 		})
-	// 	)?.map(lu => lu.id) ?? [];
 	const path =
 		(
-			await findGreedyLearningPath({
+			await findLearningPath({
 				knowledge: ownedSkill,
 				goal: desiredSkills,
 				skills: skills,
 				lus: lus,
+				optimalSolution: optimalSolution,
 				fnCost: fnCost,
 				fnHeuristic: fnHeuristic
 			})

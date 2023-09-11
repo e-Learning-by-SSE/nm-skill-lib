@@ -246,3 +246,42 @@ export async function findGreedyLearningPath<LU extends LearningUnit>({
 
 	return pathResult;
 }
+
+export async function findLearningPath<LU extends LearningUnit>({
+	knowledge,
+	goal,
+	skills,
+	lus,
+	optimalSolution = false,
+	fnCost,
+	fnHeuristic
+}: {
+	knowledge: Skill[];
+	goal: Skill[];
+	skills: ReadonlyArray<Skill>;
+	lus: LU[];
+	optimalSolution?: boolean;
+	fnCost?: CostFunction<LU>;
+	fnHeuristic?: HeuristicFunction<LU>;
+}) {
+	return optimalSolution
+		? // Guarantees an optimal solution, but may take very long
+		  findOptimalLearningPath({
+				knowledge,
+				goal,
+				skills,
+				lus,
+				fnCost,
+				fnHeuristic
+		  })
+		: // Splits goal into sub goals, finds optimal solutions for each sub goal and glues them together
+		  // This is much faster, but won't guarantee a global optimum
+		  findGreedyLearningPath({
+				knowledge,
+				goal,
+				skills,
+				lus,
+				fnCost,
+				fnHeuristic
+		  });
+}
