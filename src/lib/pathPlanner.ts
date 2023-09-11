@@ -1,10 +1,6 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
 import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider } from "./types";
-import {
-	findGreedyLearningPath,
-	findLearningPath,
-	findOptimalLearningPath
-} from "./fastDownward/fastDownward";
+import { findLearningPath } from "./fastDownward/fastDownward";
 import { CostFunction, HeuristicFunction } from "./fastDownward/types";
 import { DistanceMap } from "./fastDownward/distanceMap";
 
@@ -69,7 +65,7 @@ export async function getPath<LU extends LearningUnit>({
 	ownedSkill?: Skill[];
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
-}): Promise<ReadonlyArray<string>> {
+}): Promise<ReadonlyArray<string> | null> {
 	const startTime = new Date().getTime();
 
 	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
@@ -94,7 +90,7 @@ export async function getPath<LU extends LearningUnit>({
 				fnCost: fnCost,
 				fnHeuristic: fnHeuristic
 			})
-		)?.map(lu => lu.id) ?? [];
+		)?.map(lu => lu.id) ?? null;
 
 	const duration = new Date().getTime() - startTime;
 	console.log(`Path planning took ${duration}ms`);
