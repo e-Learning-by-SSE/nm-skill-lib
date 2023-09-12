@@ -203,7 +203,8 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				luProvider: dataHandler,
-				desiredSkills: [firstMap[2]]
+				desiredSkills: [firstMap[2]],
+				optimalSolution: true
 			});
 
 			// Assert: Path should be: 1 -> 2 -> 3
@@ -222,7 +223,8 @@ describe("Path Planer", () => {
 				skills: firstMap,
 				luProvider: dataHandler,
 				desiredSkills: [firstMap[2]],
-				ownedSkill: [firstMap[1]]
+				ownedSkill: [firstMap[1]],
+				optimalSolution: true
 			});
 
 			// Assert: Path should be: 3 (as 2 is already known)
@@ -238,7 +240,8 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMapHierarchy,
 				luProvider: dataHandler,
-				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8")
+				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+				optimalSolution: true
 			});
 
 			// Assert: Path should be: (7 & 8) -> 9
@@ -256,7 +259,8 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				luProvider: dataHandler,
-				desiredSkills: firstMap.filter(skill => skill.id === "sk:3")
+				desiredSkills: firstMap.filter(skill => skill.id === "sk:3"),
+				optimalSolution: true
 			});
 
 			// Assert: Path should be: (10 & 11) -> 12
@@ -280,7 +284,8 @@ describe("Path Planer", () => {
 				desiredSkills: [
 					...firstMap.filter(skill => skill.id === "sk:3"),
 					...thirdMapHierarchy.filter(skill => skill.id === "sk:8")
-				]
+				],
+				optimalSolution: true
 			});
 
 			// Assert: Path contain LUs from two paths:
@@ -319,7 +324,8 @@ describe("Path Planer", () => {
 				skills: thirdMap,
 				luProvider: dataHandler,
 				desiredSkills: thirdMap.filter(skill => skill.id === "sk:4"),
-				fnCost: fnCost
+				fnCost: fnCost,
+				optimalSolution: true
 			});
 
 			// Assert: Path should be: lu:13:en -> lu:14:en -> lu:14:en -> lu:15:en
@@ -344,7 +350,8 @@ describe("Path Planer", () => {
 				skills: thirdMap,
 				luProvider: dataHandler,
 				desiredSkills: thirdMap.filter(skill => skill.id === "sk:3"),
-				fnCost: fnCost
+				fnCost: fnCost,
+				optimalSolution: true
 			});
 
 			// Assert: Path should be: lu:20 -> lu:21 -> lu:22
