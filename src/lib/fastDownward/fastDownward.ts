@@ -114,7 +114,7 @@ async function search<LU extends LearningUnit>(
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
-export function findOptimalLearningPath<LU extends LearningUnit>({
+function findOptimalLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
 	skills,
@@ -184,7 +184,7 @@ export function findOptimalLearningPath<LU extends LearningUnit>({
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
-export async function findGreedyLearningPath<LU extends LearningUnit>({
+async function findGreedyLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
 	skills,
@@ -247,6 +247,25 @@ export async function findGreedyLearningPath<LU extends LearningUnit>({
 	return pathResult;
 }
 
+/**
+ * Searches for an (optimal) path to learn the desired Skills (goal) based on the given knowledge.
+ *
+ * In case of selecting the greedy-strategy, it's not guaranteed that the returned path is optimal.
+ * However, the algorithm will detect local optimums (for each partial goal / child of the goal) and will avoid to learn LearningUnits multiple times.
+ * Thus, the result should be a valid path and still optimal in many cases.
+ *
+ * By extending LU (must also be considered at the cost function and the heuristic) the algorithm
+ * can be adapted to work with different LearningUnit types.
+ *
+ * @param knowledge The skills that are already known by the learner.
+ * @param goal The skills that should be learned.
+ * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param lus The set of all LearningUnits.
+ * @param optimalSolution If true, the algorithm will guarantee an optimal solution, but may take very long.
+ * @param fnCost Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
+ * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
+ * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
+ */
 export async function findLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
