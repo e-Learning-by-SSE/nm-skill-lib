@@ -4,7 +4,7 @@ import {
 	getConnectedGraphForSkill,
 	getPath
 } from "./pathPlanner";
-import { CostFunction } from "./fastDownward/types";
+import { CostFunction } from "./fastDownward/fdTypes";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)

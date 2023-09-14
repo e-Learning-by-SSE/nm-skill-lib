@@ -1,6 +1,6 @@
 import { LearningUnit, Skill } from "../types";
 import { Graph as GraphLib, alg, Edge as GraphEdge } from "@dagrejs/graphlib";
-import { CostFunction } from "./types";
+import { CostFunction } from "./fdTypes";
 
 export class DistanceMap<LU extends LearningUnit> {
 	private distances: Map<string, Map<string, number>>;
