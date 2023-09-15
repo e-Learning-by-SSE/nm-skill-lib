@@ -1,4 +1,4 @@
-import { LearningUnit, Skill } from "../types";
+import { LearningUnit, Path, Skill } from "../types";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction, LUProvider } from "./fdTypes";
@@ -44,7 +44,7 @@ export async function search<LU extends LearningUnit>(
 	luProvider: LUProvider<LU>,
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction<LU>
-): Promise<LU[] | null> {
+): Promise<Path | null> {
 	const openList: SearchNode<LU>[] = [
 		new SearchNode<LU>(initialState, null, null, 0, 0) //fnHeuristic(initialState, goal)
 	];
@@ -57,12 +57,13 @@ export async function search<LU extends LearningUnit>(
 		/* Check if currentNode.state is the goal state */
 		if (currentNode.state.goalFulfilled(goal)) {
 			// Build and return the path
-			const path: LU[] = [];
+			const path = new Path();
+			path.cost = currentNode.cost;
 			let node = currentNode;
 			while (node.parent !== null) {
 				const lu = node.action;
 				if (lu) {
-					path.unshift(lu);
+					path.path.unshift(lu);
 				}
 				node = node.parent;
 			}

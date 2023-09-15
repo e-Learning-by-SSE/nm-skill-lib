@@ -25,6 +25,11 @@ export type Node = {
 	element: Skill | LearningUnit;
 };
 
+export class Path {
+	cost: number = 0;
+	path: LearningUnit[] = [];
+}
+
 export interface LearningUnitProvider<LU extends LearningUnit> {
 	/**
 	 * Load all LearningUnits that provide at least one of the given skills (as teaching goal)

@@ -1,4 +1,4 @@
-import { LearningUnit, Skill, Graph, LearningUnitProvider } from "./types";
+import { LearningUnit, Skill, Graph, LearningUnitProvider, Path } from "./types";
 import {
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
@@ -211,7 +211,7 @@ describe("Path Planer", () => {
 			const expectedIDs = straightPathOfLus
 				.map(lu => lu.id)
 				.sort((a, b) => a.localeCompare(b));
-			expect(path).toEqual(expectedIDs);
+			expectPath(path, [expectedIDs], 3);
 		});
 
 		it("Intermediate knowledge; 1 map; no nested skills; 1 goal", async () => {
@@ -229,7 +229,7 @@ describe("Path Planer", () => {
 
 			// Assert: Path should be: 3 (as 2 is already known)
 			const expectedIDs = [straightPathOfLus[2].id];
-			expect(path).toEqual(expectedIDs);
+			expectPath(path, [expectedIDs], 1);
 		});
 
 		it("No knowledge; 1 map; with nested skills; 1 goal", async () => {
@@ -245,10 +245,14 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Path should be: (7 & 8) -> 9
-			expectPath(path, [
-				["lu:7", "lu:8", "lu:9"],
-				["lu:8", "lu:7", "lu:9"]
-			]);
+			expectPath(
+				path,
+				[
+					["lu:7", "lu:8", "lu:9"],
+					["lu:8", "lu:7", "lu:9"]
+				],
+				3
+			);
 		});
 
 		it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU; 1 goal", async () => {
@@ -264,10 +268,14 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Path should be: (10 & 11) -> 12
-			expectPath(path, [
-				["lu:10", "lu:11", "lu:12"],
-				["lu:11", "lu:10", "lu:12"]
-			]);
+			expectPath(
+				path,
+				[
+					["lu:10", "lu:11", "lu:12"],
+					["lu:11", "lu:10", "lu:12"]
+				],
+				3
+			);
 		});
 
 		it("No knowledge; 2 maps; with nested skills; multiple requirements for 1 LU; 2 goals", async () => {
@@ -291,23 +299,27 @@ describe("Path Planer", () => {
 			// Assert: Path contain LUs from two paths:
 			// Path 1: (10 & 11) -> 12
 			// Path 2: (7 & 8) -> 9
-			expectPath(path, [
-				// Path 1, Path 2
-				["lu:10", "lu:11", "lu:12", "lu:7", "lu:8", "lu:9"],
-				["lu:11", "lu:10", "lu:12", "lu:7", "lu:8", "lu:9"],
-				["lu:10", "lu:11", "lu:12", "lu:8", "lu:7", "lu:9"],
-				["lu:11", "lu:10", "lu:12", "lu:8", "lu:7", "lu:9"],
-				// Path 2, Path 1
-				["lu:7", "lu:8", "lu:9", "lu:10", "lu:11", "lu:12"],
-				["lu:8", "lu:7", "lu:9", "lu:10", "lu:11", "lu:12"],
-				["lu:7", "lu:8", "lu:9", "lu:11", "lu:10", "lu:12"],
-				["lu:8", "lu:7", "lu:9", "lu:11", "lu:10", "lu:12"],
-				// Mixed paths (not complete, add if necessary)
-				["lu:7", "lu:8", "lu:10", "lu:11", "lu:9", "lu:12"],
-				["lu:7", "lu:8", "lu:11", "lu:10", "lu:9", "lu:12"],
-				["lu:8", "lu:7", "lu:10", "lu:11", "lu:9", "lu:12"],
-				["lu:8", "lu:7", "lu:11", "lu:10", "lu:9", "lu:12"]
-			]);
+			expectPath(
+				path,
+				[
+					// Path 1, Path 2
+					["lu:10", "lu:11", "lu:12", "lu:7", "lu:8", "lu:9"],
+					["lu:11", "lu:10", "lu:12", "lu:7", "lu:8", "lu:9"],
+					["lu:10", "lu:11", "lu:12", "lu:8", "lu:7", "lu:9"],
+					["lu:11", "lu:10", "lu:12", "lu:8", "lu:7", "lu:9"],
+					// Path 2, Path 1
+					["lu:7", "lu:8", "lu:9", "lu:10", "lu:11", "lu:12"],
+					["lu:8", "lu:7", "lu:9", "lu:10", "lu:11", "lu:12"],
+					["lu:7", "lu:8", "lu:9", "lu:11", "lu:10", "lu:12"],
+					["lu:8", "lu:7", "lu:9", "lu:11", "lu:10", "lu:12"],
+					// Mixed paths (not complete, add if necessary)
+					["lu:7", "lu:8", "lu:10", "lu:11", "lu:9", "lu:12"],
+					["lu:7", "lu:8", "lu:11", "lu:10", "lu:9", "lu:12"],
+					["lu:8", "lu:7", "lu:10", "lu:11", "lu:9", "lu:12"],
+					["lu:8", "lu:7", "lu:11", "lu:10", "lu:9", "lu:12"]
+				],
+				6
+			);
 		});
 
 		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction", async () => {
@@ -333,7 +345,7 @@ describe("Path Planer", () => {
 				.filter(lu => lu.lang === "en")
 				.map(lu => lu.id)
 				.sort((a, b) => a.localeCompare(b));
-			expect(path).toEqual(expectedIDs);
+			expectPath(path, [expectedIDs], 4);
 		});
 
 		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction; Cheap path becomes expensive at the end", async () => {
@@ -355,7 +367,7 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Path should be: lu:20 -> lu:21 -> lu:22
-			expect(path).toEqual(["lu:20", "lu:21", "lu:22"]);
+			expectPath(path, [["lu:20", "lu:21", "lu:22"]], 5);
 		});
 	});
 });
@@ -374,9 +386,16 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 	return [expectedIDs, expectedElements];
 }
 
-function expectPath(path: ReadonlyArray<string>, expectedPaths: string[][]) {
+function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: number) {
+	if (!expectPath) {
+		expect(path).toBeNull();
+		return;
+	}
+
 	const pathIsValid = expectedPaths.some(expectedPath => {
-		const pathIsEqual = path.every((id, index) => id === expectedPath[index]);
+		const pathIsEqual = path.path
+			.map(lu => lu.id)
+			.every((id, index) => id === expectedPath[index]);
 		return pathIsEqual;
 	});
 
@@ -384,7 +403,11 @@ function expectPath(path: ReadonlyArray<string>, expectedPaths: string[][]) {
 		// Return one wrong result
 		expect(path).toEqual(expectedPaths[0]);
 	} else {
-		expect(pathIsValid).toBe(true);
+		if (cost) {
+			expect(path.cost).toBe(cost);
+		} else {
+			expect(pathIsValid).toBe(true);
+		}
 	}
 }
 
