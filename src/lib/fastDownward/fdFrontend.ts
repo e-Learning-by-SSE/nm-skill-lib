@@ -1,4 +1,4 @@
-import { LearningUnit, Skill } from "../types";
+import { LearningUnit, Path, Skill } from "../types";
 import { search } from "./fastDownward";
 import { State } from "./state";
 import { LUProvider, CostFunction, HeuristicFunction } from "./fdTypes";
@@ -33,7 +33,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	luProvider?: LUProvider<LU>;
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
-}) {
+}): Promise<Path | null> {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const initialState = new State(
 		knowledge.map(skill => skill.id),
@@ -120,7 +120,7 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 		}
 	});
 
-	const pathResult: LU[] = [];
+	const pathResult = new Path();
 	for (const child of flattenGoal) {
 		// Find local optimal path for the current partial goal
 		const path = findOptimalLearningPath({
@@ -132,11 +132,12 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 			fnHeuristic
 		});
 
-		const pathLuIds = await path;
-		if (pathLuIds) {
+		const partialPath = await path;
+		if (partialPath) {
 			// Glue partial paths together and add learned skills to the knowledge to avoid learning them twice
-			pathResult.push(...pathLuIds);
-			const learnedSkills = pathLuIds
+			pathResult.path.push(...partialPath.path);
+			pathResult.cost += partialPath.cost;
+			const learnedSkills = partialPath.path
 				.map(lu => lus.find(l => l.id === lu.id)!)
 				.flatMap(lu => lu.teachingGoals)
 				.map(skillId => skills.find(skill => skill.id === skillId)!);
