@@ -387,7 +387,7 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 }
 
 function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: number) {
-	if (!expectPath) {
+	if (!expectedPaths) {
 		expect(path).toBeNull();
 		return;
 	}
