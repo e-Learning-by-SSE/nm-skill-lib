@@ -392,6 +392,10 @@ function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: 
 		return;
 	}
 
+	if (!path) {
+		fail(`Path is null, but there was at least one path expected: ${expectPath[0]}`);
+	}
+
 	const pathIsValid = expectedPaths.some(expectedPath => {
 		const pathIsEqual = path.path
 			.map(lu => lu.id)
