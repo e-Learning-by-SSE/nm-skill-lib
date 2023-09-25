@@ -16,6 +16,8 @@ export type Edge = {
 
 export type LearningUnit = {
 	id: string;
+	mediaTime?: number;
+	words?: number;
 	requiredSkills: string[];
 	teachingGoals: string[];
 };
