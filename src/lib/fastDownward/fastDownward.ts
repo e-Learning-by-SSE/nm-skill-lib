@@ -43,7 +43,8 @@ export async function search<LU extends LearningUnit>(
 	skills: ReadonlyArray<Skill>,
 	luProvider: LUProvider<LU>,
 	fnCost: CostFunction<LU>,
-	fnHeuristic: HeuristicFunction<LU>
+	fnHeuristic: HeuristicFunction<LU>,
+	contextSwitchPenalty = 1.2
 ): Promise<Path | null> {
 	const openList: SearchNode<LU>[] = [
 		new SearchNode<LU>(initialState, null, null, 0, 0) //fnHeuristic(initialState, goal)
@@ -74,7 +75,20 @@ export async function search<LU extends LearningUnit>(
 
 		// Generate successors and add them to openList
 		for (const lu of await availableActions(currentNode.state, luProvider)) {
-			const cost = currentNode.cost + fnCost(lu);
+			// Check if the LU of the currentNode provides any skills that are used by the current LU
+			const sameContext =
+				contextSwitchPenalty !== 1
+					? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
+					  lu.teachingGoals.some(
+							skill => currentNode.action?.requiredSkills.includes(skill) ?? true
+					  )
+					: true;
+			const cost = sameContext
+				? // Same context or no penalty defined
+				  currentNode.cost + fnCost(lu)
+				: // Conext switch -> apply penalty
+				  currentNode.cost + contextSwitchPenalty * fnCost(lu);
+
 			const openGoals =
 				goal.length > 1
 					? goal.filter(skill => !currentNode.state.learnedSkills.includes(skill.id))

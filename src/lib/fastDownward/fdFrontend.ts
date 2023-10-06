@@ -24,7 +24,8 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	lus,
 	luProvider,
 	fnCost,
-	fnHeuristic
+	fnHeuristic,
+	contextSwitchPenalty = 1.2
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
@@ -33,6 +34,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	luProvider?: LUProvider<LU>;
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
+	contextSwitchPenalty?: number;
 }): Promise<Path | null> {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const initialState = new State(
@@ -66,7 +68,15 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 		};
 	}
 
-	return search(initialState, goal, skills, luProvider, fnCost, fnHeuristic);
+	return search(
+		initialState,
+		goal,
+		skills,
+		luProvider,
+		fnCost,
+		fnHeuristic,
+		contextSwitchPenalty
+	);
 }
 
 /**
@@ -93,7 +103,8 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 	skills,
 	lus,
 	fnCost,
-	fnHeuristic
+	fnHeuristic,
+	contextSwitchPenalty = 1.2
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
@@ -101,6 +112,7 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 	lus: LU[];
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
+	contextSwitchPenalty?: number;
 }) {
 	/**
 	 * Iterate through the goal child by child.
@@ -129,7 +141,8 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 			skills,
 			lus,
 			fnCost,
-			fnHeuristic
+			fnHeuristic,
+			contextSwitchPenalty
 		});
 
 		const partialPath = await path;
@@ -177,7 +190,8 @@ export async function findLearningPath<LU extends LearningUnit>({
 	lus,
 	optimalSolution = false,
 	fnCost,
-	fnHeuristic
+	fnHeuristic,
+	contextSwitchPenalty = 1.2
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
@@ -186,6 +200,7 @@ export async function findLearningPath<LU extends LearningUnit>({
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
+	contextSwitchPenalty?: number;
 }) {
 	return optimalSolution
 		? // Guarantees an optimal solution, but may take very long
@@ -195,7 +210,8 @@ export async function findLearningPath<LU extends LearningUnit>({
 				skills,
 				lus,
 				fnCost,
-				fnHeuristic
+				fnHeuristic,
+				contextSwitchPenalty
 		  })
 		: // Splits goal into sub goals, finds optimal solutions for each sub goal and glues them together
 		  // This is much faster, but won't guarantee a global optimum
@@ -205,6 +221,7 @@ export async function findLearningPath<LU extends LearningUnit>({
 				skills,
 				lus,
 				fnCost,
-				fnHeuristic
+				fnHeuristic,
+				contextSwitchPenalty
 		  });
 }

@@ -57,7 +57,8 @@ export async function getPath<LU extends LearningUnit>({
 	desiredSkills,
 	ownedSkill = [],
 	optimalSolution = false,
-	fnCost
+	fnCost,
+	contextSwitchPenalty = 1.2
 }: {
 	skills: ReadonlyArray<Skill>;
 	luProvider: LearningUnitProvider<LU>;
@@ -65,6 +66,7 @@ export async function getPath<LU extends LearningUnit>({
 	ownedSkill?: Skill[];
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
+	contextSwitchPenalty?: number;
 }): Promise<Path | null> {
 	const startTime = new Date().getTime();
 
@@ -79,14 +81,15 @@ export async function getPath<LU extends LearningUnit>({
 		return min;
 	};
 
-	const path = findLearningPath({
+	const path = await findLearningPath({
 		knowledge: ownedSkill,
 		goal: desiredSkills,
 		skills: skills,
 		lus: lus,
 		optimalSolution: optimalSolution,
 		fnCost: fnCost,
-		fnHeuristic: fnHeuristic
+		fnHeuristic: fnHeuristic,
+		contextSwitchPenalty: contextSwitchPenalty
 	});
 
 	const duration = new Date().getTime() - startTime;
