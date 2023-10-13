@@ -376,6 +376,57 @@ describe("Path Planer", () => {
 			// Assert: Path should be: lu:20 -> lu:21 -> lu:22
 			expectPath(path, [["lu:20", "lu:21", "lu:22"]], 5);
 		});
+
+		describe("Suggested Ordering", () => {
+			// Suggested Ordering: LU1 -> (optional) LU2 -> LU3
+			const suggestedOrderingOfLus: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:1", [], ["sk:1"]),
+				newLearningUnit(firstMap, "lu:2", ["sk:1"], ["sk:2"]),
+				newLearningUnit(
+					firstMap,
+					"lu:3",
+					["sk:1"],
+					["sk:3"],
+					[{ weight: 0.2, skill: "sk:2" }]
+				)
+			];
+
+			it("Only necessary skills / skip suggested skills", async () => {
+				// Test data preparation
+				dataHandler.init([...firstMap], [...suggestedOrderingOfLus]);
+
+				// Test: Compute path
+				const path = await getPath({
+					skills: thirdMap,
+					luProvider: dataHandler,
+					desiredSkills: firstMap.filter(skill => skill.id === "sk:3"),
+					optimalSolution: true,
+					contextSwitchPenalty: 1
+				});
+
+				// Assert: Path should be: lu:1 -> lu:3
+				expectPath(path, [["lu:1", "lu:3"]], 2.2);
+			});
+
+			it("Include suggested skill -> Ensure Ordering", async () => {
+				// Test data preparation
+				dataHandler.init([...firstMap], [...suggestedOrderingOfLus]);
+
+				// Test: Compute path
+				const path = await getPath({
+					skills: thirdMap,
+					luProvider: dataHandler,
+					desiredSkills: firstMap.filter(
+						skill => skill.id === "sk:3" || skill.id === "sk:2"
+					),
+					optimalSolution: true,
+					contextSwitchPenalty: 1
+				});
+
+				// Assert: Path should be: lu:1 -> lu:2 -> lu:3
+				expectPath(path, [["lu:1", "lu:2", "lu:3"]], 3);
+			});
+		});
 	});
 });
 
@@ -457,11 +508,23 @@ function newLearningUnit(
 	map: Skill[],
 	id: string,
 	requiredSkills: string[],
-	teachingGoals: string[]
+	teachingGoals: string[],
+	suggestedSkills: { weight: number; skill: string }[] = []
 ) {
+	const suggestions: { weight: number; skill: Skill }[] = [];
+	if (suggestedSkills.length > 0) {
+		for (const suggestion of suggestedSkills) {
+			const skill = map.find(skill => suggestion.skill.includes(skill.id));
+			if (skill) {
+				suggestions.push({ weight: suggestion.weight, skill: skill });
+			}
+		}
+	}
+
 	return {
 		id: id,
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
-		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id))
+		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+		suggestedSkills: suggestions
 	};
 }

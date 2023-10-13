@@ -154,8 +154,8 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 			pathResult.cost += partialPath.cost;
 			const learnedSkills = partialPath.path
 				.map(lu => lus.find(l => l.id === lu.id)!)
-				.flatMap(lu => lu.teachingGoals)
-				.map(goal => skills.find(skill => skill === goal)!);
+				.flatMap(lu => lu.teachingGoals);
+			// .map(goal => skills.find(skill => skill === goal)!);
 			knowledge = [...knowledge, ...learnedSkills];
 		} else {
 			// There exist no path for one of the children, so there is no path for the whole goal

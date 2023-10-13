@@ -81,6 +81,7 @@ function newLearningUnit(
 	return {
 		id: id,
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
-		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id))
+		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+		suggestedSkills: []
 	};
 }
