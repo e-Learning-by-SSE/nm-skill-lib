@@ -20,6 +20,7 @@ export type LearningUnit = {
 	words?: number;
 	requiredSkills: Skill[];
 	teachingGoals: Skill[];
+	suggestedSkills: { weight: number; skill: Skill }[];
 };
 
 export type Node = {

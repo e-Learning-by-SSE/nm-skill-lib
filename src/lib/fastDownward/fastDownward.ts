@@ -26,6 +26,41 @@ async function availableActions<LU extends LearningUnit>(
 	);
 }
 
+function computeCost<LU extends LearningUnit>(
+	contextSwitchPenalty: number,
+	lu: LU,
+	currentNode: SearchNode<LU>,
+	suggestionViolationPenalty = true,
+	fnCost: CostFunction<LU>
+) {
+	const sameContext =
+		contextSwitchPenalty !== 1
+			? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
+			  lu.teachingGoals.some(
+					skill => currentNode.action?.requiredSkills.includes(skill) ?? true
+			  )
+			: true;
+
+	const suggestionPenalty = suggestionViolationPenalty
+		? // Identify all missing suggested skills in the current state
+		  1 +
+		  lu.suggestedSkills
+				.filter(
+					suggestion => !currentNode.state.learnedSkills.includes(suggestion.skill.id)
+				)
+				.map(suggestion => suggestion.weight)
+				.reduce((a, b) => a + b, 0)
+		: // No penalty for not following suggestions
+		  1;
+
+	const cost = sameContext
+		? // Same context or no penalty defined
+		  currentNode.cost + suggestionPenalty * fnCost(lu)
+		: // Context switch -> apply penalty
+		  currentNode.cost + contextSwitchPenalty * suggestionPenalty * fnCost(lu);
+	return cost;
+}
+
 /**
  * Implemented state-space search algorithm based on FAST-DOWNWARD algorithm.
  * @see https://roboticseabass.com/2022/07/19/task-planning-in-robotics/
@@ -36,6 +71,10 @@ async function availableActions<LU extends LearningUnit>(
  * @param fnCost Function to calculate the costs of reaching a new state based on learning a LearningUnit on its predecessor.
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state, must not overestimate the cost.
  *        Returns Infinity if the goal cannot be reached from the given state.
+ * @param [contextSwitchPenalty=1.2] Penalty for switching the context, i.e., if a learning unit requires other skills than the last ones taught
+ * 		  Must be equal to or greater than 1.
+ *        If the penalty is 1, the context switch is free.
+ * @param suggestionViolationPenalty If true, the cost of a learning unit is increased by the sum of the weights of all suggestions that are not fulfilled.
  */
 export async function search<LU extends LearningUnit>(
 	initialState: State,
@@ -44,7 +83,8 @@ export async function search<LU extends LearningUnit>(
 	luProvider: LUProvider<LU>,
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction<LU>,
-	contextSwitchPenalty = 1.2
+	contextSwitchPenalty = 1.2,
+	suggestionViolationPenalty = true
 ): Promise<Path | null> {
 	const openList: SearchNode<LU>[] = [
 		new SearchNode<LU>(initialState, null, null, 0, 0) //fnHeuristic(initialState, goal)
@@ -59,7 +99,8 @@ export async function search<LU extends LearningUnit>(
 		if (currentNode.state.goalFulfilled(goal)) {
 			// Build and return the path
 			const path = new Path();
-			path.cost = currentNode.cost;
+			// Round at most 2 digits, based on: https://stackoverflow.com/a/11832950
+			path.cost = Math.round((currentNode.cost + Number.EPSILON) * 100) / 100;
 			let node = currentNode;
 			while (node.parent !== null) {
 				const lu = node.action;
@@ -76,18 +117,13 @@ export async function search<LU extends LearningUnit>(
 		// Generate successors and add them to openList
 		for (const lu of await availableActions(currentNode.state, luProvider)) {
 			// Check if the LU of the currentNode provides any skills that are used by the current LU
-			const sameContext =
-				contextSwitchPenalty !== 1
-					? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
-					  lu.teachingGoals.some(
-							skill => currentNode.action?.requiredSkills.includes(skill) ?? true
-					  )
-					: true;
-			const cost = sameContext
-				? // Same context or no penalty defined
-				  currentNode.cost + fnCost(lu)
-				: // Context switch -> apply penalty
-				  currentNode.cost + contextSwitchPenalty * fnCost(lu);
+			const cost = computeCost<LU>(
+				contextSwitchPenalty,
+				lu,
+				currentNode,
+				suggestionViolationPenalty,
+				fnCost
+			);
 
 			const openGoals =
 				goal.length > 1
