@@ -16,13 +16,13 @@ async function availableActions<LU extends LearningUnit>(
 	const usefulLus = (await luProvider.loadLearnableCandidates(currentState.learnedSkills)).filter(
 		lu =>
 			lu.teachingGoals.some(
-				skill => !currentState.learnedSkills.some(learnedSkill => learnedSkill === skill)
+				skill => !currentState.learnedSkills.some(learnedSkill => learnedSkill === skill.id)
 			)
 	);
 
 	// Do not suggest learning units that do not teach any unknown skills
 	return usefulLus.filter(lu =>
-		lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill))
+		lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
 	);
 }
 
@@ -86,7 +86,7 @@ export async function search<LU extends LearningUnit>(
 			const cost = sameContext
 				? // Same context or no penalty defined
 				  currentNode.cost + fnCost(lu)
-				: // Conext switch -> apply penalty
+				: // Context switch -> apply penalty
 				  currentNode.cost + contextSwitchPenalty * fnCost(lu);
 
 			const openGoals =

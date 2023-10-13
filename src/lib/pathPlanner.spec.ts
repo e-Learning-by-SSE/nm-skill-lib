@@ -40,46 +40,46 @@ describe("Path Planer", () => {
 	].sort((a, b) => a.id.localeCompare(b.id));
 	// LearningUnits
 	const straightPathOfLus: LearningUnit[] = [
-		{ id: "lu:1", requiredSkills: [], teachingGoals: ["sk:1"] },
-		{ id: "lu:2", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"] },
-		{ id: "lu:3", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"] }
+		newLearningUnit(firstMap, "lu:1", [], ["sk:1"]),
+		newLearningUnit(firstMap, "lu:2", ["sk:1"], ["sk:2"]),
+		newLearningUnit(firstMap, "lu:3", ["sk:2"], ["sk:3"])
 	];
 	const straightPathOfLus2: LearningUnit[] = [
-		{ id: "lu:4", requiredSkills: [], teachingGoals: ["sk:4"] },
-		{ id: "lu:5", requiredSkills: ["sk:4"], teachingGoals: ["sk:5"] },
-		{ id: "lu:6", requiredSkills: ["sk:5"], teachingGoals: ["sk:6"] }
+		newLearningUnit(secondMap, "lu:4", [], ["sk:4"]),
+		newLearningUnit(secondMap, "lu:5", ["sk:4"], ["sk:5"]),
+		newLearningUnit(secondMap, "lu:5", ["sk:4"], ["sk:6"])
 	];
 	// lu:7 and lu:8 must be learned to understand sk:9 (which is group of sk:10 and sk:11)
 	const structuredPathOfLus: LearningUnit[] = [
-		{ id: "lu:7", requiredSkills: [], teachingGoals: ["sk:10"] },
-		{ id: "lu:8", requiredSkills: [], teachingGoals: ["sk:11"] },
-		{ id: "lu:9", requiredSkills: ["sk:9"], teachingGoals: ["sk:8"] }
+		newLearningUnit(thirdMapHierarchy, "lu:7", [], ["sk:10"]),
+		newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
+		newLearningUnit(thirdMapHierarchy, "lu:9", ["sk:9"], ["sk:8"])
 	];
 	const multipleRequirementsOfLu: LearningUnit[] = [
-		{ id: "lu:10", requiredSkills: [], teachingGoals: ["sk:1"] },
-		{ id: "lu:11", requiredSkills: [], teachingGoals: ["sk:2"] },
-		{ id: "lu:12", requiredSkills: ["sk:1", "sk:2"], teachingGoals: ["sk:3"] }
+		newLearningUnit(firstMap, "lu:10", [], ["sk:1"]),
+		newLearningUnit(firstMap, "lu:11", [], ["sk:2"]),
+		newLearningUnit(firstMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"])
 	];
 	// Alternative languages (de is shorter than en)
 	const alternativeLanguagesOfLus: (LearningUnit & { lang: string })[] = [
-		{ id: "lu:13:de", requiredSkills: [], teachingGoals: ["sk:1"], lang: "de" },
-		{ id: "lu:14:de", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], lang: "de" },
-		{ id: "lu:15:de", requiredSkills: ["sk:2"], teachingGoals: ["sk:3", "sk:4"], lang: "de" },
-		{ id: "lu:13:en", requiredSkills: [], teachingGoals: ["sk:1"], lang: "en" },
-		{ id: "lu:14:en", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], lang: "en" },
-		{ id: "lu:15:en", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"], lang: "en" },
-		{ id: "lu:16:en", requiredSkills: ["sk:3"], teachingGoals: ["sk:4"], lang: "en" }
+		{ ...newLearningUnit(thirdMap, "lu:13:de", [], ["sk:1"]), lang: "de" },
+		{ ...newLearningUnit(thirdMap, "lu:14:de", ["sk:1"], ["sk:2"]), lang: "de" },
+		{ ...newLearningUnit(thirdMap, "lu:15:de", ["sk:2"], ["sk:3", "sk:4"]), lang: "de" },
+		{ ...newLearningUnit(thirdMap, "lu:13:en", [], ["sk:1"]), lang: "en" },
+		{ ...newLearningUnit(thirdMap, "lu:14:en", ["sk:1"], ["sk:2"]), lang: "en" },
+		{ ...newLearningUnit(thirdMap, "lu:15:en", ["sk:2"], ["sk:3"]), lang: "en" },
+		{ ...newLearningUnit(thirdMap, "lu:16:en", ["sk:3"], ["sk:4"]), lang: "en" }
 	];
 	// Two alternative paths with different costs
 	const alternativeCostsOfLus: (LearningUnit & { cost: number })[] = [
 		// 1st alternative path, cost: 7
-		{ id: "lu:17", requiredSkills: [], teachingGoals: ["sk:1"], cost: 1 },
-		{ id: "lu:18", requiredSkills: ["sk:1"], teachingGoals: ["sk:2"], cost: 1 },
-		{ id: "lu:19", requiredSkills: ["sk:2"], teachingGoals: ["sk:3"], cost: 5 },
+		{ ...newLearningUnit(thirdMap, "lu:17", [], ["sk:1"]), cost: 1 },
+		{ ...newLearningUnit(thirdMap, "lu:18", ["sk:1"], ["sk:2"]), cost: 1 },
+		{ ...newLearningUnit(thirdMap, "lu:19", ["sk:2"], ["sk:3"]), cost: 5 },
 		// 2nd alternative path, cost: 5
-		{ id: "lu:20", requiredSkills: [], teachingGoals: ["sk:4"], cost: 3 },
-		{ id: "lu:21", requiredSkills: ["sk:4"], teachingGoals: ["sk:5"], cost: 1 },
-		{ id: "lu:22", requiredSkills: ["sk:5"], teachingGoals: ["sk:3"], cost: 1 }
+		{ ...newLearningUnit(thirdMap, "lu:20", [], ["sk:4"]), cost: 3 },
+		{ ...newLearningUnit(thirdMap, "lu:21", ["sk:4"], ["sk:5"]), cost: 1 },
+		{ ...newLearningUnit(thirdMap, "lu:22", ["sk:5"], ["sk:3"]), cost: 1 }
 	];
 
 	describe("getConnectedGraphForSkill - Skills Only", () => {
@@ -444,9 +444,24 @@ class TestDataHandler implements LearningUnitProvider<LearningUnit> {
 
 	getLearningUnitsBySkillIds(skillIds: string[]): Promise<LearningUnit[]> {
 		return Promise.resolve(
-			this.learningUnits.filter(lu => lu.teachingGoals.some(goal => skillIds.includes(goal)))
+			this.learningUnits.filter(lu =>
+				lu.teachingGoals.some(goal => skillIds.includes(goal.id))
+			)
 		);
 	}
 }
 
 const dataHandler = new TestDataHandler();
+
+function newLearningUnit(
+	map: Skill[],
+	id: string,
+	requiredSkills: string[],
+	teachingGoals: string[]
+) {
+	return {
+		id: id,
+		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id))
+	};
+}

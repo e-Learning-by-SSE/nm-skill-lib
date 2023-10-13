@@ -92,7 +92,9 @@ export class State {
 	}
 
 	deriveState(operator: LearningUnit, skills: ReadonlyArray<Skill>) {
-		const mergedSkills = arrayUnique(this.learnedSkills.concat(operator.teachingGoals));
+		const mergedSkills = arrayUnique(
+			this.learnedSkills.concat(operator.teachingGoals.map(goal => goal.id))
+		);
 		return new State(mergedSkills, skills);
 	}
 

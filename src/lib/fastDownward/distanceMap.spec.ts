@@ -9,8 +9,8 @@ describe("getDistance", () => {
 			{ id: "skill:3", repositoryId: "Map 1", nestedSkills: [] }
 		];
 		const units: LearningUnit[] = [
-			{ id: "unit:1", requiredSkills: ["skill:1"], teachingGoals: ["skill:2"] },
-			{ id: "unit:2", requiredSkills: ["skill:2"], teachingGoals: ["skill:3"] }
+			newLearningUnit(skills, "unit:1", ["skill:1"], ["skill:2"]),
+			newLearningUnit(skills, "unit:2", ["skill:2"], ["skill:3"])
 		];
 
 		const dMap = new DistanceMap(skills, units);
@@ -31,8 +31,8 @@ describe("getDistance", () => {
 			{ id: "skill:3", repositoryId: "Map 1", nestedSkills: [] }
 		];
 		const units: LearningUnit[] = [
-			{ id: "unit:1", requiredSkills: ["skill:1"], teachingGoals: ["skill:child:2"] },
-			{ id: "unit:2", requiredSkills: ["skill:parent:2"], teachingGoals: ["skill:3"] }
+			newLearningUnit(skills, "unit:1", ["skill:1"], ["skill:child:2"]),
+			newLearningUnit(skills, "unit:2", ["skill:parent:2"], ["skill:3"])
 		];
 
 		const dMap = new DistanceMap(skills, units);
@@ -55,8 +55,8 @@ describe("getDistance", () => {
 			{ id: "skill:3", repositoryId: "Map 1", nestedSkills: [] }
 		];
 		const units: LearningUnit[] = [
-			{ id: "unit:1", requiredSkills: ["skill:1"], teachingGoals: ["skill:parent:2"] },
-			{ id: "unit:2", requiredSkills: ["skill:child:2"], teachingGoals: ["skill:3"] }
+			newLearningUnit(skills, "unit:1", ["skill:1"], ["skill:parent:2"]),
+			newLearningUnit(skills, "unit:2", ["skill:child:2"], ["skill:3"])
 		];
 
 		const dMap = new DistanceMap(skills, units);
@@ -71,3 +71,16 @@ describe("getDistance", () => {
 		expect(dMap.getDistance("unit:2", "skill:3")).toBe(1);
 	});
 });
+
+function newLearningUnit(
+	map: Skill[],
+	id: string,
+	requiredSkills: string[],
+	teachingGoals: string[]
+) {
+	return {
+		id: id,
+		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id))
+	};
+}

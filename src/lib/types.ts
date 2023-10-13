@@ -18,8 +18,8 @@ export type LearningUnit = {
 	id: string;
 	mediaTime?: number;
 	words?: number;
-	requiredSkills: string[];
-	teachingGoals: string[];
+	requiredSkills: Skill[];
+	teachingGoals: Skill[];
 };
 
 export type Node = {

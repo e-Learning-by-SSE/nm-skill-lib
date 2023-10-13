@@ -63,7 +63,9 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 			// Return all LearningUnit for which all requirements are fulfilled
 			loadLearnableCandidates: async (learnedSkillIds: string[]) =>
 				lus.filter(lu =>
-					lu.requiredSkills.every(prerequisite => learnedSkillIds.includes(prerequisite))
+					lu.requiredSkills.every(prerequisite =>
+						learnedSkillIds.includes(prerequisite.id)
+					)
 				)
 		};
 	}
@@ -153,7 +155,7 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 			const learnedSkills = partialPath.path
 				.map(lu => lus.find(l => l.id === lu.id)!)
 				.flatMap(lu => lu.teachingGoals)
-				.map(skillId => skills.find(skill => skill.id === skillId)!);
+				.map(goal => skills.find(skill => skill === goal)!);
 			knowledge = [...knowledge, ...learnedSkills];
 		} else {
 			// There exist no path for one of the children, so there is no path for the whole goal
