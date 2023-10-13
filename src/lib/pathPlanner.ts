@@ -135,11 +135,11 @@ async function populateGraphWithLearningUnits(
 	learningUnits.forEach(lu => {
 		graph.setNode("lu" + lu.id, lu);
 		lu.requiredSkills.forEach(req => {
-			graph.setEdge("sk" + req, "lu" + lu.id);
+			graph.setEdge("sk" + req.id, "lu" + lu.id);
 		});
 
 		lu.teachingGoals.forEach(goal => {
-			graph.setEdge("lu" + lu.id, "sk" + goal);
+			graph.setEdge("lu" + lu.id, "sk" + goal.id);
 		});
 	});
 	return graph;
