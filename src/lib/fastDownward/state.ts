@@ -107,4 +107,8 @@ export class State {
 	equal(other: State) {
 		return this.asString === other.asString;
 	}
+
+	getHashCode() {
+		return this.asString;
+	}
 }

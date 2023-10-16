@@ -86,10 +86,8 @@ export async function search<LU extends LearningUnit>(
 	contextSwitchPenalty = 1.2,
 	suggestionViolationPenalty = true
 ): Promise<Path | null> {
-	const openList: SearchNode<LU>[] = [
-		new SearchNode<LU>(initialState, null, null, 0, 0) //fnHeuristic(initialState, goal)
-	];
-	const closedSet: State[] = [];
+	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
+	const closedSet = new Set<string>();
 
 	while (openList.length > 0) {
 		openList.sort((a, b) => a.heuristic - b.heuristic);
@@ -112,7 +110,7 @@ export async function search<LU extends LearningUnit>(
 			return path;
 		}
 
-		closedSet.push(currentNode.state);
+		closedSet.add(currentNode.state.getHashCode());
 
 		// Generate successors and add them to openList
 		for (const lu of await availableActions(currentNode.state, luProvider)) {
@@ -140,7 +138,7 @@ export async function search<LU extends LearningUnit>(
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
 			// Skip states that are already analyzed
-			if (closedSet.some(state => state.equal(newState))) {
+			if (closedSet.has(newState.getHashCode())) {
 				continue;
 			}
 
