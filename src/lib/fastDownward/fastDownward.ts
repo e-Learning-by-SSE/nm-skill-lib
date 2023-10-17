@@ -88,9 +88,9 @@ export async function search<LU extends LearningUnit>(
 ): Promise<Path | null> {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
 	const closedSet = new Set<string>();
-
 	while (openList.length > 0) {
-		openList.sort((a, b) => a.heuristic - b.heuristic);
+		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
+
 		const currentNode = openList.shift()!;
 
 		/* Check if currentNode.state is the goal state */
@@ -151,7 +151,21 @@ export async function search<LU extends LearningUnit>(
 					existingNode.parent = newNode.parent;
 				}
 			} else {
-				openList.push(newNode);
+				// Inserting newNode to openList in sorted manner
+				if (openList.length == 0) {
+					openList.push(newNode);
+				} else if (openList[openList.length - 1].heuristic < newNode.heuristic) {
+					openList.push(newNode);
+				} else {
+					for (let index = 0; index < openList.length; index++) {
+						if (newNode.heuristic <= openList[index].heuristic) {
+							openList.splice(index, 0, newNode);
+							break;
+						}
+					}
+				}
+				
+				//openList.push(newNode);
 			}
 		}
 	}
