@@ -2,6 +2,7 @@ import { LearningUnit, Path, Skill } from "../types";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction, LUProvider } from "./fdTypes";
+import { GlobalKnowledge } from "./global-knowledge";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
@@ -79,7 +80,7 @@ function computeCost<LU extends LearningUnit>(
 export async function search<LU extends LearningUnit>(
 	initialState: State,
 	goal: Skill[],
-	skills: ReadonlyArray<Skill>,
+	globalKnowledge: GlobalKnowledge,
 	luProvider: LUProvider<LU>,
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction<LU>,
@@ -134,7 +135,7 @@ export async function search<LU extends LearningUnit>(
 				continue;
 			}
 
-			const newState = currentNode.state.deriveState(lu, skills);
+			const newState = currentNode.state.deriveState(lu, globalKnowledge);
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
 			// Skip states that are already analyzed
@@ -164,7 +165,7 @@ export async function search<LU extends LearningUnit>(
 						}
 					}
 				}
-				
+
 				//openList.push(newNode);
 			}
 		}
