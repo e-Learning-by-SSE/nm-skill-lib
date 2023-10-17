@@ -1,4 +1,5 @@
 import { Skill, LearningUnit } from "../types";
+import { GlobalKnowledge } from "./global-knowledge";
 
 /**
  * Removes duplicate elements from the given array.
@@ -26,27 +27,27 @@ export class State {
 	// Should save time by avoiding repeated string concatenations
 	private asString: string;
 
-	constructor(learnedSkills: string[], skills: ReadonlyArray<Skill>) {
+	constructor(learnedSkills: string[], globalKnowledge: GlobalKnowledge) {
 		this.learnedSkills = learnedSkills;
 
-		this.checkGroupedSkills(skills);
+		this.checkGroupedSkills(globalKnowledge);
 		// Sort for equality check and to speed up creation of derived states
 		this.learnedSkills.sort();
 		this.asString = this.learnedSkills.join(",");
 	}
 
-	private checkGroupedSkills(skills: ReadonlyArray<Skill>) {
+	private checkGroupedSkills(globalKnowledge: GlobalKnowledge) {
 		let changed = false;
 		do {
 			changed = false;
-			changed = changed || this.checkIfChildrenAreSubsumedByParents(skills);
-			changed = changed || this.checkIfParentsAreSubsumedByChildren(skills);
+			changed = changed || this.checkIfChildrenAreSubsumedByParents(globalKnowledge);
+			changed = changed || this.checkIfParentsAreSubsumedByChildren(globalKnowledge);
 		} while (changed);
 	}
 
-	private checkIfParentsAreSubsumedByChildren(skills: ReadonlyArray<Skill>) {
+	private checkIfParentsAreSubsumedByChildren(globalKnowledge: GlobalKnowledge) {
 		// Finds all skills that have children
-		const allParents = skills.filter(skill => skill.nestedSkills.length > 0);
+		const allParents = globalKnowledge.getAllParents();
 		// Filters for parents for which all children are known (this is not recursive)
 		const relevantParents = allParents.filter(parent =>
 			parent.nestedSkills.every(child => this.learnedSkills.includes(child))
@@ -64,9 +65,9 @@ export class State {
 		return false;
 	}
 
-	private checkIfChildrenAreSubsumedByParents(skills: ReadonlyArray<Skill>) {
-		const allLearnedParents = skills
-			.filter(skill => skill.nestedSkills.length > 0)
+	private checkIfChildrenAreSubsumedByParents(globalKnowledge: GlobalKnowledge) {
+		const allLearnedParents = globalKnowledge
+			.getAllParents()
 			.filter(parent => this.learnedSkills.includes(parent.id));
 		const allLearnedChildren = allLearnedParents.map(parent => parent.nestedSkills).flat();
 		const missedChildren = allLearnedChildren.filter(
@@ -91,11 +92,11 @@ export class State {
 		);
 	}
 
-	deriveState(operator: LearningUnit, skills: ReadonlyArray<Skill>) {
+	deriveState(operator: LearningUnit, globalKnowledge: GlobalKnowledge) {
 		const mergedSkills = arrayUnique(
 			this.learnedSkills.concat(operator.teachingGoals.map(goal => goal.id))
 		);
-		return new State(mergedSkills, skills);
+		return new State(mergedSkills, globalKnowledge);
 	}
 
 	/**

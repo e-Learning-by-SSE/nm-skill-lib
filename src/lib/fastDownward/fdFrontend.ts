@@ -2,6 +2,7 @@ import { LearningUnit, Path, Skill } from "../types";
 import { search } from "./fastDownward";
 import { State } from "./state";
 import { LUProvider, CostFunction, HeuristicFunction } from "./fdTypes";
+import { GlobalKnowledge } from "./global-knowledge";
 
 /**
  * Searches for an optimal path to learn the desired Skills (goal) based on the given knowledge.
@@ -37,9 +38,10 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	contextSwitchPenalty?: number;
 }): Promise<Path | null> {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
+	const globalKnowledge = new GlobalKnowledge(skills);
 	const initialState = new State(
 		knowledge.map(skill => skill.id),
-		skills
+		globalKnowledge
 	);
 
 	// Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
@@ -73,7 +75,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	return search(
 		initialState,
 		goal,
-		skills,
+		globalKnowledge,
 		luProvider,
 		fnCost,
 		fnHeuristic,
