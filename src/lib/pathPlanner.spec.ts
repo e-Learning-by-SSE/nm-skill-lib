@@ -1,4 +1,4 @@
-import { LearningUnit, Skill, Graph, LearningUnitProvider, Path } from "./types";
+import { LearningUnit, Skill, Graph, Path } from "./types";
 import {
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
@@ -84,9 +84,6 @@ describe("Path Planer", () => {
 
 	describe("getConnectedGraphForSkill - Skills Only", () => {
 		it("Only skills available; no nested skills -> return all skills of the same map", async () => {
-			// Test data preparation
-			dataHandler.init([...firstMap, ...secondMap, ...thirdMapHierarchy], []);
-
 			// Test: Compute graph
 			const graph = await getConnectedGraphForSkill(firstMap);
 
@@ -99,9 +96,6 @@ describe("Path Planer", () => {
 		});
 
 		it("Only skills available; nested skills -> return all skills of the same map", async () => {
-			// Test data preparation
-			dataHandler.init([...firstMap, ...secondMap, ...thirdMapHierarchy], []);
-
 			// Test: Compute graph
 			const graph = await getConnectedGraphForSkill(thirdMapHierarchy);
 
@@ -114,12 +108,6 @@ describe("Path Planer", () => {
 		});
 
 		it("Skills & LearningUnits available; no nested skills -> return all skills of the same map", async () => {
-			// Test data preparation
-			dataHandler.init(
-				[...firstMap, ...secondMap, ...thirdMapHierarchy],
-				[...straightPathOfLus]
-			);
-
 			// Test: Compute graph
 			const graph = await getConnectedGraphForSkill(firstMap);
 
@@ -134,9 +122,6 @@ describe("Path Planer", () => {
 
 	describe("getConnectedGraphForSkill - Skills & LearningUnits", () => {
 		it("Only skills available; no nested skills -> return all skills of the same map", async () => {
-			// Test data preparation
-			dataHandler.init([...firstMap, ...secondMap, ...thirdMapHierarchy], []);
-
 			// Test: Compute graph
 			const graph = await getConnectedGraphForSkill(firstMap);
 
@@ -149,14 +134,8 @@ describe("Path Planer", () => {
 		});
 
 		it("Skills & LearningUnits using Skills of the same repository; no nested skills -> return all skills and LearningUnits", async () => {
-			// Test data preparation
-			dataHandler.init(
-				[...firstMap, ...secondMap, ...thirdMapHierarchy],
-				[...straightPathOfLus]
-			);
-
 			// Test: Compute graph
-			const graph = await getConnectedGraphForLearningUnit(dataHandler, firstMap);
+			const graph = await getConnectedGraphForLearningUnit(straightPathOfLus, firstMap);
 
 			// Assert: All skills of the first map and all LUs of the straight path are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -171,14 +150,8 @@ describe("Path Planer", () => {
 		});
 
 		it("Skills & LearningUnits of multiple repositories; no nested skills -> return only connected elements", async () => {
-			// Test data preparation
-			dataHandler.init(
-				[...firstMap, ...secondMap, ...thirdMapHierarchy],
-				[...straightPathOfLus, ...straightPathOfLus2]
-			);
-
 			// Test: Compute graph
-			const graph = await getConnectedGraphForLearningUnit(dataHandler, firstMap);
+			const graph = await getConnectedGraphForLearningUnit(straightPathOfLus, firstMap);
 
 			// Assert: All skills of the first map and all LUs of straightPathOfLus1 are returned
 			// straightPathOfLus2 is not connected and must not be returned
@@ -196,13 +169,10 @@ describe("Path Planer", () => {
 
 	describe("pathForSkill", () => {
 		it("No knowledge; 1 map; no nested skills; 1 goal", async () => {
-			// Test data preparation
-			dataHandler.init([...firstMap], [...straightPathOfLus]);
-
 			// Test: Compute path
 			const path = await getPath({
 				skills: firstMap,
-				luProvider: dataHandler,
+				learningUnits: straightPathOfLus,
 				desiredSkills: [firstMap[2]],
 				optimalSolution: true,
 				contextSwitchPenalty: 1
@@ -216,13 +186,10 @@ describe("Path Planer", () => {
 		});
 
 		it("Intermediate knowledge; 1 map; no nested skills; 1 goal", async () => {
-			// Test data preparation
-			dataHandler.init([...firstMap], [...straightPathOfLus]);
-
 			// Test: Compute path
 			const path = await getPath({
 				skills: firstMap,
-				luProvider: dataHandler,
+				learningUnits: straightPathOfLus,
 				desiredSkills: [firstMap[2]],
 				ownedSkill: [firstMap[1]],
 				optimalSolution: true,
@@ -235,13 +202,10 @@ describe("Path Planer", () => {
 		});
 
 		it("No knowledge; 1 map; with nested skills; 1 goal", async () => {
-			// Test data preparation
-			dataHandler.init([...thirdMapHierarchy], [...structuredPathOfLus]);
-
 			// Test: Compute path
 			const path = await getPath({
 				skills: thirdMapHierarchy,
-				luProvider: dataHandler,
+				learningUnits: structuredPathOfLus,
 				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
 				optimalSolution: true,
 				contextSwitchPenalty: 1
@@ -259,13 +223,10 @@ describe("Path Planer", () => {
 		});
 
 		it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU; 1 goal", async () => {
-			// Test data preparation
-			dataHandler.init([...firstMap], [...multipleRequirementsOfLu]);
-
 			// Test: Compute path
 			const path = await getPath({
 				skills: firstMap,
-				luProvider: dataHandler,
+				learningUnits: multipleRequirementsOfLu,
 				desiredSkills: firstMap.filter(skill => skill.id === "sk:3"),
 				optimalSolution: true,
 				contextSwitchPenalty: 1
@@ -283,16 +244,10 @@ describe("Path Planer", () => {
 		});
 
 		it("No knowledge; 2 maps; with nested skills; multiple requirements for 1 LU; 2 goals", async () => {
-			// Test data preparation
-			dataHandler.init(
-				[...firstMap, ...thirdMapHierarchy],
-				[...multipleRequirementsOfLu, ...structuredPathOfLus]
-			);
-
 			// Test: Compute path
 			const path = await getPath({
 				skills: [...firstMap, ...thirdMapHierarchy],
-				luProvider: dataHandler,
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
 				desiredSkills: [
 					...firstMap.filter(skill => skill.id === "sk:3"),
 					...thirdMapHierarchy.filter(skill => skill.id === "sk:8")
@@ -330,8 +285,6 @@ describe("Path Planer", () => {
 
 		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction", async () => {
 			// Test data preparation
-			dataHandler.init([...thirdMap], [...alternativeLanguagesOfLus]);
-
 			const fnCost: CostFunction<LearningUnit & { lang: string }> = lu => {
 				// Simulate that only english units can be understood, all others should be avoided
 				return lu.lang === "en" ? 1 : Infinity;
@@ -340,7 +293,7 @@ describe("Path Planer", () => {
 			// Test: Compute path
 			const path = await getPath({
 				skills: thirdMap,
-				luProvider: dataHandler,
+				learningUnits: alternativeLanguagesOfLus,
 				desiredSkills: thirdMap.filter(skill => skill.id === "sk:4"),
 				fnCost: fnCost,
 				optimalSolution: true,
@@ -357,8 +310,6 @@ describe("Path Planer", () => {
 
 		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction; Cheap path becomes expensive at the end", async () => {
 			// Test data preparation
-			dataHandler.init([...thirdMap], [...alternativeCostsOfLus]);
-
 			const fnCost: CostFunction<LearningUnit & { cost: number }> = lu => {
 				// Simulate that the LearningUnits have any properties which are more expensive for a learner
 				return lu.cost;
@@ -367,7 +318,7 @@ describe("Path Planer", () => {
 			// Test: Compute path
 			const path = await getPath({
 				skills: thirdMap,
-				luProvider: dataHandler,
+				learningUnits: alternativeCostsOfLus,
 				desiredSkills: thirdMap.filter(skill => skill.id === "sk:3"),
 				fnCost: fnCost,
 				optimalSolution: true,
@@ -393,13 +344,10 @@ describe("Path Planer", () => {
 			];
 
 			it("Only necessary skills / skip suggested skills", async () => {
-				// Test data preparation
-				dataHandler.init([...firstMap], [...suggestedOrderingOfLus]);
-
 				// Test: Compute path
 				const path = await getPath({
 					skills: thirdMap,
-					luProvider: dataHandler,
+					learningUnits: suggestedOrderingOfLus,
 					desiredSkills: firstMap.filter(skill => skill.id === "sk:3"),
 					optimalSolution: true,
 					contextSwitchPenalty: 1
@@ -410,13 +358,10 @@ describe("Path Planer", () => {
 			});
 
 			it("Include suggested skill -> Ensure Ordering", async () => {
-				// Test data preparation
-				dataHandler.init([...firstMap], [...suggestedOrderingOfLus]);
-
 				// Test: Compute path
 				const path = await getPath({
 					skills: thirdMap,
-					luProvider: dataHandler,
+					learningUnits: suggestedOrderingOfLus,
 					desiredSkills: firstMap.filter(
 						skill => skill.id === "sk:3" || skill.id === "sk:2"
 					),
@@ -473,37 +418,6 @@ function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: 
 		}
 	}
 }
-
-class TestDataHandler implements LearningUnitProvider<LearningUnit> {
-	private skillMaps: Map<string, Skill[]> = new Map<string, Skill[]>();
-	private learningUnits: LearningUnit[] = [];
-
-	init(skills: Skill[], learningUnits: LearningUnit[]) {
-		// Create SkillMaps on the fly
-		skills.forEach(skill => {
-			const skillMap = this.skillMaps.get(skill.repositoryId);
-			if (skillMap) {
-				// Add skill to existing map
-				skillMap.push(skill);
-			} else {
-				// Create new map
-				this.skillMaps.set(skill.repositoryId, [skill]);
-			}
-		});
-
-		this.learningUnits = learningUnits;
-	}
-
-	getLearningUnitsBySkillIds(skillIds: string[]): Promise<LearningUnit[]> {
-		return Promise.resolve(
-			this.learningUnits.filter(lu =>
-				lu.teachingGoals.some(goal => skillIds.includes(goal.id))
-			)
-		);
-	}
-}
-
-const dataHandler = new TestDataHandler();
 
 function newLearningUnit(
 	map: Skill[],

@@ -1,7 +1,7 @@
 import { LearningUnit, Path, Skill } from "../types";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
-import { HeuristicFunction, CostFunction, LUProvider } from "./fdTypes";
+import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 
 /**
@@ -9,22 +9,25 @@ import { GlobalKnowledge } from "./global-knowledge";
  */
 async function availableActions<LU extends LearningUnit>(
 	currentState: State,
-	luProvider: LUProvider<LU>
+	learningUnits: ReadonlyArray<LU>
 ) {
 	// Avoid operators that are already in the current state
 	// Ideally we would check that the LearningUnits are not learned twice
 	// However, we can also check that we always learn at least one new skill
-	const usefulLus = (await luProvider.loadLearnableCandidates(currentState.learnedSkills)).filter(
-		lu =>
-			lu.teachingGoals.some(
-				skill => !currentState.learnedSkills.some(learnedSkill => learnedSkill === skill.id)
-			)
-	);
+	const usefulLus = learningUnits
+		.filter(unit =>
+			unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
+		)
+		.filter(lu =>
+			// Do not suggest learning units that do not teach any unknown skills
+			lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
+		);
 
-	// Do not suggest learning units that do not teach any unknown skills
-	return usefulLus.filter(lu =>
-		lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
-	);
+	// // Do not suggest learning units that do not teach any unknown skills
+	// return usefulLus.filter(lu =>
+	// 	lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
+	// );
+	return usefulLus;
 }
 
 function computeCost<LU extends LearningUnit>(
@@ -81,7 +84,7 @@ export async function search<LU extends LearningUnit>(
 	initialState: State,
 	goal: Skill[],
 	globalKnowledge: GlobalKnowledge,
-	luProvider: LUProvider<LU>,
+	learningUnits: ReadonlyArray<LU>,
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction<LU>,
 	contextSwitchPenalty = 1.2,
@@ -114,7 +117,7 @@ export async function search<LU extends LearningUnit>(
 		closedSet.add(currentNode.state.getHashCode());
 
 		// Generate successors and add them to openList
-		for (const lu of await availableActions(currentNode.state, luProvider)) {
+		for (const lu of await availableActions(currentNode.state, learningUnits)) {
 			// Check if the LU of the currentNode provides any skills that are used by the current LU
 			const cost = computeCost<LU>(
 				contextSwitchPenalty,

@@ -1,5 +1,5 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
-import { Edge, Graph, Skill, Node, LearningUnit, LearningUnitProvider, Path } from "./types";
+import { Edge, Graph, Skill, Node, LearningUnit, Path } from "./types";
 import { findLearningPath } from "./fastDownward/fdFrontend";
 import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
 import { DistanceMap } from "./fastDownward/distanceMap";
@@ -21,12 +21,9 @@ export async function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): P
  * @returns A Promise that resolves to the connected graph.
  */
 export async function getConnectedGraphForLearningUnit(
-	luProvider: LearningUnitProvider<LearningUnit>,
+	learningUnits: ReadonlyArray<LearningUnit>,
 	skills: ReadonlyArray<Skill>
 ): Promise<Graph> {
-	const learningUnits = await luProvider.getLearningUnitsBySkillIds(
-		skills.map(skill => skill.id)
-	);
 	const graph = await populateGraphWithLearningUnits(skills, learningUnits);
 	return buildReturnGraph(graph);
 }
@@ -47,21 +44,21 @@ export async function isAcyclic(
 /**
  * Returns the path from the root node to the given skill in the graph.
  * @param skills The set of skills to include in the graph.
- * @param luProvider The learning unit provider to use for populating the graph.
+ * @param learningUnits All learning units of the system to learn new skills.
  * @param goalDef The goal definition to use for finding the path.
  * @returns A Promise that resolves to an array of node IDs representing the path.
  */
 export async function getPath<LU extends LearningUnit>({
 	skills,
-	luProvider,
 	desiredSkills,
+	learningUnits,
 	ownedSkill = [],
 	optimalSolution = false,
 	fnCost,
 	contextSwitchPenalty = 1.2
 }: {
 	skills: ReadonlyArray<Skill>;
-	luProvider: LearningUnitProvider<LU>;
+	learningUnits: ReadonlyArray<LU>;
 	desiredSkills: Skill[];
 	ownedSkill?: Skill[];
 	optimalSolution?: boolean;
@@ -70,9 +67,7 @@ export async function getPath<LU extends LearningUnit>({
 }): Promise<Path | null> {
 	const startTime = new Date().getTime();
 
-	const lus = await luProvider.getLearningUnitsBySkillIds(skills.map(skill => skill.id));
-
-	const distances = new DistanceMap(skills, lus, fnCost);
+	const distances = new DistanceMap(skills, learningUnits, fnCost);
 	const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
 		const min = distances.getDistances(
 			lu.id,
@@ -81,11 +76,17 @@ export async function getPath<LU extends LearningUnit>({
 		return min;
 	};
 
+	// Filter LearningUnits which cannot reach the goal
+	const goalIds = desiredSkills.map(skill => skill.id);
+	const filteredLearningUnits = learningUnits.filter(
+		lu => distances.getDistances(lu.id, goalIds) !== Infinity
+	);
+
 	const path = await findLearningPath({
 		knowledge: ownedSkill,
 		goal: desiredSkills,
 		skills: skills,
-		lus: lus,
+		learningUnits: filteredLearningUnits,
 		optimalSolution: optimalSolution,
 		fnCost: fnCost,
 		fnHeuristic: fnHeuristic,

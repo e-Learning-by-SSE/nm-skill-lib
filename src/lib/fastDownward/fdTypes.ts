@@ -17,10 +17,3 @@ export type CostFunction<LU extends LearningUnit> = (operation: LU) => number;
  * @returns The estimated cost of reaching the goal, between 0 and Infinity.
  */
 export type HeuristicFunction<LU extends LearningUnit> = (goal: Skill[], operation: LU) => number;
-
-/**
- * Provider that loads all LearningUnits that can be learned based on the given knowledge.
- */
-export interface LUProvider<LU extends LearningUnit> {
-	loadLearnableCandidates(learnedSkillIds: string[]): Promise<LU[]>;
-}
