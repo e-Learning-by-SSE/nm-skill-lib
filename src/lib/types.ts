@@ -92,4 +92,4 @@ export class Path {
 export type UpdateSoftConstraintFunction = (
 	learningUnit: LearningUnit,
 	missingSkills: string[]
-) => void;
+) => Promise<void>;

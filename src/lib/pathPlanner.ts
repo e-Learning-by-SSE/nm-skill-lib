@@ -171,7 +171,7 @@ function buildReturnGraph(graph: GraphLib): Graph {
  * @param learningUnits The ordering of the learning units, for which soft constraints shall be computed to enforce the given order.
  * @param fnUpdate The CREATE/UPDATE/DELETE function to apply the computed constraints.
  */
-export function computeSuggestedSkills(
+export async function computeSuggestedSkills(
 	learningUnits: LearningUnit[],
 	fnUpdate: UpdateSoftConstraintFunction
 ) {
@@ -183,8 +183,6 @@ export function computeSuggestedSkills(
 			.map(goal => goal.id)
 			.filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId));
 
-		if (fnUpdate) {
-			fnUpdate(currentUnit, missingSkills);
-		}
+		await fnUpdate(currentUnit, missingSkills);
 	}
 }
