@@ -1,5 +1,13 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
-import { Edge, Graph, Skill, Node, LearningUnit, Path } from "./types";
+import {
+	Edge,
+	Graph,
+	Skill,
+	Node,
+	LearningUnit,
+	Path,
+	UpdateSoftConstraintFunction
+} from "./types";
 import { findLearningPath } from "./fastDownward/fdFrontend";
 import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
 import { DistanceMap } from "./fastDownward/distanceMap";
@@ -156,4 +164,27 @@ function buildReturnGraph(graph: GraphLib): Graph {
 		return { from: element.v.slice(2), to: element.w.slice(2) };
 	});
 	return { nodes: nodeList, edges: edgeList };
+}
+
+/**
+ * Computes and sets suggested constraints to enforce a preferred order based on the given learning units.
+ * @param learningUnits The ordering of the learning units, for which soft constraints shall be computed to enforce the given order.
+ * @param fnUpdate The CREATE/UPDATE/DELETE function to apply the computed constraints.
+ */
+export function computeSuggestedSkills(
+	learningUnits: LearningUnit[],
+	fnUpdate: UpdateSoftConstraintFunction
+) {
+	// Iterate over all learningUnits starting at index 2 and set ordering condition to previous learningUnit
+	for (let i = 1; i < learningUnits.length; i++) {
+		const previousUnit = learningUnits[i - 1];
+		const currentUnit = learningUnits[i];
+		const missingSkills = previousUnit.teachingGoals
+			.map(goal => goal.id)
+			.filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId));
+
+		if (fnUpdate) {
+			fnUpdate(currentUnit, missingSkills);
+		}
+	}
 }
