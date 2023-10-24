@@ -393,9 +393,9 @@ describe("Path Planer", () => {
 			});
 
 			// Test: Simulate
-			computeSuggestedSkills(
+			await computeSuggestedSkills(
 				structuredPathOfLus,
-				(lu: LearningUnit, missingSkills: string[]) => {
+				async (lu: LearningUnit, missingSkills: string[]) => {
 					switch (lu.id) {
 						case path.path[0].id:
 							fail("Must not compute any constraints for the first LU");
@@ -414,9 +414,9 @@ describe("Path Planer", () => {
 			);
 
 			// Apply constraints
-			computeSuggestedSkills(
+			await computeSuggestedSkills(
 				structuredPathOfLus,
-				(lu: LearningUnit, missingSkills: string[]) => {
+				async (lu: LearningUnit, missingSkills: string[]) => {
 					lu.suggestedSkills = missingSkills.map(skill => ({
 						weight: 1,
 						skill: thirdMapHierarchy.find(s => s.id === skill)
