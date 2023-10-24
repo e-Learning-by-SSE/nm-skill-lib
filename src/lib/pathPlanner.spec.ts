@@ -1,5 +1,6 @@
 import { LearningUnit, Skill, Graph, Path } from "./types";
 import {
+	computeSuggestedSkills,
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
 	getPath
@@ -348,7 +349,7 @@ describe("Path Planer", () => {
 				const path = await getPath({
 					skills: thirdMap,
 					learningUnits: suggestedOrderingOfLus,
-					desiredSkills: firstMap.filter(skill => skill.id === "sk:3"),
+					desiredSkills: thirdMap.filter(skill => skill.id === "sk:3"),
 					optimalSolution: true,
 					contextSwitchPenalty: 1
 				});
@@ -372,6 +373,68 @@ describe("Path Planer", () => {
 				// Assert: Path should be: lu:1 -> lu:2 -> lu:3
 				expectPath(path, [["lu:1", "lu:2", "lu:3"]], 3);
 			});
+		});
+	});
+
+	describe("computeSuggestedSkills", () => {
+		it("Apply first constraints", async () => {
+			// Compute default order and exchange first to positions
+			const path = await getPath({
+				skills: thirdMapHierarchy,
+				learningUnits: structuredPathOfLus,
+				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+				optimalSolution: true,
+				contextSwitchPenalty: 1
+			});
+
+			path.path = [path.path[1], path.path[0], path.path[2]];
+			structuredPathOfLus.sort((a, b) => {
+				return path.path.indexOf(a) - path.path.indexOf(b);
+			});
+
+			// Test: Simulate
+			computeSuggestedSkills(
+				structuredPathOfLus,
+				(lu: LearningUnit, missingSkills: string[]) => {
+					switch (lu.id) {
+						case path.path[0].id:
+							fail("Must not compute any constraints for the first LU");
+						case path.path[1].id:
+							expect(missingSkills).toEqual(
+								path.path[0].teachingGoals.map(skill => skill.id)
+							);
+							break;
+						case path.path[2].id:
+							expect(missingSkills).toEqual(
+								path.path[1].teachingGoals.map(skill => skill.id)
+							);
+							break;
+					}
+				}
+			);
+
+			// Apply constraints
+			computeSuggestedSkills(
+				structuredPathOfLus,
+				(lu: LearningUnit, missingSkills: string[]) => {
+					lu.suggestedSkills = missingSkills.map(skill => ({
+						weight: 1,
+						skill: thirdMapHierarchy.find(s => s.id === skill)
+					}));
+				}
+			);
+
+			// Compute path with new constraints
+			const changedPath = await getPath({
+				skills: thirdMapHierarchy,
+				learningUnits: structuredPathOfLus,
+				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+				optimalSolution: true,
+				contextSwitchPenalty: 1
+			});
+
+			// Test: Verify that path has changed
+			expect(changedPath.path).toEqual(path.path);
 		});
 	});
 });
