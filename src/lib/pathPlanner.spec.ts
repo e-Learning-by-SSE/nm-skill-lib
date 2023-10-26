@@ -45,11 +45,6 @@ describe("Path Planer", () => {
 		newLearningUnit(firstMap, "lu:2", ["sk:1"], ["sk:2"]),
 		newLearningUnit(firstMap, "lu:3", ["sk:2"], ["sk:3"])
 	];
-	const straightPathOfLus2: LearningUnit[] = [
-		newLearningUnit(secondMap, "lu:4", [], ["sk:4"]),
-		newLearningUnit(secondMap, "lu:5", ["sk:4"], ["sk:5"]),
-		newLearningUnit(secondMap, "lu:5", ["sk:4"], ["sk:6"])
-	];
 	// lu:7 and lu:8 must be learned to understand sk:9 (which is group of sk:10 and sk:11)
 	const structuredPathOfLus: LearningUnit[] = [
 		newLearningUnit(thirdMapHierarchy, "lu:7", [], ["sk:10"]),
@@ -387,7 +382,12 @@ describe("Path Planer", () => {
 				contextSwitchPenalty: 1
 			});
 
+			if (path === null) {
+				fail("Path is null, but was not expected to be null");
+			}
+
 			path.path = [path.path[1], path.path[0], path.path[2]];
+
 			structuredPathOfLus.sort((a, b) => {
 				return path.path.indexOf(a) - path.path.indexOf(b);
 			});
@@ -417,10 +417,12 @@ describe("Path Planer", () => {
 			await computeSuggestedSkills(
 				structuredPathOfLus,
 				async (lu: LearningUnit, missingSkills: string[]) => {
-					lu.suggestedSkills = missingSkills.map(skill => ({
-						weight: 1,
-						skill: thirdMapHierarchy.find(s => s.id === skill)
-					}));
+					lu.suggestedSkills = missingSkills
+						.map(skillId => thirdMap.find(s => s.id === skillId))
+						.map(skill => ({
+							weight: 1,
+							skill: skill
+						}));
 				}
 			);
 
@@ -432,6 +434,10 @@ describe("Path Planer", () => {
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
+
+			if (changedPath === null) {
+				fail("Path is null, but was not expected to be null");
+			}
 
 			// Test: Verify that path has changed
 			expect(changedPath.path).toEqual(path.path);
