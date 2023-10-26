@@ -91,13 +91,12 @@ export async function search<LU extends LearningUnit>(
 	suggestionViolationPenalty = true
 ): Promise<Path | null> {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
-	const openListStringArray : String[] = [];
 	const closedSet = new Set<string>();
+	const openListMap = new Map();
 	while (openList.length > 0) {
 		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
 
 		const currentNode = openList.shift()!;
-		openListStringArray.shift()!;
 
 		/* Check if currentNode.state is the goal state */
 		if (currentNode.state.goalFulfilled(goal)) {
@@ -139,22 +138,18 @@ export async function search<LU extends LearningUnit>(
 			if (cost === Infinity || heuristic === Infinity) {
 				continue;
 			}
-
+			
 			const newState = currentNode.state.deriveState(lu, globalKnowledge);
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
-
+			
 			// Skip states that are already analyzed
 			if (closedSet.has(newState.getHashCode())) {
 				continue;
 			}
 
 			/* Check if node with same state is in openList */
-			const existingNodeIndex = openListStringArray.indexOf(newState.getHashCode());
-			let existingNode;
-			if (existingNodeIndex != -1) {
-				existingNode = openList.at(existingNodeIndex);
-			} 
-			
+			const existingNode = openListMap.get(newState.getHashCode());
+
 			if (existingNode) {
 				if (newNode.cost < existingNode.cost) {
 					existingNode.cost = newNode.cost;
@@ -165,19 +160,18 @@ export async function search<LU extends LearningUnit>(
 				// Inserting newNode to openList in sorted manner
 				if (openList.length == 0) {
 					openList.push(newNode);
-					openListStringArray.push(newNode.state.getHashCode());
 				} else if (openList[openList.length - 1].heuristic < newNode.heuristic) {
 					openList.push(newNode);
-					openListStringArray.push(newNode.state.getHashCode());
 				} else {
 					for (let index = 0; index < openList.length; index++) {
 						if (newNode.heuristic <= openList[index].heuristic) {
 							openList.splice(index, 0, newNode);
-							openListStringArray.splice(index, 0, newNode.state.getHashCode());
 							break;
 						}
 					}
 				}
+
+				openListMap.set(newNode.state.getHashCode(), newNode);
 			}
 		}
 	}
