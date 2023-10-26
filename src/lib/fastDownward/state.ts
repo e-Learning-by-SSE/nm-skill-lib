@@ -93,9 +93,22 @@ export class State {
 	}
 
 	deriveState(operator: LearningUnit, globalKnowledge: GlobalKnowledge) {
-		const mergedSkills = arrayUnique(
-			this.learnedSkills.concat(operator.teachingGoals.map(goal => goal.id))
-		);
+		
+		//const mergedSkills = arrayUnique(
+		//	this.learnedSkills.concat(operator.teachingGoals.map(goal => goal.id))
+		//);
+
+		const mergedSkills : string[] = [];
+		this.learnedSkills.forEach(skill => {
+			mergedSkills.push(skill);
+		});
+
+		operator.teachingGoals.forEach(goal => {
+			if (!mergedSkills.includes(goal.id)) {
+				mergedSkills.push(goal.id);
+			}
+		});
+		
 		return new State(mergedSkills, globalKnowledge);
 	}
 
