@@ -17,8 +17,8 @@ import { DistanceMap } from "./fastDownward/distanceMap";
  * @param skills The set of skills to include in the graph.
  * @returns A Promise that resolves to the connected graph.
  */
-export async function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Promise<Graph> {
-	const graph = await populateGraphWithSkills(skills);
+export function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Graph {
+	const graph = populateGraphWithSkills(skills);
 	return buildReturnGraph(graph);
 }
 
@@ -28,11 +28,11 @@ export async function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): P
  * @param skills The set of skills to include in the graph.
  * @returns A Promise that resolves to the connected graph.
  */
-export async function getConnectedGraphForLearningUnit(
+export function getConnectedGraphForLearningUnit(
 	learningUnits: ReadonlyArray<LearningUnit>,
 	skills: ReadonlyArray<Skill>
-): Promise<Graph> {
-	const graph = await populateGraphWithLearningUnits(skills, learningUnits);
+): Graph {
+	const graph = populateGraphWithLearningUnits(skills, learningUnits);
 	return buildReturnGraph(graph);
 }
 
@@ -41,11 +41,11 @@ export async function getConnectedGraphForLearningUnit(
  * @param skills The set of skills to check.
  * @returns A Promise that resolves to a boolean indicating whether the graph is acyclic.
  */
-export async function isAcyclic(
+export function isAcyclic(
 	skills: ReadonlyArray<Skill>,
 	learningUnits: ReadonlyArray<LearningUnit>
-): Promise<boolean> {
-	const graph = await populateGraphWithLearningUnits(skills, learningUnits);
+): boolean {
+	const graph = populateGraphWithLearningUnits(skills, learningUnits);
 	return alg.isAcyclic(graph);
 }
 
@@ -107,7 +107,7 @@ export async function getPath<LU extends LearningUnit>({
 	return path;
 }
 
-async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
+function populateGraphWithSkills(skills: ReadonlyArray<Skill>): GraphLib {
 	const graph = new GraphLib({ directed: true, multigraph: true });
 
 	skills.forEach(skill => {
@@ -119,7 +119,7 @@ async function populateGraphWithSkills(skills: ReadonlyArray<Skill>): Promise<Gr
 	return graph;
 }
 
-async function populateGraphWithSkillsAndReverse(skills: ReadonlyArray<Skill>): Promise<GraphLib> {
+function populateGraphWithSkillsAndReverse(skills: ReadonlyArray<Skill>): GraphLib {
 	const graph = new GraphLib({ directed: true, multigraph: true });
 
 	skills.forEach(skill => {
@@ -133,14 +133,14 @@ async function populateGraphWithSkillsAndReverse(skills: ReadonlyArray<Skill>): 
 	return graph;
 }
 
-async function populateGraphWithLearningUnits(
+function populateGraphWithLearningUnits(
 	skills: ReadonlyArray<Skill>,
 	learningUnits: ReadonlyArray<LearningUnit>,
 	reverse = false
-): Promise<GraphLib> {
+): GraphLib {
 	const graph = reverse
-		? await populateGraphWithSkills(skills)
-		: await populateGraphWithSkillsAndReverse(skills);
+		? populateGraphWithSkills(skills)
+		: populateGraphWithSkillsAndReverse(skills);
 	learningUnits.forEach(lu => {
 		graph.setNode("lu" + lu.id, lu);
 		lu.requiredSkills.forEach(req => {

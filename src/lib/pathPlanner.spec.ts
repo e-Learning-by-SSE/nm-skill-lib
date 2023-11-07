@@ -79,9 +79,9 @@ describe("Path Planer", () => {
 	];
 
 	describe("getConnectedGraphForSkill - Skills Only", () => {
-		it("Only skills available; no nested skills -> return all skills of the same map", async () => {
+		it("Only skills available; no nested skills -> return all skills of the same map", () => {
 			// Test: Compute graph
-			const graph = await getConnectedGraphForSkill(firstMap);
+			const graph = getConnectedGraphForSkill(firstMap);
 
 			// Assert: All skills of the first map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -91,9 +91,9 @@ describe("Path Planer", () => {
 			expect(nodeElements).toEqual(firstMap);
 		});
 
-		it("Only skills available; nested skills -> return all skills of the same map", async () => {
+		it("Only skills available; nested skills -> return all skills of the same map", () => {
 			// Test: Compute graph
-			const graph = await getConnectedGraphForSkill(thirdMapHierarchy);
+			const graph = getConnectedGraphForSkill(thirdMapHierarchy);
 
 			// Assert: All skills of the third map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -103,9 +103,9 @@ describe("Path Planer", () => {
 			expect(nodeElements).toEqual(thirdMapHierarchy);
 		});
 
-		it("Skills & LearningUnits available; no nested skills -> return all skills of the same map", async () => {
+		it("Skills & LearningUnits available; no nested skills -> return all skills of the same map", () => {
 			// Test: Compute graph
-			const graph = await getConnectedGraphForSkill(firstMap);
+			const graph = getConnectedGraphForSkill(firstMap);
 
 			// Assert: All skills of the first map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -117,9 +117,9 @@ describe("Path Planer", () => {
 	});
 
 	describe("getConnectedGraphForSkill - Skills & LearningUnits", () => {
-		it("Only skills available; no nested skills -> return all skills of the same map", async () => {
+		it("Only skills available; no nested skills -> return all skills of the same map", () => {
 			// Test: Compute graph
-			const graph = await getConnectedGraphForSkill(firstMap);
+			const graph = getConnectedGraphForSkill(firstMap);
 
 			// Assert: All skills of the first map are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -131,7 +131,7 @@ describe("Path Planer", () => {
 
 		it("Skills & LearningUnits using Skills of the same repository; no nested skills -> return all skills and LearningUnits", async () => {
 			// Test: Compute graph
-			const graph = await getConnectedGraphForLearningUnit(straightPathOfLus, firstMap);
+			const graph = getConnectedGraphForLearningUnit(straightPathOfLus, firstMap);
 
 			// Assert: All skills of the first map and all LUs of the straight path are returned
 			const [nodeIDs, nodeElements] = extractElements(graph);
@@ -147,7 +147,7 @@ describe("Path Planer", () => {
 
 		it("Skills & LearningUnits of multiple repositories; no nested skills -> return only connected elements", async () => {
 			// Test: Compute graph
-			const graph = await getConnectedGraphForLearningUnit(straightPathOfLus, firstMap);
+			const graph = getConnectedGraphForLearningUnit(straightPathOfLus, firstMap);
 
 			// Assert: All skills of the first map and all LUs of straightPathOfLus1 are returned
 			// straightPathOfLus2 is not connected and must not be returned
@@ -417,10 +417,12 @@ describe("Path Planer", () => {
 			await computeSuggestedSkills(
 				structuredPathOfLus,
 				async (lu: LearningUnit, missingSkills: string[]) => {
-					lu.suggestedSkills = missingSkills.map(skill => ({
-						weight: 1,
-						skill: thirdMapHierarchy.find(s => s.id === skill)
-					}));
+					lu.suggestedSkills = missingSkills
+						.filter(skill => skill != undefined)
+						.map(skill => ({
+							weight: 1,
+							skill: thirdMapHierarchy.find(s => s.id === skill)
+						}));
 				}
 			);
 
