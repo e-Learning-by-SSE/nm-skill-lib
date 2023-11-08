@@ -18,7 +18,7 @@ import { DistanceMap } from "./fastDownward/distanceMap";
  * @returns A Promise that resolves to the connected graph.
  */
 export function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Graph {
-	const graph = populateGraphWithSkills(skills);
+	const graph = populateGraph({ skills, parentChild: true, childParent: false });
 	return buildReturnGraph(graph);
 }
 
@@ -32,7 +32,7 @@ export function getConnectedGraphForLearningUnit(
 	learningUnits: ReadonlyArray<LearningUnit>,
 	skills: ReadonlyArray<Skill>
 ): Graph {
-	const graph = populateGraphWithLearningUnits(skills, learningUnits);
+	const graph = populateGraph({ skills, learningUnits });
 	return buildReturnGraph(graph);
 }
 
@@ -45,7 +45,7 @@ export function isAcyclic(
 	skills: ReadonlyArray<Skill>,
 	learningUnits: ReadonlyArray<LearningUnit>
 ): boolean {
-	const graph = populateGraphWithLearningUnits(skills, learningUnits);
+	const graph = populateGraph({ skills, learningUnits });
 	return alg.isAcyclic(graph);
 }
 
@@ -107,50 +107,71 @@ export async function getPath<LU extends LearningUnit>({
 	return path;
 }
 
-function populateGraphWithSkills(skills: ReadonlyArray<Skill>): GraphLib {
+/**
+ * Builds a directed multi-graph from the given set of Skills and LearningUnits.
+ * @param skills: The Skills to include in the graph.
+ * @param learningUnits: Optionally, the LearningUnits to include in the graph.
+ * @param parentChild: Whether to include parent-child relationships between Skills (Parent -> Child; default: true).
+ * @param childParent: Whether to include child-parent relationships between Skills (Child -> Parent; default: false).
+ * @param suggestions: Whether to include suggested relationships between Skills and LearningUnits, considered like requirements
+ * (Suggested Skill -> LearningUnit; default: true).
+ * @returns The graph which may be used for graph-based algorithms.
+ */
+function populateGraph({
+	skills,
+	learningUnits,
+	parentChild = true,
+	childParent = false,
+	suggestions = true
+}: {
+	skills: ReadonlyArray<Skill>;
+	learningUnits?: ReadonlyArray<LearningUnit>;
+	parentChild?: boolean;
+	childParent?: boolean;
+	suggestions?: boolean;
+}): GraphLib {
 	const graph = new GraphLib({ directed: true, multigraph: true });
 
+	// Add Skills
 	skills.forEach(skill => {
-		graph.setNode("sk" + skill.id, skill);
-		skill.nestedSkills.forEach(child => {
-			graph.setEdge("sk" + skill.id, "sk" + child);
-		});
+		const nodeName = "sk" + skill.id;
+		graph.setNode(nodeName, skill);
+		if (parentChild || childParent) {
+			skill.nestedSkills.forEach(child => {
+				const childName = "sk" + child;
+				if (parentChild) {
+					// Parent -> Child
+					graph.setEdge(nodeName, childName);
+				}
+				if (childParent) {
+					// Child -> Parent
+					graph.setEdge(childName, nodeName);
+				}
+			});
+		}
 	});
-	return graph;
-}
 
-function populateGraphWithSkillsAndReverse(skills: ReadonlyArray<Skill>): GraphLib {
-	const graph = new GraphLib({ directed: true, multigraph: true });
+	// Add LearningUnits, if defined
+	if (learningUnits) {
+		learningUnits.forEach(lu => {
+			const luName = "lu" + lu.id;
+			graph.setNode("lu" + lu.id, lu);
+			lu.requiredSkills.forEach(req => {
+				graph.setEdge("sk" + req.id, luName);
+			});
 
-	skills.forEach(skill => {
-		graph.setNode("sk" + skill.id, skill);
-		skill.nestedSkills.forEach(child => {
-			const childName = "sk" + child;
-			graph.setEdge("sk" + skill.id, childName);
-			graph.setEdge(childName, "sk" + skill.id);
+			lu.teachingGoals.forEach(goal => {
+				graph.setEdge(luName, "sk" + goal.id);
+			});
+
+			if (suggestions) {
+				lu.suggestedSkills.forEach(suggestion => {
+					// Analogous to requirements: Skill -> LearningUnit
+					graph.setEdge("sk" + suggestion.skill.id, luName);
+				});
+			}
 		});
-	});
-	return graph;
-}
-
-function populateGraphWithLearningUnits(
-	skills: ReadonlyArray<Skill>,
-	learningUnits: ReadonlyArray<LearningUnit>,
-	reverse = false
-): GraphLib {
-	const graph = reverse
-		? populateGraphWithSkills(skills)
-		: populateGraphWithSkillsAndReverse(skills);
-	learningUnits.forEach(lu => {
-		graph.setNode("lu" + lu.id, lu);
-		lu.requiredSkills.forEach(req => {
-			graph.setEdge("sk" + req.id, "lu" + lu.id);
-		});
-
-		lu.teachingGoals.forEach(goal => {
-			graph.setEdge("lu" + lu.id, "sk" + goal.id);
-		});
-	});
+	}
 	return graph;
 }
 
@@ -185,4 +206,49 @@ export async function computeSuggestedSkills(
 
 		await fnUpdate(currentUnit, missingSkills);
 	}
+}
+
+/**
+ * Detects cycles in the given set of Skills and LearningUnits.
+ * However, there exist corner cases that are not covered by this function.
+ * @param skills The Skills to check. Will also check for cycles in the nestedSkills.
+ * @param learningUnits The LearningUnits to check. Will check for cycles among the requiredSkills/suggestions and teachingGoals.
+ * @returns An empty array if no cycles were detected or an array of detected cycles.
+ */
+export function findCycles<S extends Skill, LU extends LearningUnit>(
+	skills: ReadonlyArray<S>,
+	learningUnits?: ReadonlyArray<LU>
+) {
+	// Mapping of internal IDs to objects
+	const mapping = new Map<string, S | LU>();
+	for (const skill of skills) {
+		mapping.set("sk" + skill.id, skill);
+	}
+	for (const lu of learningUnits) {
+		mapping.set("lu" + lu.id, lu);
+	}
+
+	// Build graph
+	const graph = populateGraph({
+		skills,
+		learningUnits,
+		parentChild: false,
+		childParent: true,
+		suggestions: true
+	});
+
+	const result: (S | LU)[][] = [];
+
+	// isAcyclic is much more performant than findCycles -> Used as pre-check
+	if (!alg.isAcyclic(graph)) {
+		const cycles = alg.findCycles(graph);
+
+		// Map (internal) IDs back to objects
+		for (const cycle of cycles) {
+			const cycleElements = cycle.map(nodeId => mapping.get(nodeId));
+			result.push(cycleElements);
+		}
+	}
+
+	return result;
 }

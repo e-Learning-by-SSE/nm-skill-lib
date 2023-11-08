@@ -1,6 +1,7 @@
 import { LearningUnit, Skill, Graph, Path } from "./types";
 import {
 	computeSuggestedSkills,
+	findCycles,
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
 	getPath
@@ -15,12 +16,6 @@ describe("Path Planer", () => {
 		{ id: "sk:1", repositoryId: "1", nestedSkills: [] },
 		{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
 		{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
-	].sort((a, b) => a.id.localeCompare(b.id));
-	// Flat map
-	const secondMap: Skill[] = [
-		{ id: "sk:4", repositoryId: "2", nestedSkills: [] },
-		{ id: "sk:5", repositoryId: "2", nestedSkills: [] },
-		{ id: "sk:6", repositoryId: "2", nestedSkills: [] }
 	].sort((a, b) => a.id.localeCompare(b.id));
 	// Flat map, but longer (no conflict with Map1 as they are from a different repository)
 	const thirdMap: Skill[] = [
@@ -441,6 +436,197 @@ describe("Path Planer", () => {
 
 			// Test: Verify that path has changed
 			expect(changedPath.path).toEqual(path.path);
+		});
+	});
+
+	describe("findCycles", () => {
+		/**
+		 * Tests:
+		 * SK1 -> SK2 -> SK4 has no cycles
+		 */
+		it("Tree of Skills -> OK", () => {
+			const structuredMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:4", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:5", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const cycles = findCycles(structuredMap, []);
+			expect(cycles).toEqual([]);
+		});
+
+		/**
+		 * Tests:
+		 * SK1 -> SK2 -> SK4 -> SK1 has a cycle
+		 */
+		it("Cycle of Skills -> Cycle", () => {
+			const structuredMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:4", repositoryId: "1", nestedSkills: ["sk:1"] },
+				{ id: "sk:5", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const cycles = findCycles(structuredMap, []);
+			expect(cycles.length).toEqual(1);
+
+			const expectedIDs = ["sk:1", "sk:2", "sk:4"];
+			const expected = structuredMap
+				.filter(skill => expectedIDs.includes(skill.id))
+				.sort((a, b) => a.id.localeCompare(b.id));
+			cycles[0] = (cycles[0] as Skill[]).sort((a, b) => a.id.localeCompare(b.id));
+			expect(cycles).toEqual([expected]);
+		});
+
+		/**
+		 * Tests:
+		 * {} -> LU1 -> SK1 -> LU2 -> SK2 -> LU3 -> SK3 has no cycles
+		 */
+		it("Cycle-free LearningUnits -> OK", () => {
+			const skillMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const learningUnits: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:1", [], ["sk:1"]),
+				newLearningUnit(firstMap, "lu:2", ["sk:1"], ["sk:2"]),
+				newLearningUnit(firstMap, "lu:3", ["sk:2"], ["sk:3"])
+			];
+
+			const cycles = findCycles(skillMap, learningUnits);
+			expect(cycles).toEqual([]);
+		});
+
+		/**
+		 * Tests:
+		 * SK3 -> LU1 -> SK1 -> LU2 -> SK2 -> LU3 -> SK3 has a cycle
+		 */
+		it("Flat cycle of LearningUnits -> Cycle", () => {
+			const skillMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const learningUnits: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:1", ["sk:3"], ["sk:1"]),
+				newLearningUnit(firstMap, "lu:2", ["sk:1"], ["sk:2"]),
+				newLearningUnit(firstMap, "lu:3", ["sk:2"], ["sk:3"])
+			];
+
+			const cycles = findCycles(skillMap, learningUnits);
+			expect(cycles.length).toEqual(1);
+
+			// All elements are affected (Skills & LUs)
+			const affectedIds = cycles[0].map(elem => elem.id).sort((a, b) => a.localeCompare(b));
+			const expectedIds = [...skillMap, ...learningUnits]
+				.map(elem => elem.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(affectedIds).toEqual(expectedIds);
+		});
+
+		/**
+		 * Tests
+		 * Child -> LU1 -> Parent has no cycles
+		 */
+		it("Nested Skill required to learn parent Skill -> OK", () => {
+			const structuredMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const learningUnits: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:1", ["sk:2"], ["sk:1"])
+			];
+
+			const cycles = findCycles(structuredMap, learningUnits);
+			expect(cycles).toEqual([]);
+		});
+
+		/**
+		 * Tests
+		 * Parent -> LU1 -> Child has a cycle
+		 */
+		it("Parent Skill required to learn nested Skill -> Cycle", () => {
+			const structuredMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const learningUnits: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:1", ["sk:1"], ["sk:2"])
+			];
+
+			const cycles = findCycles(structuredMap, learningUnits);
+			expect(cycles.length).toEqual(1);
+
+			// All elements are affected, except for SK3
+			const affectedIds = cycles[0].map(elem => elem.id).sort((a, b) => a.localeCompare(b));
+			const expectedIds = [
+				...structuredMap.filter(skill => skill.id !== "sk:3"),
+				...learningUnits
+			]
+				.map(elem => elem.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(affectedIds).toEqual(expectedIds);
+		});
+
+		it("Suggested Skill without Cycle -> OK", () => {
+			const skillMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const learningUnits: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:1", ["sk:1"], ["sk:2"]),
+				newLearningUnit(
+					firstMap,
+					"lu:2",
+					["sk:2"],
+					["sk:3"],
+					[{ weight: 0.1, skill: "sk:1" }]
+				)
+			];
+
+			const cycles = findCycles(skillMap, learningUnits);
+			expect(cycles).toEqual([]);
+		});
+
+		it("Suggested Skill with Cycle -> Cycle", () => {
+			const skillMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] }
+			];
+
+			const learningUnits: LearningUnit[] = [
+				newLearningUnit(
+					skillMap,
+					"lu:1",
+					["sk:1"],
+					["sk:2"],
+					[{ weight: 0.1, skill: "sk:3" }]
+				),
+				newLearningUnit(skillMap, "lu:2", ["sk:2"], ["sk:3"])
+			];
+
+			const cycles = findCycles(skillMap, learningUnits);
+			expect(cycles.length).toEqual(1);
+
+			// All elements are affected, except for SK1
+			const affectedIds = cycles[0].map(elem => elem.id).sort((a, b) => a.localeCompare(b));
+			const expectedIds = [...skillMap.filter(skill => skill.id !== "sk:1"), ...learningUnits]
+				.map(elem => elem.id)
+				.sort((a, b) => a.localeCompare(b));
+			expect(affectedIds).toEqual(expectedIds);
 		});
 	});
 });
