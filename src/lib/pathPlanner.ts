@@ -224,8 +224,10 @@ export function findCycles<S extends Skill, LU extends LearningUnit>(
 	for (const skill of skills) {
 		mapping.set("sk" + skill.id, skill);
 	}
-	for (const lu of learningUnits) {
-		mapping.set("lu" + lu.id, lu);
+	if (learningUnits) {
+		for (const lu of learningUnits) {
+			mapping.set("lu" + lu.id, lu);
+		}
 	}
 
 	// Build graph
@@ -245,7 +247,9 @@ export function findCycles<S extends Skill, LU extends LearningUnit>(
 
 		// Map (internal) IDs back to objects
 		for (const cycle of cycles) {
-			const cycleElements = cycle.map(nodeId => mapping.get(nodeId));
+			const cycleElements = cycle
+				.map(nodeId => mapping.get(nodeId))
+				.filter(element => element !== undefined) as (S | LU)[];
 			result.push(cycleElements);
 		}
 	}
