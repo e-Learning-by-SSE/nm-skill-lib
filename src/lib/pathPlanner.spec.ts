@@ -164,7 +164,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				learningUnits: straightPathOfLus,
-				desiredSkills: [firstMap[2]],
+				goal: [firstMap[2]],
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
@@ -181,8 +181,8 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				learningUnits: straightPathOfLus,
-				desiredSkills: [firstMap[2]],
-				ownedSkill: [firstMap[1]],
+				goal: [firstMap[2]],
+				knowledge: [firstMap[1]],
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
@@ -197,7 +197,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMapHierarchy,
 				learningUnits: structuredPathOfLus,
-				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+				goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
@@ -218,7 +218,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: firstMap,
 				learningUnits: multipleRequirementsOfLu,
-				desiredSkills: firstMap.filter(skill => skill.id === "sk:3"),
+				goal: firstMap.filter(skill => skill.id === "sk:3"),
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
@@ -239,7 +239,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: [...firstMap, ...thirdMapHierarchy],
 				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
-				desiredSkills: [
+				goal: [
 					...firstMap.filter(skill => skill.id === "sk:3"),
 					...thirdMapHierarchy.filter(skill => skill.id === "sk:8")
 				],
@@ -285,7 +285,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMap,
 				learningUnits: alternativeLanguagesOfLus,
-				desiredSkills: thirdMap.filter(skill => skill.id === "sk:4"),
+				goal: thirdMap.filter(skill => skill.id === "sk:4"),
 				fnCost: fnCost,
 				optimalSolution: true,
 				contextSwitchPenalty: 1
@@ -310,7 +310,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMap,
 				learningUnits: alternativeCostsOfLus,
-				desiredSkills: thirdMap.filter(skill => skill.id === "sk:3"),
+				goal: thirdMap.filter(skill => skill.id === "sk:3"),
 				fnCost: fnCost,
 				optimalSolution: true,
 				contextSwitchPenalty: 1
@@ -339,7 +339,7 @@ describe("Path Planer", () => {
 				const path = await getPath({
 					skills: thirdMap,
 					learningUnits: suggestedOrderingOfLus,
-					desiredSkills: thirdMap.filter(skill => skill.id === "sk:3"),
+					goal: thirdMap.filter(skill => skill.id === "sk:3"),
 					optimalSolution: true,
 					contextSwitchPenalty: 1
 				});
@@ -353,9 +353,7 @@ describe("Path Planer", () => {
 				const path = await getPath({
 					skills: thirdMap,
 					learningUnits: suggestedOrderingOfLus,
-					desiredSkills: firstMap.filter(
-						skill => skill.id === "sk:3" || skill.id === "sk:2"
-					),
+					goal: firstMap.filter(skill => skill.id === "sk:3" || skill.id === "sk:2"),
 					optimalSolution: true,
 					contextSwitchPenalty: 1
 				});
@@ -372,7 +370,7 @@ describe("Path Planer", () => {
 			const path = await getPath({
 				skills: thirdMapHierarchy,
 				learningUnits: structuredPathOfLus,
-				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+				goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
@@ -428,7 +426,7 @@ describe("Path Planer", () => {
 			const changedPath = await getPath({
 				skills: thirdMapHierarchy,
 				learningUnits: structuredPathOfLus,
-				desiredSkills: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+				goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
 				optimalSolution: true,
 				contextSwitchPenalty: 1
 			});
