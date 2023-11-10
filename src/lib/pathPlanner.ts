@@ -52,23 +52,27 @@ export function isAcyclic(
 /**
  * Returns the path from the root node to the given skill in the graph.
  * @param skills The set of skills to include in the graph.
+ * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
  * @param learningUnits All learning units of the system to learn new skills.
- * @param goalDef The goal definition to use for finding the path.
- * @returns A Promise that resolves to an array of node IDs representing the path.
+ * @param knowledge The knowledge of the user (skills already learned).
+ * @param optimalSolution Whether to enforce an optimal solution (true) or to use a greedy approach which may produce a suboptimal solution (false).
+ * @param fnCost The cost function to use for computing the cost of a path, e.g. the duration of a learning unit o user specific customization requests like preferred language, density, gravity, etc.
+ * @param contextSwitchPenalty The penalty for switching among topics which are not build on each other (default: 1.2).
+ * @returns An optimal path of LearningUnits that leads to the specified skills (goal) or null if no path was found.
  */
 export async function getPath<LU extends LearningUnit>({
 	skills,
-	desiredSkills,
+	goal,
 	learningUnits,
-	ownedSkill = [],
+	knowledge = [],
 	optimalSolution = false,
 	fnCost,
 	contextSwitchPenalty = 1.2
 }: {
 	skills: ReadonlyArray<Skill>;
 	learningUnits: ReadonlyArray<LU>;
-	desiredSkills: Skill[];
-	ownedSkill?: Skill[];
+	goal: Skill[];
+	knowledge?: Skill[];
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
 	contextSwitchPenalty?: number;
@@ -85,14 +89,14 @@ export async function getPath<LU extends LearningUnit>({
 	};
 
 	// Filter LearningUnits which cannot reach the goal
-	const goalIds = desiredSkills.map(skill => skill.id);
+	const goalIds = goal.map(skill => skill.id);
 	const filteredLearningUnits = learningUnits.filter(
 		lu => distances.getDistances(lu.id, goalIds) !== Infinity
 	);
 
 	const path = await findLearningPath({
-		knowledge: ownedSkill,
-		goal: desiredSkills,
+		knowledge: knowledge,
+		goal: goal,
 		skills: skills,
 		learningUnits: filteredLearningUnits,
 		optimalSolution: optimalSolution,

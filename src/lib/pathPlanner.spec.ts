@@ -412,12 +412,15 @@ describe("Path Planer", () => {
 			await computeSuggestedSkills(
 				structuredPathOfLus,
 				async (lu: LearningUnit, missingSkills: string[]) => {
-					lu.suggestedSkills = missingSkills
+					const suggestedSkills = missingSkills
 						.filter(skill => skill != undefined)
-						.map(skill => ({
-							weight: 1,
-							skill: thirdMapHierarchy.find(s => s.id === skill)
-						}));
+						.map(skill => thirdMapHierarchy.find(s => s.id === skill))
+						.filter(skill => skill != undefined) as Skill[];
+
+					lu.suggestedSkills = suggestedSkills.map(skill => ({
+						weight: 1,
+						skill: skill
+					}));
 				}
 			);
 
