@@ -65,7 +65,10 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 		learningUnits,
 		fnCost,
 		fnHeuristic,
-		contextSwitchPenalty
+		contextSwitchPenalty,
+		true,
+		alternatives,
+		alternativesTimeout
 	);
 }
 
