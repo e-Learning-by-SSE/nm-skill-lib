@@ -88,14 +88,14 @@ export async function search<LU extends LearningUnit>(
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction<LU>,
 	contextSwitchPenalty = 1.2,
-	suggestionViolationPenalty = true
+	suggestionViolationPenalty = true,
+	alternatives = 1,
+	alternativesTimeout = 5000
 ): Promise<Path[] | null> {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
 	const closedSet = new Set<string>();
 	const openListMap = new Map();
-	const pathList : Path[] = [];
-	const alternatives = 5;
-	const alternativesTimeout = 5000;
+	const pathList: Path[] = [];
 	let duration = 0;
 
 	while (openList.length > 0) {
@@ -150,10 +150,10 @@ export async function search<LU extends LearningUnit>(
 			if (cost === Infinity || heuristic === Infinity) {
 				continue;
 			}
-			
+
 			const newState = currentNode.state.deriveState(lu, globalKnowledge);
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
-			
+
 			// Skip states that are already analyzed
 			if (closedSet.has(newState.getHashCode())) {
 				continue;
@@ -194,7 +194,6 @@ export async function search<LU extends LearningUnit>(
 		if (duration > alternativesTimeout) {
 			return pathList;
 		}
-		
 	}
 
 	if (pathList.length > 0) {

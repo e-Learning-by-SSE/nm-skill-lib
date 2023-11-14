@@ -76,6 +76,61 @@ export async function getPath<LU extends LearningUnit>({
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
 	contextSwitchPenalty?: number;
+}): Promise<Path | null> {
+	const paths = await getPaths({
+		skills,
+		goal,
+		learningUnits,
+		knowledge,
+		optimalSolution,
+		fnCost,
+		contextSwitchPenalty,
+		alternatives: 1,
+		alternativesTimeout: null
+	});
+
+	if (paths && paths.length > 0) {
+		return paths[0];
+	} else {
+		return null;
+	}
+}
+
+/**
+ * Returns multiple paths from the root node to the given skill in the graph.
+ * @param skills The set of skills to include in the graph.
+ * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
+ * @param learningUnits All learning units of the system to learn new skills.
+ * @param knowledge The knowledge of the user (skills already learned).
+ * @param optimalSolution Whether to enforce an optimal solution (true) or to use a greedy approach which may produce a suboptimal solution (false).
+ * @param fnCost The cost function to use for computing the cost of a path, e.g. the duration of a learning unit o user specific customization requests like preferred language, density, gravity, etc.
+ * @param contextSwitchPenalty The penalty for switching among topics which are not build on each other (default: 1.2).
+ * @param alternatives The number of alternative paths to compute.
+ * @param alternativesTimeout The timeout in milliseconds for computing the alternatives.
+ * If only one path shall be computed, this value may be set to null to ignore the timeout.
+ * Otherwise, a null value will be replaced by a default timeout of 5000ms.
+ * @returns Optimal paths of LearningUnits that leads to the specified skills (goal) or null if no path was found.
+ */
+export async function getPaths<LU extends LearningUnit>({
+	skills,
+	goal,
+	learningUnits,
+	knowledge = [],
+	optimalSolution = false,
+	fnCost,
+	contextSwitchPenalty = 1.2,
+	alternatives = 5,
+	alternativesTimeout = 5000
+}: {
+	skills: ReadonlyArray<Skill>;
+	learningUnits: ReadonlyArray<LU>;
+	goal: Skill[];
+	knowledge?: Skill[];
+	optimalSolution?: boolean;
+	fnCost?: CostFunction<LU>;
+	contextSwitchPenalty?: number;
+	alternatives: number;
+	alternativesTimeout: number | null;
 }): Promise<Path[] | null> {
 	const startTime = new Date().getTime();
 
@@ -94,6 +149,11 @@ export async function getPath<LU extends LearningUnit>({
 		lu => distances.getDistances(lu.id, goalIds) !== Infinity
 	);
 
+	// Ensure timeout if more than one path should be computed
+	if (alternatives > 1 && alternativesTimeout === null) {
+		alternativesTimeout = 5000;
+	}
+
 	const path = await findLearningPath({
 		knowledge: knowledge,
 		goal: goal,
@@ -102,7 +162,9 @@ export async function getPath<LU extends LearningUnit>({
 		optimalSolution: optimalSolution,
 		fnCost: fnCost,
 		fnHeuristic: fnHeuristic,
-		contextSwitchPenalty: contextSwitchPenalty
+		contextSwitchPenalty: contextSwitchPenalty,
+		alternatives,
+		alternativesTimeout
 	});
 
 	const duration = new Date().getTime() - startTime;
