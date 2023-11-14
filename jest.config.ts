@@ -11,6 +11,7 @@ export default {
 		collectCoverageFrom: ["**/*.(t|j)s"],
 		testEnvironment: "node"
 	},
+	coverageReporters: ["clover", "cobertura", "text"],
 
 	// preset: './jest.preset.js',
 	testEnvironment: "node",

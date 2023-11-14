@@ -6,5 +6,5 @@
 		"source.fixAll.eslint": true
 	},
 	"editor.formatOnPaste": false,
-	"cSpell.words": ["dijkstra"]
+	"cSpell.words": ["cobertura", "dijkstra"]
 }

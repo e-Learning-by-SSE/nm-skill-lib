@@ -37,16 +37,12 @@ pipeline {
                 sh 'npm run test:jenkins'
             }
             post {
-                success {
-                    step([
-                        $class: 'CloverPublisher',
-                        cloverReportDir: 'output/test/coverage/',
-                        cloverReportFileName: 'clover.xml',
-                        healthyTarget: [methodCoverage: 70, conditionalCoverage: 80, statementCoverage: 80],
-                        unhealthyTarget: [methodCoverage: 50, conditionalCoverage: 50, statementCoverage: 50],
-                        failingTarget: [methodCoverage: 0, conditionalCoverage: 0, statementCoverage: 0]
-                    ])
+                success {                    
+                    // Test Results
                     junit 'output/test/junit*.xml'
+                    
+                    // New Coverage Tool: Cobertura + Coverage Plugin
+                    recordCoverage qualityGates: [[metric: 'LINE', threshold: 60.0], [metric: 'BRANCH', threshold: 60.0]], tools: [[parser: 'COBERTURA', pattern: 'output/test/coverage/cobertura-coverage.xml']]
                 }
             }
         }
