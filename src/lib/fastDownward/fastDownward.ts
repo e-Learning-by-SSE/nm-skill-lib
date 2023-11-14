@@ -90,7 +90,7 @@ export async function search<LU extends LearningUnit>(
 	contextSwitchPenalty = 1.2,
 	suggestionViolationPenalty = true,
 	alternatives = 1,
-	alternativesTimeout = 5000
+	alternativesTimeout: number | null = 5000
 ): Promise<Path[] | null> {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
 	const closedSet = new Set<string>();
@@ -123,8 +123,6 @@ export async function search<LU extends LearningUnit>(
 			if (pathList.length == alternatives) {
 				return pathList;
 			}
-
-			//return path;
 		}
 
 		closedSet.add(currentNode.state.getHashCode());
@@ -191,7 +189,7 @@ export async function search<LU extends LearningUnit>(
 
 		duration = duration + new Date().getTime() - startTime;
 
-		if (duration > alternativesTimeout) {
+		if (alternativesTimeout && duration > alternativesTimeout) {
 			return pathList;
 		}
 	}
