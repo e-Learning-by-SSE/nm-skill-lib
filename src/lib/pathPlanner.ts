@@ -76,7 +76,7 @@ export async function getPath<LU extends LearningUnit>({
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
 	contextSwitchPenalty?: number;
-}): Promise<Path | null> {
+}): Promise<Path[] | null> {
 	const startTime = new Date().getTime();
 
 	const distances = new DistanceMap(skills, learningUnits, fnCost);

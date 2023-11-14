@@ -89,12 +89,18 @@ export async function search<LU extends LearningUnit>(
 	fnHeuristic: HeuristicFunction<LU>,
 	contextSwitchPenalty = 1.2,
 	suggestionViolationPenalty = true
-): Promise<Path | null> {
+): Promise<Path[] | null> {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
 	const closedSet = new Set<string>();
 	const openListMap = new Map();
+	const pathList : Path[] = [];
+	const alternatives = 5;
+	const alternativesTimeout = 5000;
+	let duration = 0;
+
 	while (openList.length > 0) {
 		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
+		const startTime = new Date().getTime();
 
 		const currentNode = openList.shift()!;
 
@@ -112,7 +118,13 @@ export async function search<LU extends LearningUnit>(
 				}
 				node = node.parent;
 			}
-			return path;
+			pathList.push(path);
+
+			if (pathList.length == alternatives) {
+				return pathList;
+			}
+
+			//return path;
 		}
 
 		closedSet.add(currentNode.state.getHashCode());
@@ -160,12 +172,14 @@ export async function search<LU extends LearningUnit>(
 				// Inserting newNode to openList in sorted manner
 				if (openList.length == 0) {
 					openList.push(newNode);
-				} else if (openList[openList.length - 1].heuristic < newNode.heuristic) {
+				} else if (openList[openList.length - 1].heuristic <= newNode.heuristic) {
 					openList.push(newNode);
+				} else if (openList[0].heuristic >= newNode.heuristic) {
+					openList.unshift(newNode);
 				} else {
-					for (let index = 0; index < openList.length; index++) {
-						if (newNode.heuristic <= openList[index].heuristic) {
-							openList.splice(index, 0, newNode);
+					for (let index = openList.length - 2; index > 0; index--) {
+						if (newNode.heuristic >= openList[index].heuristic) {
+							openList.splice(index + 1, 0, newNode);
 							break;
 						}
 					}
@@ -174,6 +188,17 @@ export async function search<LU extends LearningUnit>(
 				openListMap.set(newNode.state.getHashCode(), newNode);
 			}
 		}
+
+		duration = duration + new Date().getTime() - startTime;
+
+		if (duration > alternativesTimeout) {
+			return pathList;
+		}
+		
+	}
+
+	if (pathList.length > 0) {
+		return pathList;
 	}
 
 	return null;

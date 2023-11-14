@@ -34,7 +34,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
-}): Promise<Path | null> {
+}): Promise<Path[] | null> {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const globalKnowledge = new GlobalKnowledge(skills);
 	const initialState = new State(
@@ -134,11 +134,11 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 		const partialPath = await path;
 		if (partialPath) {
 			// Glue partial paths together and add learned skills to the knowledge to avoid learning them twice
-			pathResult.path.push(...partialPath.path);
-			pathResult.cost += partialPath.cost;
-			const learnedSkills = partialPath.path
-				.map(lu => learningUnits.find(l => l.id === lu.id)!)
-				.flatMap(lu => lu.teachingGoals);
+			pathResult.path.push(...partialPath.values().next().value.path);
+			pathResult.cost += partialPath.values().next().value.cost;
+			const learnedSkills = partialPath.values().next().value.path
+				.map((lu: { id: string; }) => learningUnits.find(l => l.id === lu.id)!)
+				.flatMap((lu: { teachingGoals: any; }) => lu.teachingGoals);
 			// .map(goal => skills.find(skill => skill === goal)!);
 			knowledge = [...knowledge, ...learnedSkills];
 		} else {
@@ -147,7 +147,9 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 		}
 	}
 
-	return pathResult;
+	const pathList : Path[] = [];
+	pathList.push(pathResult);
+	return pathList;
 }
 
 /**
