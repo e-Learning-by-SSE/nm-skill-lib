@@ -635,6 +635,9 @@ describe("Path Planer", () => {
 	describe("alternativePaths", () => {
 
 		it("Compute more than one path", async () => {
+			const alternatives = 4;
+			const alternativesTimeout = 5000;
+
 			// Test: Compute paths
 			const paths = await getPaths({
 				skills: [...firstMap, ...thirdMapHierarchy],
@@ -647,8 +650,8 @@ describe("Path Planer", () => {
 				],
 				optimalSolution: true,
 				contextSwitchPenalty: 1,
-				alternatives: 4,
-				alternativesTimeout: 5000
+				alternatives: alternatives,
+				alternativesTimeout: alternativesTimeout
 			});
 
 			// Assert: Compute at least two paths:
@@ -656,6 +659,9 @@ describe("Path Planer", () => {
 		});
 
 		it("Compute No alternative paths due to timeout", async () => {
+			const alternatives = 4;
+			const alternativesTimeout = 0.5;
+
 			// Test: Compute paths
 			const noPaths = await getPaths({
 				skills: [...firstMap, ...thirdMapHierarchy],
@@ -668,12 +674,37 @@ describe("Path Planer", () => {
 				],
 				optimalSolution: true,
 				contextSwitchPenalty: 1,
-				alternatives: 2,
-				alternativesTimeout: 1
+				alternatives: alternatives,
+				alternativesTimeout: alternativesTimeout
 			});
 
 			// Assert: No paths are computed, due to timeout
 			expect(noPaths).toBeNull();
+		});
+
+		it("Compute some of the alternative paths due to timeout", async () => {
+			// Test: Compute paths
+			const alternatives = 100;
+			const alternativesTimeout = 5;
+
+			const Paths = await getPaths({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				],
+				optimalSolution: true,
+				contextSwitchPenalty: 1,
+				alternatives: alternatives,
+				alternativesTimeout: alternativesTimeout
+			});
+
+			// Assert: Computed paths are less than requested alternative paths
+			expect(Paths.length).toBeGreaterThanOrEqual(1);
+			expect(Paths.length).toBeLessThan(alternatives);
 		});
 	});
 });
