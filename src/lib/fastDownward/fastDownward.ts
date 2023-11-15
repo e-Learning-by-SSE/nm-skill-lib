@@ -193,8 +193,12 @@ export async function search<LU extends LearningUnit>(
 
 		duration = duration + new Date().getTime() - startTime;
 
-		if (alternativesTimeout && duration > alternativesTimeout) {
-			return pathList;
+		if (alternativesTimeout && duration >= alternativesTimeout) {
+			if (pathList.length == 0) {
+				return null;
+			} else {
+				return pathList;
+			}
 		} else if (openList.length == 0 && pathList.length < alternatives && alternatives > 1) {
 			if (openListExtra.length > 0) {
 				openList.push(openListExtra.shift()!);
