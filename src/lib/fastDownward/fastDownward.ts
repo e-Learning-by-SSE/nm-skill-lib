@@ -154,7 +154,7 @@ export async function search<LU extends LearningUnit>(
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
 			// Skip states that are already analyzed
-			if (closedSet.has(newState.getHashCode()) && alternatives > 1) {
+			if (closedSet.has(newState.getHashCode()) && alternatives == 1) {
 				continue;
 			}
 
