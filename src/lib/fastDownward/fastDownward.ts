@@ -96,6 +96,7 @@ export async function search<LU extends LearningUnit>(
 	const closedSet = new Set<string>();
 	const openListMap = new Map();
 	const pathList: Path[] = [];
+	const openListExtra = [];
 	let duration = 0;
 
 	while (openList.length > 0) {
@@ -153,7 +154,7 @@ export async function search<LU extends LearningUnit>(
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
 			// Skip states that are already analyzed
-			if (closedSet.has(newState.getHashCode())) {
+			if (closedSet.has(newState.getHashCode()) && alternatives > 1) {
 				continue;
 			}
 
@@ -162,9 +163,12 @@ export async function search<LU extends LearningUnit>(
 
 			if (existingNode) {
 				if (newNode.cost < existingNode.cost) {
+					openListExtra.push(existingNode);
 					existingNode.cost = newNode.cost;
 					existingNode.heuristic = newNode.heuristic;
 					existingNode.parent = newNode.parent;
+				} else {
+					openListExtra.push(newNode);
 				}
 			} else {
 				// Inserting newNode to openList in sorted manner
@@ -191,6 +195,10 @@ export async function search<LU extends LearningUnit>(
 
 		if (alternativesTimeout && duration > alternativesTimeout) {
 			return pathList;
+		} else if (openList.length == 0 && pathList.length < alternatives && alternatives > 1) {
+			if (openListExtra.length > 0) {
+				openList.push(openListExtra.shift()!);
+			}
 		}
 	}
 
