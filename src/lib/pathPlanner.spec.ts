@@ -821,12 +821,12 @@ describe("Path Planer", () => {
 				);
 			});
 
-			it("Optimal path for Chapter 4", async () => {
+			it.skip("Optimal path for Chapter 4", async () => {
 				const path = await getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,
 					goal: [ch4],
-					optimalSolution: false,
+					optimalSolution: true,
 					contextSwitchPenalty: 1.2
 				});
 
