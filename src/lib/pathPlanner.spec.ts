@@ -1151,16 +1151,14 @@ function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: 
 		fail(`Path is null, but there was at least one path expected: ${expectedPaths[0]}`);
 	}
 
-	const pathIsValid = expectedPaths.some(expectedPath => {
-		const pathIsEqual = path.path
-			.map(lu => lu.id)
-			.every((id, index) => id === expectedPath[index]);
-		return pathIsEqual;
-	});
+	const pathIds = path.path.map(lu => lu.id);
+	const pathIsValid = expectedPaths.some(expectedPath =>
+		pathIds.every((id, index) => id === expectedPath[index])
+	);
 
 	if (!pathIsValid) {
 		// Return one wrong result
-		expect(path).toEqual(expectedPaths[0]);
+		expect(pathIds).toEqual(expectedPaths[0]);
 	} else {
 		if (cost) {
 			expect(path.cost).toBe(cost);
