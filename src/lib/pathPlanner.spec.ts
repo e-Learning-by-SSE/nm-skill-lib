@@ -7,7 +7,6 @@ import {
 	getPath
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
-import exp from "constants";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -269,7 +268,8 @@ describe("Path Planer", () => {
 					["lu:7", "lu:8", "lu:11", "lu:10", "lu:9", "lu:12"],
 					["lu:8", "lu:7", "lu:10", "lu:11", "lu:9", "lu:12"],
 					["lu:8", "lu:7", "lu:11", "lu:10", "lu:9", "lu:12"],
-					["lu:7", "lu:10", "lu:8", "lu:11", "lu:9", "lu:12"]
+					["lu:7", "lu:10", "lu:8", "lu:11", "lu:9", "lu:12"],
+					["lu:7", "lu:11", "lu:10", "lu:12", "lu:8", "lu:9"]
 				],
 				6
 			);
@@ -786,7 +786,7 @@ describe("Path Planer", () => {
 				];
 			});
 
-			it.skip("Greedy path for Chapter 4", async () => {
+			it("Greedy path for Chapter 4", async () => {
 				const path = await getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,

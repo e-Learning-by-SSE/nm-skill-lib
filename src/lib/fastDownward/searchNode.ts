@@ -15,20 +15,27 @@ export class SearchNode<LU extends LearningUnit> {
 		public heuristic: number // Heuristic total cost (real cost to current state + estimated cost to goal)
 	) {}
 
-	// /**
-	//  * Returns a string representation of the SearchNode for debugging purposes.
-	//  * @returns The path (IDs of the LearningUnits) from the root node to this node and its cost.
-	//  */
-	// public toString(): string {
-	// 	let str = this.action.id;
-	// 	let node = this.parent;
-	// 	while (node !== null) {
-	// 		str = node.action.id + ", " + str;
-	// 		node = node.parent;
-	// 	}
+	/**
+	 * Returns a string representation of the SearchNode for debugging purposes.
+	 * @returns The path (IDs of the LearningUnits) from the root node to this node and its cost.
+	 */
+	public toString(): string {
+		let str = "";
+		let node: SearchNode<LU> | null = this;
+		while (node !== null) {
+			if (node.action !== null) {
+				str = node.action.id + ", " + str;
+			}
+			node = node.parent;
+		}
 
-	// 	str += " (" + this.cost + ")";
+		// Remove last, dangling comma
+		if (str.length > 2) {
+			str = str.slice(0, -2);
+		}
 
-	// 	return str;
-	// }
+		str += " (" + this.cost + ")";
+
+		return str;
+	}
 }
