@@ -138,10 +138,10 @@ export async function search<LU extends LearningUnit>(
 			if (cost === Infinity || heuristic === Infinity) {
 				continue;
 			}
-			
+
 			const newState = currentNode.state.deriveState(lu, globalKnowledge);
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
-			
+
 			// Skip states that are already analyzed
 			if (closedSet.has(newState.getHashCode())) {
 				continue;
@@ -155,6 +155,8 @@ export async function search<LU extends LearningUnit>(
 					existingNode.cost = newNode.cost;
 					existingNode.heuristic = newNode.heuristic;
 					existingNode.parent = newNode.parent;
+
+					openList.sort((a, b) => a.heuristic - b.heuristic);
 				}
 			} else {
 				// Inserting newNode to openList in sorted manner
@@ -163,9 +165,18 @@ export async function search<LU extends LearningUnit>(
 				} else if (openList[openList.length - 1].heuristic < newNode.heuristic) {
 					openList.push(newNode);
 				} else {
-					for (let index = 0; index < openList.length; index++) {
-						if (newNode.heuristic <= openList[index].heuristic) {
-							openList.splice(index, 0, newNode);
+					// Using bisection procedure to insert newNode to openList in sorted manner
+					let low = 0;
+					let high = openList.length - 1;
+
+					while (low <= high) {
+						let mid = Math.floor((low + high) / 2);
+						if (openList[mid].heuristic > newNode.heuristic && mid - low > 1) {
+							low = mid + 1;
+						} else if (openList[mid].heuristic < newNode.heuristic && high - mid > 1) {
+							high = mid - 1;
+						} else {
+							openList.splice(mid, 0, newNode);
 							break;
 						}
 					}

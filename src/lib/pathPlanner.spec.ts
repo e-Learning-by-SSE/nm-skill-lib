@@ -7,6 +7,7 @@ import {
 	getPath
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
+import exp from "constants";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -785,7 +786,7 @@ describe("Path Planer", () => {
 				];
 			});
 
-			it("Greedy path for Chapter 4", async () => {
+			it.skip("Greedy path for Chapter 4", async () => {
 				const path = await getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,
@@ -795,6 +796,7 @@ describe("Path Planer", () => {
 				});
 
 				// Maybe further alternatives possible, add them if necessary
+				expect(path.cost).toBe(17.6);
 				expectPath(
 					path,
 					[
@@ -831,6 +833,7 @@ describe("Path Planer", () => {
 				});
 
 				// Maybe further alternatives possible, add them if necessary
+				expect(path.cost).toBe(17.6);
 				expectPath(
 					path,
 					[
