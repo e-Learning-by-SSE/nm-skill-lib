@@ -4,7 +4,8 @@ import {
 	findCycles,
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
-	getPath
+	getPath,
+	getPaths
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
 
@@ -405,6 +406,42 @@ describe("Path Planer", () => {
 					"lu:28",
 					"lu:29",
 					"lu:25"
+				],
+				[
+					"lu:24",
+					"lu:22",
+					"lu:1",
+					"lu:2",
+					"lu:3",
+					"lu:4",
+					"lu:6",
+					"lu:7",
+					"lu:8",
+					"lu:12",
+					"lu:23",
+					"lu:25",
+					"lu:26",
+					"lu:27",
+					"lu:28",
+					"lu:29"
+				],
+				[
+					"lu:1",
+					"lu:2",
+					"lu:3",
+					"lu:4",
+					"lu:6",
+					"lu:7",
+					"lu:8",
+					"lu:12",
+					"lu:24",
+					"lu:25",
+					"lu:29",
+					"lu:28",
+					"lu:22",
+					"lu:23",
+					"lu:26",
+					"lu:27"
 				]
 			];
 
@@ -1117,6 +1154,81 @@ describe("Path Planer", () => {
 				.map(elem => elem.id)
 				.sort((a, b) => a.localeCompare(b));
 			expect(affectedIds).toEqual(expectedIds);
+		});
+	});
+
+	describe("alternativePaths", () => {
+		it("Compute more than one path", () => {
+			const alternatives = 4;
+			const alternativesTimeout = 5000;
+
+			// Test: Compute paths
+			const paths = getPaths({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				],
+				optimalSolution: true,
+				contextSwitchPenalty: 1,
+				alternatives: alternatives,
+				alternativesTimeout: alternativesTimeout
+			});
+
+			// Assert: Compute at least two paths:
+			expect(paths.length).toBeGreaterThan(1);
+		});
+
+		it("Compute No alternative paths due to timeout", () => {
+			const alternatives = 4;
+			const alternativesTimeout = 0.01;
+
+			// Test: Compute paths
+			const noPaths = getPaths({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				],
+				optimalSolution: true,
+				contextSwitchPenalty: 1,
+				alternatives: alternatives,
+				alternativesTimeout: alternativesTimeout
+			});
+
+			// Assert: No paths are computed, due to timeout
+			expect(noPaths).toBeNull();
+		});
+
+		it("Compute some of the alternative paths due to timeout", async () => {
+			// Test: Compute paths
+			const alternatives = 100;
+			const alternativesTimeout = 5;
+
+			const Paths = await getPaths({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				],
+				optimalSolution: true,
+				contextSwitchPenalty: 1,
+				alternatives: alternatives,
+				alternativesTimeout: alternativesTimeout
+			});
+
+			// Assert: Computed paths are less than requested alternative paths
+			expect(Paths.length).toBeGreaterThanOrEqual(1);
+			expect(Paths.length).toBeLessThan(alternatives);
 		});
 	});
 });

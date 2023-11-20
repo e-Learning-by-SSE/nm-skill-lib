@@ -26,7 +26,9 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	learningUnits,
 	fnCost,
 	fnHeuristic,
-	contextSwitchPenalty = 1.2
+	contextSwitchPenalty = 1.2,
+	alternatives,
+	alternativesTimeout
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
@@ -35,7 +37,9 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	fnCost: CostFunction<LU>;
 	fnHeuristic: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
-}): Path | null {
+	alternatives: number;
+	alternativesTimeout: number | null;
+}): Path[] | null {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const initialState = new State(
 		knowledge.map(skill => skill.id),
@@ -49,7 +53,10 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 		learningUnits,
 		fnCost,
 		fnHeuristic,
-		contextSwitchPenalty
+		contextSwitchPenalty,
+		true,
+		alternatives,
+		alternativesTimeout
 	);
 }
 
@@ -78,7 +85,9 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 	learningUnits,
 	fnCost,
 	fnHeuristic,
-	contextSwitchPenalty = 1.2
+	contextSwitchPenalty = 1.2,
+	alternatives,
+	alternativesTimeout
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
@@ -87,6 +96,8 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 	fnCost: CostFunction<LU>;
 	fnHeuristic: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
+	alternatives: number;
+	alternativesTimeout: number | null;
 }) {
 	/**
 	 * Iterate through the goal child by child.
@@ -123,17 +134,21 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 			learningUnits,
 			fnCost,
 			fnHeuristic,
-			contextSwitchPenalty
+			contextSwitchPenalty,
+			alternatives,
+			alternativesTimeout
 		});
 
 		const partialPath = path;
 		if (partialPath) {
 			// Glue partial paths together and add learned skills to the knowledge to avoid learning them twice
-			pathResult.path.push(...partialPath.path);
-			pathResult.cost += partialPath.cost;
-			const learnedSkills = partialPath.path
-				.map(lu => learningUnits.find(l => l.id === lu.id)!)
-				.flatMap(lu => lu.teachingGoals);
+			pathResult.path.push(...partialPath.values().next().value.path);
+			pathResult.cost += partialPath.values().next().value.cost;
+			const learnedSkills = partialPath
+				.values()
+				.next()
+				.value.path.map((lu: { id: string }) => learningUnits.find(l => l.id === lu.id)!)
+				.flatMap((lu: { teachingGoals: any }) => lu.teachingGoals);
 			// .map(goal => skills.find(skill => skill === goal)!);
 			knowledge = [...knowledge, ...learnedSkills];
 		} else {
@@ -153,7 +168,9 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 	}
 	pathResult.cost = cost;
 
-	return pathResult;
+	const pathList: Path[] = [];
+	pathList.push(pathResult);
+	return pathList;
 }
 
 /**
@@ -183,7 +200,9 @@ export function findLearningPath<LU extends LearningUnit>({
 	optimalSolution = false,
 	fnCost,
 	fnHeuristic,
-	contextSwitchPenalty = 1.2
+	contextSwitchPenalty = 1.2,
+	alternatives,
+	alternativesTimeout
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
@@ -193,6 +212,8 @@ export function findLearningPath<LU extends LearningUnit>({
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
+	alternatives: number;
+	alternativesTimeout: number | null;
 }) {
 	const globalKnowledge = new GlobalKnowledge(skills);
 
@@ -208,7 +229,7 @@ export function findLearningPath<LU extends LearningUnit>({
 		fnHeuristic = state => 0;
 	}
 
-	const path = optimalSolution
+	const paths = optimalSolution
 		? // Guarantees an optimal solution, but may take very long
 		  findOptimalLearningPath({
 				knowledge,
@@ -217,7 +238,9 @@ export function findLearningPath<LU extends LearningUnit>({
 				learningUnits,
 				fnCost,
 				fnHeuristic,
-				contextSwitchPenalty
+				contextSwitchPenalty,
+				alternatives,
+				alternativesTimeout
 		  })
 		: // Splits goal into sub goals, finds optimal solutions for each sub goal and glues them together
 		  // This is much faster, but won't guarantee a global optimum
@@ -228,12 +251,16 @@ export function findLearningPath<LU extends LearningUnit>({
 				learningUnits,
 				fnCost,
 				fnHeuristic,
-				contextSwitchPenalty
+				contextSwitchPenalty,
+				alternatives,
+				alternativesTimeout
 		  });
 
-	if (path) {
-		path.cost = Math.round((path.cost + Number.EPSILON) * 100) / 100;
+	if (paths) {
+		for (const path of paths) {
+			path.cost = Math.round((path.cost + Number.EPSILON) * 100) / 100;
+		}
 	}
 
-	return path;
+	return paths;
 }

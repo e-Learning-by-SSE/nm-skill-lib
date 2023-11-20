@@ -88,13 +88,20 @@ export function search<LU extends LearningUnit>(
 	fnCost: CostFunction<LU>,
 	fnHeuristic: HeuristicFunction<LU>,
 	contextSwitchPenalty = 1.2,
-	suggestionViolationPenalty = true
-): Path | null {
+	suggestionViolationPenalty = true,
+	alternatives = 1,
+	alternativesTimeout: number | null = 5000
+): Path[] | null {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
 	const closedSet = new Set<string>();
 	const openListMap = new Map();
+	const pathList: Path[] = [];
+	const openListExtra = [];
+	let duration = 0;
+
 	while (openList.length > 0) {
 		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
+		const startTime = new Date().getTime();
 
 		const currentNode = openList.shift()!;
 
@@ -112,7 +119,11 @@ export function search<LU extends LearningUnit>(
 				}
 				node = node.parent;
 			}
-			return path;
+			pathList.push(path);
+
+			if (pathList.length == alternatives) {
+				return pathList;
+			}
 		}
 
 		closedSet.add(currentNode.state.getHashCode());
@@ -143,7 +154,7 @@ export function search<LU extends LearningUnit>(
 			const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
 			// Skip states that are already analyzed
-			if (closedSet.has(newState.getHashCode())) {
+			if (closedSet.has(newState.getHashCode()) && alternatives == 1) {
 				continue;
 			}
 
@@ -152,18 +163,21 @@ export function search<LU extends LearningUnit>(
 
 			if (existingNode) {
 				if (newNode.cost < existingNode.cost) {
+					openListExtra.push(existingNode);
 					existingNode.cost = newNode.cost;
 					existingNode.heuristic = newNode.heuristic;
 					existingNode.parent = newNode.parent;
-
-					openList.sort((a, b) => a.heuristic - b.heuristic);
+				} else {
+					openListExtra.push(newNode);
 				}
 			} else {
 				// Inserting newNode to openList in sorted manner
 				if (openList.length == 0) {
 					openList.push(newNode);
-				} else if (openList[openList.length - 1].heuristic < newNode.heuristic) {
+				} else if (openList[openList.length - 1].heuristic <= newNode.heuristic) {
 					openList.push(newNode);
+				} else if (openList[0].heuristic >= newNode.heuristic) {
+					openList.unshift(newNode);
 				} else {
 					// Using bisection procedure to insert newNode to openList in sorted manner
 					let low = 0;
@@ -191,6 +205,24 @@ export function search<LU extends LearningUnit>(
 				openListMap.set(newNode.state.getHashCode(), newNode);
 			}
 		}
+
+		duration = duration + new Date().getTime() - startTime;
+
+		if (alternativesTimeout && duration >= alternativesTimeout) {
+			if (pathList.length == 0) {
+				return null;
+			} else {
+				return pathList;
+			}
+		} else if (openList.length == 0 && pathList.length < alternatives && alternatives > 1) {
+			if (openListExtra.length > 0) {
+				openList.push(openListExtra.shift()!);
+			}
+		}
+	}
+
+	if (pathList.length > 0) {
+		return pathList;
 	}
 
 	return null;
