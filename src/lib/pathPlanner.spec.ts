@@ -786,7 +786,7 @@ describe("Path Planer", () => {
 				];
 			});
 
-			it.skip("Greedy path for Chapter 4", async () => {
+			it("Greedy path for Chapter 4", async () => {
 				const path = await getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,

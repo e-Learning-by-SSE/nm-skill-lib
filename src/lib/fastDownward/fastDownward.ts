@@ -168,17 +168,23 @@ export async function search<LU extends LearningUnit>(
 					// Using bisection procedure to insert newNode to openList in sorted manner
 					let low = 0;
 					let high = openList.length - 1;
+					let mid = 0;
 
 					while (low <= high) {
-						let mid = Math.floor((low + high) / 2);
+						mid = Math.floor((low + high) / 2);
 						if (openList[mid].heuristic > newNode.heuristic && mid - low > 1) {
-							low = mid + 1;
-						} else if (openList[mid].heuristic < newNode.heuristic && high - mid > 1) {
 							high = mid - 1;
+						} else if (openList[mid].heuristic < newNode.heuristic && high - mid > 1) {
+							low = mid + 1;
 						} else {
 							openList.splice(mid, 0, newNode);
+							mid = -1;
 							break;
 						}
+					}
+
+					if (mid !== -1) {
+						openList.splice(mid, 0, newNode);
 					}
 				}
 
