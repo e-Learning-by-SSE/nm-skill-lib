@@ -60,7 +60,7 @@ export function isAcyclic(
  * @param contextSwitchPenalty The penalty for switching among topics which are not build on each other (default: 1.2).
  * @returns An optimal path of LearningUnits that leads to the specified skills (goal) or null if no path was found.
  */
-export async function getPath<LU extends LearningUnit>({
+export function getPath<LU extends LearningUnit>({
 	skills,
 	goal,
 	learningUnits,
@@ -76,7 +76,7 @@ export async function getPath<LU extends LearningUnit>({
 	optimalSolution?: boolean;
 	fnCost?: CostFunction<LU>;
 	contextSwitchPenalty?: number;
-}): Promise<Path | null> {
+}): Path | null {
 	const startTime = new Date().getTime();
 
 	const distances = new DistanceMap(skills, learningUnits, fnCost);
@@ -94,7 +94,7 @@ export async function getPath<LU extends LearningUnit>({
 		lu => distances.getDistances(lu.id, goalIds) !== Infinity
 	);
 
-	const path = await findLearningPath({
+	const path = findLearningPath({
 		knowledge: knowledge,
 		goal: goal,
 		skills: skills,

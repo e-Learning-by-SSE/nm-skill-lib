@@ -7,7 +7,7 @@ import { GlobalKnowledge } from "./global-knowledge";
 /**
  * Compute which LearningUnits are reachable based on the given state.
  */
-async function availableActions<LU extends LearningUnit>(
+function availableActions<LU extends LearningUnit>(
 	currentState: State,
 	learningUnits: ReadonlyArray<LU>
 ) {
@@ -80,7 +80,7 @@ function computeCost<LU extends LearningUnit>(
  *        If the penalty is 1, the context switch is free.
  * @param suggestionViolationPenalty If true, the cost of a learning unit is increased by the sum of the weights of all suggestions that are not fulfilled.
  */
-export async function search<LU extends LearningUnit>(
+export function search<LU extends LearningUnit>(
 	initialState: State,
 	goal: Skill[],
 	globalKnowledge: GlobalKnowledge,
@@ -89,7 +89,7 @@ export async function search<LU extends LearningUnit>(
 	fnHeuristic: HeuristicFunction<LU>,
 	contextSwitchPenalty = 1.2,
 	suggestionViolationPenalty = true
-): Promise<Path | null> {
+): Path | null {
 	const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
 	const closedSet = new Set<string>();
 	const openListMap = new Map();
@@ -118,7 +118,7 @@ export async function search<LU extends LearningUnit>(
 		closedSet.add(currentNode.state.getHashCode());
 
 		// Generate successors and add them to openList
-		for (const lu of await availableActions(currentNode.state, learningUnits)) {
+		for (const lu of availableActions(currentNode.state, learningUnits)) {
 			// Check if the LU of the currentNode provides any skills that are used by the current LU
 			const cost = computeCost<LU>(
 				contextSwitchPenalty,

@@ -34,7 +34,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 	fnCost?: CostFunction<LU>;
 	fnHeuristic?: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
-}): Promise<Path | null> {
+}): Path | null {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
 	const globalKnowledge = new GlobalKnowledge(skills);
 	const initialState = new State(
@@ -83,7 +83,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
-async function findGreedyLearningPath<LU extends LearningUnit>({
+function findGreedyLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
 	skills,
@@ -131,7 +131,7 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
 			contextSwitchPenalty
 		});
 
-		const partialPath = await path;
+		const partialPath = path;
 		if (partialPath) {
 			// Glue partial paths together and add learned skills to the knowledge to avoid learning them twice
 			pathResult.path.push(...partialPath.path);
@@ -169,7 +169,7 @@ async function findGreedyLearningPath<LU extends LearningUnit>({
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
-export async function findLearningPath<LU extends LearningUnit>({
+export function findLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
 	skills,
