@@ -161,7 +161,7 @@ describe("Path Planer", () => {
 	describe("pathForSkill", () => {
 		it("No knowledge; 1 map; no nested skills; 1 goal", async () => {
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: firstMap,
 				learningUnits: straightPathOfLus,
 				goal: [firstMap[2]],
@@ -178,7 +178,7 @@ describe("Path Planer", () => {
 
 		it("Intermediate knowledge; 1 map; no nested skills; 1 goal", async () => {
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: firstMap,
 				learningUnits: straightPathOfLus,
 				goal: [firstMap[2]],
@@ -194,7 +194,7 @@ describe("Path Planer", () => {
 
 		it("No knowledge; 1 map; with nested skills; 1 goal", async () => {
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: thirdMapHierarchy,
 				learningUnits: structuredPathOfLus,
 				goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
@@ -215,7 +215,7 @@ describe("Path Planer", () => {
 
 		it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU; 1 goal", async () => {
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: firstMap,
 				learningUnits: multipleRequirementsOfLu,
 				goal: firstMap.filter(skill => skill.id === "sk:3"),
@@ -236,7 +236,7 @@ describe("Path Planer", () => {
 
 		it("No knowledge; 2 maps; with nested skills; multiple requirements for 1 LU; 2 goals", async () => {
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: [...firstMap, ...thirdMapHierarchy],
 				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
 				goal: [
@@ -283,7 +283,7 @@ describe("Path Planer", () => {
 			};
 
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: thirdMap,
 				learningUnits: alternativeLanguagesOfLus,
 				goal: thirdMap.filter(skill => skill.id === "sk:4"),
@@ -308,7 +308,7 @@ describe("Path Planer", () => {
 			};
 
 			// Test: Compute path
-			const path = await getPath({
+			const path = getPath({
 				skills: thirdMap,
 				learningUnits: alternativeCostsOfLus,
 				goal: thirdMap.filter(skill => skill.id === "sk:3"),
@@ -337,7 +337,7 @@ describe("Path Planer", () => {
 
 			it("Only necessary skills / skip suggested skills", async () => {
 				// Test: Compute path
-				const path = await getPath({
+				const path = getPath({
 					skills: thirdMap,
 					learningUnits: suggestedOrderingOfLus,
 					goal: thirdMap.filter(skill => skill.id === "sk:3"),
@@ -351,7 +351,7 @@ describe("Path Planer", () => {
 
 			it("Include suggested skill -> Ensure Ordering", async () => {
 				// Test: Compute path
-				const path = await getPath({
+				const path = getPath({
 					skills: thirdMap,
 					learningUnits: suggestedOrderingOfLus,
 					goal: firstMap.filter(skill => skill.id === "sk:3" || skill.id === "sk:2"),
@@ -787,7 +787,7 @@ describe("Path Planer", () => {
 			});
 
 			it("Greedy path for Chapter 4", async () => {
-				const path = await getPath({
+				const path = getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,
 					goal: [ch4],
@@ -796,7 +796,7 @@ describe("Path Planer", () => {
 				});
 
 				// Maybe further alternatives possible, add them if necessary
-				expect(path.cost).toBe(17.6);
+				expect(path!.cost).toBe(17.6);
 				expectPath(
 					path,
 					[
@@ -824,7 +824,7 @@ describe("Path Planer", () => {
 			});
 
 			it.skip("Optimal path for Chapter 4", async () => {
-				const path = await getPath({
+				const path = getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,
 					goal: [ch4],
@@ -833,7 +833,7 @@ describe("Path Planer", () => {
 				});
 
 				// Maybe further alternatives possible, add them if necessary
-				expect(path.cost).toBe(17.6);
+				expect(path!.cost).toBe(17.6);
 				expectPath(
 					path,
 					[
@@ -865,7 +865,7 @@ describe("Path Planer", () => {
 	describe("computeSuggestedSkills", () => {
 		it("Apply first constraints", async () => {
 			// Compute default order and exchange first to positions
-			const path = await getPath({
+			const path = getPath({
 				skills: thirdMapHierarchy,
 				learningUnits: structuredPathOfLus,
 				goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
@@ -921,7 +921,7 @@ describe("Path Planer", () => {
 			);
 
 			// Compute path with new constraints
-			const changedPath = await getPath({
+			const changedPath = getPath({
 				skills: thirdMapHierarchy,
 				learningUnits: structuredPathOfLus,
 				goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
