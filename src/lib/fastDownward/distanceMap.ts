@@ -90,7 +90,6 @@ export class DistanceMap<LU extends LearningUnit> {
 			const entries = [...distanceInfo.entries()].sort((a, b) => (a[0] > b[0] ? 1 : -1));
 			for (const [goal, distance] of entries) {
 				if (distance < Infinity) {
-					// || goal.startsWith("2504")
 					str += `  ${goal}: ${distance}\n`;
 				}
 			}
