@@ -1184,7 +1184,7 @@ describe("Path Planer", () => {
 
 		it("Compute No alternative paths due to timeout", () => {
 			const alternatives = 4;
-			const alternativesTimeout = 0.01;
+			const alternativesTimeout = -1;
 
 			// Test: Compute paths
 			const noPaths = getPaths({

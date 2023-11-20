@@ -97,7 +97,6 @@ export function search<LU extends LearningUnit>(
 	const openListMap = new Map();
 	const pathList: Path[] = [];
 	const openListExtra = [];
-	let duration = 0;
 
 	while (openList.length > 0) {
 		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
@@ -206,7 +205,7 @@ export function search<LU extends LearningUnit>(
 			}
 		}
 
-		duration = duration + new Date().getTime() - startTime;
+		const duration = new Date().getTime() - startTime;
 
 		if (alternativesTimeout && duration >= alternativesTimeout) {
 			if (pathList.length == 0) {
