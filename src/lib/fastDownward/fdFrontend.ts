@@ -1,8 +1,9 @@
 import { LearningUnit, Path, Skill } from "../types";
-import { search } from "./fastDownward";
+import { computeCost, search } from "./fastDownward";
 import { State } from "./state";
 import { CostFunction, HeuristicFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
+import { SearchNode } from "./searchNode";
 
 /**
  * Searches for an optimal path to learn the desired Skills (goal) based on the given knowledge.
@@ -12,7 +13,7 @@ import { GlobalKnowledge } from "./global-knowledge";
  *
  * @param knowledge The skills that are already known by the learner.
  * @param goal The skills that should be learned.
- * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param globalKnowledge The set of all skills (independent of what was already learned and what should be learned).
  * @param lus The set of all LearningUnits.
  * @param fnCost Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
@@ -21,7 +22,7 @@ import { GlobalKnowledge } from "./global-knowledge";
 function findOptimalLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
-	skills,
+	globalKnowledge,
 	learningUnits,
 	fnCost,
 	fnHeuristic,
@@ -29,30 +30,17 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
-	skills: ReadonlyArray<Skill>;
+	globalKnowledge: GlobalKnowledge;
 	learningUnits: ReadonlyArray<LU>;
-	fnCost?: CostFunction<LU>;
-	fnHeuristic?: HeuristicFunction<LU>;
+	fnCost: CostFunction<LU>;
+	fnHeuristic: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
 }): Path | null {
 	// Initial state: All skills of "knowledge" are known, no LearningUnits are learned
-	const globalKnowledge = new GlobalKnowledge(skills);
 	const initialState = new State(
 		knowledge.map(skill => skill.id),
 		globalKnowledge
 	);
-
-	// Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
-	// Maybe replaced by a more sophisticated cost function
-	if (!fnCost) {
-		fnCost = op => 1;
-	}
-
-	// Default heuristic function: Always return 0
-	// Maybe replaced by a more sophisticated heuristic function
-	if (!fnHeuristic) {
-		fnHeuristic = state => 0;
-	}
 
 	return search(
 		initialState,
@@ -77,7 +65,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
  *
  * @param knowledge The skills that are already known by the learner.
  * @param goal The skills that should be learned.
- * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param globalKnowledge The set of all skills (independent of what was already learned and what should be learned).
  * @param learningUnits The set of all LearningUnits.
  * @param fnCost Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
@@ -86,7 +74,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
 function findGreedyLearningPath<LU extends LearningUnit>({
 	knowledge,
 	goal,
-	skills,
+	globalKnowledge,
 	learningUnits,
 	fnCost,
 	fnHeuristic,
@@ -94,10 +82,10 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 }: {
 	knowledge: Skill[];
 	goal: Skill[];
-	skills: ReadonlyArray<Skill>;
+	globalKnowledge: GlobalKnowledge;
 	learningUnits: ReadonlyArray<LU>;
-	fnCost?: CostFunction<LU>;
-	fnHeuristic?: HeuristicFunction<LU>;
+	fnCost: CostFunction<LU>;
+	fnHeuristic: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
 }) {
 	/**
@@ -111,20 +99,27 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 	goal.forEach(skill => {
 		if (skill.nestedSkills.length > 0) {
 			flattenGoal.push(
-				...skill.nestedSkills.map(childId => skills.find(skill => skill.id === childId)!)
+				...skill.nestedSkills.map(
+					childId => globalKnowledge.skills.find(skill => skill.id === childId)!
+				)
 			);
 		} else {
 			flattenGoal.push(skill);
 		}
 	});
 
+	// Needed to compute the cost of the path
+	const initialState = new State(
+		knowledge.map(skill => skill.id),
+		globalKnowledge
+	);
 	const pathResult = new Path();
 	for (const child of flattenGoal) {
 		// Find local optimal path for the current partial goal
 		const path = findOptimalLearningPath({
 			knowledge,
 			goal: [child],
-			skills,
+			globalKnowledge,
 			learningUnits,
 			fnCost,
 			fnHeuristic,
@@ -146,6 +141,17 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 			return null;
 		}
 	}
+
+	let cost = 0;
+	let state = initialState;
+	let node = new SearchNode<LU>(state, null, null, 0, 0);
+	for (let i = 0; i < pathResult.path.length; i++) {
+		const lu = pathResult.path[i];
+		cost = computeCost(contextSwitchPenalty, lu, node, true, fnCost);
+		state = state.deriveState(lu, globalKnowledge);
+		node = new SearchNode<LU>(state, lu as LU, node, cost, cost);
+	}
+	pathResult.cost = cost;
 
 	return pathResult;
 }
@@ -188,12 +194,26 @@ export function findLearningPath<LU extends LearningUnit>({
 	fnHeuristic?: HeuristicFunction<LU>;
 	contextSwitchPenalty?: number;
 }) {
-	return optimalSolution
+	const globalKnowledge = new GlobalKnowledge(skills);
+
+	// Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
+	// Maybe replaced by a more sophisticated cost function
+	if (!fnCost) {
+		fnCost = op => 1;
+	}
+
+	// Default heuristic function: Always return 0
+	// Maybe replaced by a more sophisticated heuristic function
+	if (!fnHeuristic) {
+		fnHeuristic = state => 0;
+	}
+
+	const path = optimalSolution
 		? // Guarantees an optimal solution, but may take very long
 		  findOptimalLearningPath({
 				knowledge,
 				goal,
-				skills,
+				globalKnowledge,
 				learningUnits,
 				fnCost,
 				fnHeuristic,
@@ -204,10 +224,16 @@ export function findLearningPath<LU extends LearningUnit>({
 		  findGreedyLearningPath({
 				knowledge,
 				goal,
-				skills,
+				globalKnowledge,
 				learningUnits,
 				fnCost,
 				fnHeuristic,
 				contextSwitchPenalty
 		  });
+
+	if (path) {
+		path.cost = Math.round((path.cost + Number.EPSILON) * 100) / 100;
+	}
+
+	return path;
 }

@@ -30,7 +30,7 @@ function availableActions<LU extends LearningUnit>(
 	return usefulLus;
 }
 
-function computeCost<LU extends LearningUnit>(
+export function computeCost<LU extends LearningUnit>(
 	contextSwitchPenalty: number,
 	lu: LU,
 	currentNode: SearchNode<LU>,
@@ -103,7 +103,7 @@ export function search<LU extends LearningUnit>(
 			// Build and return the path
 			const path = new Path();
 			// Round at most 2 digits, based on: https://stackoverflow.com/a/11832950
-			path.cost = Math.round((currentNode.cost + Number.EPSILON) * 100) / 100;
+			path.cost = currentNode.cost;
 			let node = currentNode;
 			while (node.parent !== null) {
 				const lu = node.action;

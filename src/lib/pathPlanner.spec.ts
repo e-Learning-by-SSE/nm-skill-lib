@@ -368,6 +368,45 @@ describe("Path Planer", () => {
 			let [ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10, ch11, ch12]: Skill[] = [];
 			let digiMediaSkillMap: Skill[];
 			let digiMediaLUs: LearningUnit[];
+			// Maybe further alternatives possible, add them if necessary
+			const expectedPathsOfChapter4 = [
+				[
+					"lu:22",
+					"lu:1",
+					"lu:2",
+					"lu:3",
+					"lu:4",
+					"lu:6",
+					"lu:7",
+					"lu:8",
+					"lu:12",
+					"lu:23",
+					"lu:24",
+					"lu:25",
+					"lu:26",
+					"lu:27",
+					"lu:28",
+					"lu:29"
+				],
+				[
+					"lu:1",
+					"lu:2",
+					"lu:3",
+					"lu:4",
+					"lu:6",
+					"lu:7",
+					"lu:8",
+					"lu:12",
+					"lu:22",
+					"lu:23",
+					"lu:24",
+					"lu:26",
+					"lu:27",
+					"lu:28",
+					"lu:29",
+					"lu:25"
+				]
+			];
 
 			// Creation of many test objects in a collapsable function ;-)
 			beforeAll(() => {
@@ -795,35 +834,11 @@ describe("Path Planer", () => {
 					contextSwitchPenalty: 1.2
 				});
 
-				// Maybe further alternatives possible, add them if necessary
-				expect(path!.cost).toBe(17.6);
-				expectPath(
-					path,
-					[
-						[
-							"lu:22",
-							"lu:1",
-							"lu:2",
-							"lu:3",
-							"lu:4",
-							"lu:6",
-							"lu:7",
-							"lu:8",
-							"lu:12",
-							"lu:23",
-							"lu:24",
-							"lu:25",
-							"lu:26",
-							"lu:27",
-							"lu:28",
-							"lu:29"
-						]
-					],
-					17.6
-				);
+				expect(path!.cost).toBe(19);
+				expectPath(path, expectedPathsOfChapter4, 19);
 			});
 
-			it.skip("Optimal path for Chapter 4", async () => {
+			it("Optimal path for Chapter 4", async () => {
 				const path = getPath({
 					skills: digiMediaSkillMap,
 					learningUnits: digiMediaLUs,
@@ -832,32 +847,8 @@ describe("Path Planer", () => {
 					contextSwitchPenalty: 1.2
 				});
 
-				// Maybe further alternatives possible, add them if necessary
-				expect(path!.cost).toBe(17.6);
-				expectPath(
-					path,
-					[
-						[
-							"lu:22",
-							"lu:1",
-							"lu:2",
-							"lu:3",
-							"lu:4",
-							"lu:6",
-							"lu:7",
-							"lu:8",
-							"lu:12",
-							"lu:23",
-							"lu:24",
-							"lu:25",
-							"lu:26",
-							"lu:27",
-							"lu:28",
-							"lu:29"
-						]
-					],
-					17.6
-				);
+				expect(path!.cost).toBe(19);
+				expectPath(path, expectedPathsOfChapter4, 19);
 			});
 		});
 	});
