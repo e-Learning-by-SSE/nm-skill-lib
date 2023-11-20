@@ -2,21 +2,6 @@ import { Skill, LearningUnit } from "../types";
 import { GlobalKnowledge } from "./global-knowledge";
 
 /**
- * Removes duplicate elements from the given array.
- * Based on: https://stackoverflow.com/a/1584377
- */
-function arrayUnique(array: string[]) {
-	var a = array.concat();
-	for (var i = 0; i < a.length; ++i) {
-		for (var j = i + 1; j < a.length; ++j) {
-			if (a[i] === a[j]) a.splice(j--, 1);
-		}
-	}
-
-	return a;
-}
-
-/**
  * Represents the state of the search tree.
  * The state is defined by the set of skills that have been learned so far along an explored path.
  */
@@ -93,12 +78,11 @@ export class State {
 	}
 
 	deriveState(operator: LearningUnit, globalKnowledge: GlobalKnowledge) {
-		
 		//const mergedSkills = arrayUnique(
 		//	this.learnedSkills.concat(operator.teachingGoals.map(goal => goal.id))
 		//);
 
-		const mergedSkills : string[] = [];
+		const mergedSkills: string[] = [];
 		this.learnedSkills.forEach(skill => {
 			mergedSkills.push(skill);
 		});
@@ -108,7 +92,7 @@ export class State {
 				mergedSkills.push(goal.id);
 			}
 		});
-		
+
 		return new State(mergedSkills, globalKnowledge);
 	}
 
