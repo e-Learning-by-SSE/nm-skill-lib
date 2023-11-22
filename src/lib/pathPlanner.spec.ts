@@ -1179,7 +1179,7 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Compute at least two paths:
-			expect(paths.length).toBeGreaterThan(1);
+			expect(paths!.length).toBeGreaterThan(1);
 		});
 
 		it("Compute No alternative paths due to timeout", () => {
@@ -1211,7 +1211,7 @@ describe("Path Planer", () => {
 			const alternatives = 100;
 			const alternativesTimeout = 5;
 
-			const Paths = await getPaths({
+			const paths = await getPaths({
 				skills: [...firstMap, ...thirdMapHierarchy],
 				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
 				goal: [
@@ -1227,8 +1227,8 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: Computed paths are less than requested alternative paths
-			expect(Paths.length).toBeGreaterThanOrEqual(1);
-			expect(Paths.length).toBeLessThan(alternatives);
+			expect(paths!.length).toBeGreaterThanOrEqual(1);
+			expect(paths!.length).toBeLessThan(alternatives);
 		});
 	});
 });
