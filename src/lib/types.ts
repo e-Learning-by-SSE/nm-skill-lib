@@ -93,3 +93,8 @@ export type UpdateSoftConstraintFunction = (
 	learningUnit: LearningUnit,
 	missingSkills: string[]
 ) => Promise<void>;
+
+export type CycledSkills<S extends Skill> = {
+	cycles: S[][];
+	nestingSkills: S[];
+};

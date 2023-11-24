@@ -2,12 +2,14 @@ import { LearningUnit, Skill, Graph, Path } from "./types";
 import {
 	computeSuggestedSkills,
 	findCycles,
+	findParentsOfCycledSkills,
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
 	getPath,
 	getPaths
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
+import exp from "constants";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1154,6 +1156,78 @@ describe("Path Planer", () => {
 				.map(elem => elem.id)
 				.sort((a, b) => a.localeCompare(b));
 			expect(affectedIds).toEqual(expectedIds);
+		});
+	});
+
+	describe("findParentsOfCycledSkills", () => {
+		it("No cycle -> null", () => {
+			const skillMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: ["sk:1"] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: ["sk:2"] }
+			];
+
+			const cycles = findParentsOfCycledSkills(skillMap);
+			expect(cycles).toEqual(null);
+		});
+
+		it("Cycle with one parent -> parent", () => {
+			/**
+			 * Cycle: sk:2 -> sk:4
+			 * Parent: sk:1
+			 */
+			const skillMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4"] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:4", repositoryId: "1", nestedSkills: ["sk:2"] }
+			];
+
+			const cycles = findParentsOfCycledSkills(skillMap);
+			expect(cycles).not.toBeNull();
+
+			const cycledSkills = cycles!.cycles
+				.flatMap(cycle => cycle.map(skill => skill.id))
+				.sort();
+			expect(cycledSkills).toEqual(["sk:2", "sk:4"]);
+			expect(cycles!.nestingSkills.map(skill => skill.id)).toEqual(["sk:1"]);
+		});
+
+		it("Cycle with multiple parents -> parents", () => {
+			/**
+			 * Cycle: sk:2 -> sk:5 -> sk:8
+			 * Parents: sk:1, sk:9, sk:11, sk:12
+			 */
+			const skillMap: Skill[] = [
+				// First tree with parent: sk:1
+				{ id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3", "sk:4"] },
+				{ id: "sk:2", repositoryId: "1", nestedSkills: ["sk:5", "sk:6"] },
+				{ id: "sk:3", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:4", repositoryId: "1", nestedSkills: ["sk:7"] },
+				{ id: "sk:5", repositoryId: "1", nestedSkills: ["sk:8"] },
+				{ id: "sk:6", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:7", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:8", repositoryId: "1", nestedSkills: ["sk:2"] },
+				// Second tree with parent: sk:9
+				{ id: "sk:9", repositoryId: "1", nestedSkills: ["sk:10", "sk:11"] },
+				{ id: "sk:10", repositoryId: "1", nestedSkills: [] },
+				{ id: "sk:11", repositoryId: "1", nestedSkills: ["sk:12"] },
+				{ id: "sk:12", repositoryId: "1", nestedSkills: ["sk:8"] }
+			];
+
+			const cycles = findParentsOfCycledSkills(skillMap);
+			expect(cycles).not.toBeNull();
+
+			const cycledSkills = cycles!.cycles
+				.flatMap(cycle => cycle.map(skill => skill.id))
+				.sort();
+			expect(cycledSkills).toEqual(["sk:2", "sk:5", "sk:8"]);
+			expect(cycles!.nestingSkills.map(skill => skill.id).sort()).toEqual([
+				"sk:1",
+				"sk:11",
+				"sk:12",
+				"sk:9"
+			]);
 		});
 	});
 
