@@ -9,6 +9,10 @@ export type Skill = {
 	nestedSkills: string[];
 };
 
+export const isSkill = (element: Skill | LearningUnit): element is Skill => {
+	return (element as Skill).repositoryId !== undefined;
+};
+
 export type Edge = {
 	from: string;
 	to: string;
@@ -21,6 +25,10 @@ export type LearningUnit = {
 	requiredSkills: Skill[];
 	teachingGoals: Skill[];
 	suggestedSkills: { weight: number; skill: Skill }[];
+};
+
+export const isLearningUnit = (element: Skill | LearningUnit): element is LearningUnit => {
+	return (element as LearningUnit).teachingGoals !== undefined;
 };
 
 export type Node = {
