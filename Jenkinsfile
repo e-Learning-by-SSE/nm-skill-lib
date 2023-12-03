@@ -3,7 +3,7 @@
 pipeline {
     agent {
         docker {
-            image 'node:18-bullseye'
+            image 'node:20-bullseye'
             reuseNode true
             label 'docker'
             args '--tmpfs /.cache -v $HOME/.npm:/.npm'
