@@ -46,5 +46,11 @@ pipeline {
                 }
             }
         }
+
+        stage('Publish NPM Package') {
+            steps {
+                npmPublish('e-learning-by-sse')
+            }
+        }
     }
 }
