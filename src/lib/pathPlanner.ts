@@ -263,6 +263,8 @@ export async function computeSuggestedSkills(
 	learningUnits: LearningUnit[],
 	fnUpdate: UpdateSoftConstraintFunction
 ) {
+	// Delete constraints for the very first unit
+	await fnUpdate(learningUnits[0], []);
 	// Iterate over all learningUnits starting at index 2 and set ordering condition to previous learningUnit
 	for (let i = 1; i < learningUnits.length; i++) {
 		const previousUnit = learningUnits[i - 1];
