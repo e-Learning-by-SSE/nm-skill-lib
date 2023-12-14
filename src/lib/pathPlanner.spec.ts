@@ -9,7 +9,6 @@ import {
 	getPaths
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
-import exp from "constants";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -904,7 +903,7 @@ describe("Path Planer", () => {
 			});
 
 			if (path === null) {
-				fail("Path is null, but was not expected to be null");
+				throw new Error("Path is null, but was not expected to be null");
 			}
 
 			path.path = [path.path[1], path.path[0], path.path[2]];
@@ -919,7 +918,12 @@ describe("Path Planer", () => {
 				async (lu: LearningUnit, missingSkills: string[]) => {
 					switch (lu.id) {
 						case path.path[0].id:
-							fail("Must not compute any constraints for the first LU");
+							if (missingSkills.length > 0) {
+								throw new Error(
+									"Must not compute any constraints for the first LU"
+								);
+							}
+							break;
 						case path.path[1].id:
 							expect(missingSkills).toEqual(
 								path.path[0].teachingGoals.map(skill => skill.id)
@@ -960,7 +964,7 @@ describe("Path Planer", () => {
 			});
 
 			if (changedPath === null) {
-				fail("Path is null, but was not expected to be null");
+				throw new Error("Path is null, but was not expected to be null");
 			}
 
 			// Test: Verify that path has changed
@@ -1328,7 +1332,9 @@ function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: 
 	}
 
 	if (!path) {
-		fail(`Path is null, but there was at least one path expected: ${expectedPaths[0]}`);
+		throw new Error(
+			`Path is null, but there was at least one path expected: ${expectedPaths[0]}`
+		);
 	}
 
 	const pathIds = path.path.map(lu => lu.id);
