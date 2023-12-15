@@ -7,9 +7,10 @@ import {
 	LearningUnit,
 	Path,
 	UpdateSoftConstraintFunction,
-	CycledSkills
+	CycledSkills,
+	SkillAnalyzedPath
 } from "./types";
-import { findLearningPath } from "./fastDownward/fdFrontend";
+import { findLearningPath, findSkillAnalysis } from "./fastDownward/fdFrontend";
 import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
 import { DistanceMap } from "./fastDownward/distanceMap";
 
@@ -48,6 +49,31 @@ export function isAcyclic(
 ): boolean {
 	const graph = populateGraph({ skills, learningUnits });
 	return alg.isAcyclic(graph);
+}
+
+/**
+ * @param skills The set of skills to include in the graph.
+ * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
+ * @param learningUnits All learning units of the system to learn new skills.
+ * @returns A list of the missing skills with the sub paths for them.
+ */
+export function getSkillAnalysis<LU extends LearningUnit>({
+	skills,
+	goal,
+	learningUnits
+}: {
+	skills: ReadonlyArray<Skill>;
+	learningUnits: ReadonlyArray<LU>;
+	goal: Skill[];
+}): SkillAnalyzedPath[] | null {
+
+	const skillAnalyzedPath = findSkillAnalysis({
+		skills,
+		goal,
+		learningUnits
+	});
+
+	return skillAnalyzedPath;
 }
 
 /**

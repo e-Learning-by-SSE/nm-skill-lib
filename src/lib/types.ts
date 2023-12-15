@@ -41,6 +41,11 @@ export class Path {
 	path: LearningUnit[] = [];
 }
 
+export class SkillAnalyzedPath {
+	missingSkill: string;
+	subPath: Path;
+}
+
 /**
  * Part of the computeSuggestedSkills function, which will be used to apply the computed skills to the database.
  * @param learningUnit The learning unit for which the skills should be updated.
