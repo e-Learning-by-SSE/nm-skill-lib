@@ -1,9 +1,10 @@
-import { LearningUnit, Path, Skill } from "../types";
+import { LearningUnit, Path, Skill, SkillAnalyzedPath } from "../types";
 import { computeCost, search } from "./fastDownward";
 import { State } from "./state";
 import { CostFunction, HeuristicFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNode } from "./searchNode";
+import { skillAnalysis } from "./analysis";
 
 /**
  * Searches for an optimal path to learn the desired Skills (goal) based on the given knowledge.
@@ -140,7 +141,7 @@ function findGreedyLearningPath<LU extends LearningUnit>({
 		});
 
 		const partialPath = path;
-		if (partialPath) {
+		if (partialPath && partialPath[0].cost != -1) {
 			// Glue partial paths together and add learned skills to the knowledge to avoid learning them twice
 			pathResult.path.push(...partialPath.values().next().value.path);
 			pathResult.cost += partialPath.values().next().value.cost;
@@ -263,4 +264,31 @@ export function findLearningPath<LU extends LearningUnit>({
 	}
 
 	return paths;
+}
+
+/**
+ *
+ * @param goal The skills that should be learned.
+ * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param learningUnits The set of all LearningUnits.
+ * @returns A list of the missing skills with the sub paths for them.
+ */
+export function findSkillAnalysis<LU extends LearningUnit>({
+	skills,
+	goal,
+	learningUnits
+}: {
+	skills: ReadonlyArray<Skill>;
+	goal: Skill[];
+	learningUnits: ReadonlyArray<LU>;
+}): SkillAnalyzedPath[] | null {
+	const globalKnowledge = new GlobalKnowledge(skills);
+
+	const skillAnalyzedPath = skillAnalysis(
+		globalKnowledge,
+		learningUnits,
+		goal
+	);
+
+	return skillAnalyzedPath;
 }

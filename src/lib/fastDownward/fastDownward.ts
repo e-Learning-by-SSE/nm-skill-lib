@@ -98,12 +98,36 @@ export function search<LU extends LearningUnit>(
 	const pathList: Path[] = [];
 	const openListExtra = [];
 	let duration = 0;
+	let skillsNotFound: string[] = [];
 
 	while (openList.length > 0) {
 		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
 		const startTime = new Date().getTime();
 
 		const currentNode = openList.shift()!;
+
+		// Get the skill in the goal but not in the currentNode status
+		const remainSkillTemp: string[] = [];
+		goal.forEach(goalSkill => {
+			// Check the nested skills in each goal
+			goalSkill.nestedSkills.forEach(skill => {
+				if (!currentNode.state.getHashCode().includes(skill)) {
+					remainSkillTemp.push(skill);
+				}
+			});
+			// If there are no nested skills then check the id of the skill
+			if (goalSkill.nestedSkills.length == 0) {
+				if (!currentNode.state.getHashCode().includes(goalSkill.id)) {
+					remainSkillTemp.push(goalSkill.id);
+				}
+			}
+		});
+
+		// Compare remaining skills in skillsNotFound with currentNode remaining skills
+		// Keep the lowest number of remaining skills
+		if (remainSkillTemp.length < skillsNotFound.length || skillsNotFound.length == 0) {
+			skillsNotFound = remainSkillTemp;
+		}
 
 		/* Check if currentNode.state is the goal state */
 		if (currentNode.state.goalFulfilled(goal)) {
@@ -210,7 +234,22 @@ export function search<LU extends LearningUnit>(
 
 		if (alternativesTimeout && duration >= alternativesTimeout) {
 			if (pathList.length == 0) {
-				return null;
+				// Create an empty path (Dummy) with cost = -1
+				// Pass the missing skills as requiredSkills in this empty path
+				const noPath = new Path();
+				noPath.cost = -1;
+				let remainSkills: Skill[] = [];
+				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
+				const tempLU = {
+					id: "-1",
+					requiredSkills: remainSkills,
+					teachingGoals: [],
+					suggestedSkills:[],
+				}
+				noPath.path.push(tempLU);
+				pathList.push(noPath);
+
+				return pathList;
 			} else {
 				return pathList;
 			}
@@ -225,5 +264,20 @@ export function search<LU extends LearningUnit>(
 		return pathList;
 	}
 
-	return null;
+	// Create an empty path (Dummy) with cost = -1
+	// Pass the missing skills as requiredSkills in this empty path
+	const noPath = new Path();
+	noPath.cost = -1;
+	let remainSkills: Skill[] = [];
+	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
+	const tempLU = {
+        id: "-1",
+        requiredSkills: remainSkills,
+        teachingGoals: [],
+		suggestedSkills:[],
+    }
+	noPath.path.push(tempLU);
+	pathList.push(noPath);
+
+	return pathList;
 }

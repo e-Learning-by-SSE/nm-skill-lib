@@ -6,7 +6,8 @@ import {
 	getConnectedGraphForLearningUnit,
 	getConnectedGraphForSkill,
 	getPath,
-	getPaths
+	getPaths,
+	getSkillAnalysis
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
 
@@ -1281,7 +1282,8 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: No paths are computed, due to timeout
-			expect(noPaths).toBeNull();
+			expect(noPaths.length).toBe(1);
+			expect(noPaths[0].cost).toBe(-1);
 		});
 
 		it("Compute some of the alternative paths due to timeout", async () => {
@@ -1307,6 +1309,203 @@ describe("Path Planer", () => {
 			// Assert: Computed paths are less than requested alternative paths
 			expect(paths!.length).toBeGreaterThanOrEqual(1);
 			expect(paths!.length).toBeLessThan(alternatives);
+		});
+	});
+
+	describe("missing skills test", () => {
+
+		it("Find one missing skill", () => {
+
+			const structuredPathOfLusMissingSk8: LearningUnit[] = [
+				newLearningUnit(thirdMapHierarchy, "lu:7", [], ["sk:10"]),
+				newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
+				newLearningUnit(thirdMapHierarchy, "lu:9", ["sk:9"], [])
+			];
+
+			// Test: Compute paths
+			const path = getPath({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLusMissingSk8],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				],
+				optimalSolution: true,
+				contextSwitchPenalty: 1
+			});
+
+			// Assert: Find missing skill:
+			expect(path!.path.length).toBe(1);
+			expect(path!.cost).toBe(-1);
+			expect(path!.path[0].requiredSkills.length).toBe(1);
+			expect(path!.path[0].requiredSkills[0].id).toBe("sk:8");
+		});
+
+		it("No missing skill", () => {
+
+			// Test: Analyze skill
+			const analysis = getSkillAnalysis({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLus],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				]
+			});
+
+			// Assert: Find no missing skill:
+			expect(analysis).toBeNull;
+		});
+
+		it("Analysis one missing skill", () => {
+
+			const multipleRequirementsOfLuMissingSk2: LearningUnit[] = [
+				newLearningUnit(firstMap, "lu:10", [], ["sk:1"]),
+				newLearningUnit(firstMap, "lu:11", [], []),
+				newLearningUnit(firstMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"])
+			];
+
+			// Test: Analyze skill
+			const analysis = getSkillAnalysis({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLuMissingSk2, ...structuredPathOfLus],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				]
+			});
+
+			// Assert: Finds missing skill and nested skills:
+			expect(analysis!.length).toBeGreaterThan(0);
+			expect(analysis[0]!.missingSkill).toBe("sk:2");
+		});
+
+		it("Analysis missing skills and nested skills", () => {
+			
+			const structuredPathOfLusMissingSk10: LearningUnit[] = [
+				newLearningUnit(thirdMapHierarchy, "lu:7", [], []),
+				newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
+				newLearningUnit(thirdMapHierarchy, "lu:9", ["sk:9"], ["sk:8"])
+			];
+
+			// Test: Analyze skill
+			const analysis = getSkillAnalysis({
+				skills: [...firstMap, ...thirdMapHierarchy],
+				learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLusMissingSk10],
+				goal: [
+					...firstMap.filter(skill => skill.id === "sk:3"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+					...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+				]
+			});
+
+			// Assert: Finds missing skill and nested skills:
+			expect(analysis!.length).toBeGreaterThan(0);
+			expect(analysis[0]!.missingSkill).toBe("sk:12");
+		});
+
+		it("Analysis missing skills with a sub paths", () => {
+
+			const multipleRequirementsOfLuMissingSk1: LearningUnit[] = [
+				newLearningUnit(thirdMap, "lu:10", [], []),
+				newLearningUnit(thirdMap, "lu:11", [], ["sk:2"]),
+				newLearningUnit(thirdMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"]),
+				newLearningUnit(thirdMap, "lu:13", ["sk:3"], ["sk:4"]),
+				newLearningUnit(thirdMap, "lu:14", ["sk:4"], ["sk:5"])
+			];
+
+			// Test: Analyze skill
+			const analysis = getSkillAnalysis({
+				skills: [...thirdMap],
+				learningUnits: [...multipleRequirementsOfLuMissingSk1],
+				goal: [
+					...thirdMap.filter(skill => skill.id === "sk:5")
+				]
+			});
+
+			// Assert: Finds missing skill with sub path:
+			expect(analysis!.length).toBeGreaterThan(0);
+			expect(analysis[0]!.missingSkill).toBe("sk:1");
+			expect(analysis[0]!.subPath.path.length).toBe(2);
+		});
+
+		it("Analysis missing skills with nested skills", () => {
+
+			const thirdNestedMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:4", repositoryId: "3", nestedSkills: ["sk:1", "sk:2", "sk:6"] },
+				{ id: "sk:5", repositoryId: "3", nestedSkills: ["sk:4", "sk:3"] }
+			].sort((a, b) => a.id.localeCompare(b.id));
+
+			const multipleRequirementsOfLuNested: LearningUnit[] = [
+				newLearningUnit(thirdNestedMap, "lu:10", [], ["sk:1"]),
+				newLearningUnit(thirdNestedMap, "lu:11", [], ["sk:2"]),
+				newLearningUnit(thirdNestedMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"])
+			];
+
+			// Test: Analyze skill
+			const analysis = getSkillAnalysis({
+				skills: [...thirdNestedMap],
+				learningUnits: [...multipleRequirementsOfLuNested],
+				goal: [
+					...thirdNestedMap.filter(skill => skill.id === "sk:5")
+				]
+			});
+
+			// Assert: Finds missing skill with nested skills:
+			expect(analysis!.length).toBeGreaterThan(0);
+			expect(analysis[0]!.missingSkill).toBe("sk:6");
+			expect(analysis[1]!.missingSkill).toBe("sk:4");
+			expect(analysis[2]!.missingSkill).toBe("sk:5");
+		});
+
+		it("Analysis missing skills with multiple nested skills", () => {
+
+			const thirdNestedMap: Skill[] = [
+				{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:4", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:5", repositoryId: "3", nestedSkills: [] },
+				{ id: "sk:6", repositoryId: "3", nestedSkills: ["sk:7", "sk:9"] },
+				{ id: "sk:9", repositoryId: "3", nestedSkills: ["sk:1", "sk:4"] },
+				{ id: "sk:7", repositoryId: "3", nestedSkills: ["sk:13", "sk:9"] },
+				{ id: "sk:8", repositoryId: "3", nestedSkills: ["sk:6", "sk:2"] }
+			].sort((a, b) => a.id.localeCompare(b.id));
+
+			const multipleRequirementsOfLuNested: LearningUnit[] = [
+				newLearningUnit(thirdNestedMap, "lu:10", [], ["sk:1"]),
+				newLearningUnit(thirdNestedMap, "lu:11", [], ["sk:2"]),
+				newLearningUnit(thirdNestedMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"]),
+				newLearningUnit(thirdNestedMap, "lu:13", [], ["sk:4"]),
+				newLearningUnit(thirdNestedMap, "lu:14", [], ["sk:5"])
+			];
+
+			// Test: Analyze skill
+			const analysis = getSkillAnalysis({
+				skills: [...thirdNestedMap],
+				learningUnits: [...multipleRequirementsOfLuNested],
+				goal: [
+					...thirdNestedMap.filter(skill => skill.id === "sk:4"),
+					...thirdNestedMap.filter(skill => skill.id === "sk:8")
+				]
+			});
+
+			// Assert: Finds missing skill with nested skills:
+			expect(analysis!.length).toBeGreaterThan(0);
+			expect(analysis[0]!.missingSkill).toBe("sk:13");
+			expect(analysis[1]!.missingSkill).toBe("sk:6");
+			expect(analysis[2]!.missingSkill).toBe("sk:7");
+			expect(analysis[3]!.missingSkill).toBe("sk:8");
 		});
 	});
 });
