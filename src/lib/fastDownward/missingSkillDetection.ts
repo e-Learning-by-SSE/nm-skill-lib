@@ -64,6 +64,7 @@ export function skillAnalysis<LU extends LearningUnit>(
     // Case 1: If a skill does not have requirements, then we can't find it through skill requirements tracing.
     // Case 2: If a skill depends on skill groups (parent/child), then we can't find it through skill requirements tracing.
     // We use goalString to find the missing skills that do not have requirements and the skill that uses skill groups.
+    // Note: I used a string to avoid performance issues in finding and deleting (I will do more research to compare it with other alternatives)
     let goalString = `,`.concat(initialState.learnedSkills.join(",").concat(`,`));
     
     while (openList.length > 0) {
