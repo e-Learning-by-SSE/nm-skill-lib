@@ -60,7 +60,10 @@ export function skillAnalysis<LU extends LearningUnit>(
 
     const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
     
-    // Use goalString to find missing skills that does not have a requirement
+    // goalString is a string with all the skills for the request goal (or skill) to analyze.
+    // Case 1: If a skill does not have requirements, then we can't find it through skill requirements tracing.
+    // Case 2: If a skill depends on skill groups (parent/child), then we can't find it through skill requirements tracing.
+    // We use goalString to find the missing skills that do not have requirements and the skill that uses skill groups.
     let goalString = `,`.concat(initialState.learnedSkills.join(",").concat(`,`));
     
     while (openList.length > 0) {
