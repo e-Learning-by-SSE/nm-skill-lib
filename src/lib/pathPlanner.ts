@@ -10,9 +10,11 @@ import {
 	CycledSkills,
 	SkillAnalyzedPath
 } from "./types";
-import { findLearningPath, findSkillAnalysis } from "./fastDownward/fdFrontend";
+import { findLearningPath } from "./fastDownward/fdFrontend";
 import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
 import { DistanceMap } from "./fastDownward/distanceMap";
+import { GlobalKnowledge } from "./fastDownward/global-knowledge";
+import { skillAnalysis } from "./fastDownward/missingSkillDetection";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -49,31 +51,6 @@ export function isAcyclic(
 ): boolean {
 	const graph = populateGraph({ skills, learningUnits });
 	return alg.isAcyclic(graph);
-}
-
-/**
- * @param skills The set of skills to include in the graph.
- * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
- * @param learningUnits All learning units of the system to learn new skills.
- * @returns A list of the missing skills with the sub paths for them.
- */
-export function getSkillAnalysis<LU extends LearningUnit>({
-	skills,
-	goal,
-	learningUnits
-}: {
-	skills: ReadonlyArray<Skill>;
-	learningUnits: ReadonlyArray<LU>;
-	goal: Skill[];
-}): SkillAnalyzedPath[] | null {
-
-	const skillAnalyzedPath = findSkillAnalysis({
-		skills,
-		goal,
-		learningUnits
-	});
-
-	return skillAnalyzedPath;
 }
 
 /**
@@ -437,4 +414,36 @@ function findParentsOfSkills<S extends Skill>(
 			}
 		}
 	}
+}
+
+/**
+ * Finding the missing skills in a learning path By analyze the skills of a goal.
+ * Tracing backward the skill requirements and group skills (parent/child) for the skills. 
+ * 
+ * Analyzing skill requirements by using recursive tracing for each required skill to try to find the missing skills.
+ * Analyzing the group skills (parent/child) by checking skill groups hierarchy.
+ * 
+ * @param goal The skills that should be learned.
+ * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param learningUnits The set of all LearningUnits.
+ * @returns A list of the missing skills with the sub paths for them.
+ */
+export function getSkillAnalysis<LU extends LearningUnit>({
+	skills,
+	goal,
+	learningUnits
+}: {
+	skills: ReadonlyArray<Skill>;
+	goal: Skill[];
+	learningUnits: ReadonlyArray<LU>;
+}): SkillAnalyzedPath[] | null {
+	const globalKnowledge = new GlobalKnowledge(skills);
+
+	const skillAnalyzedPath = skillAnalysis(
+		globalKnowledge,
+		learningUnits,
+		goal
+	);
+
+	return skillAnalyzedPath;
 }

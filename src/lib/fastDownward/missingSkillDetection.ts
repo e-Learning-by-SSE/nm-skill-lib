@@ -28,7 +28,13 @@ function availableActions<LU extends LearningUnit>(
 }
 
 /**
- * Analysis a goal to find the missing skills.
+ * Analysis skills of a goal to find the missing skills.
+ * The algorithm traces back the required skills from the goal backward.
+ * Tracing the requirements for the required skills recursively to try to find the missing skills
+ * 
+ * If a learning unit for the required skill is not found, then it is counted as a missing skill and recorded the sub-path.
+ * If a skill depends on skill groups (parent/child) is not found, then the algorithm checks skill groups hierarchy to find missing skills.
+ * 
  * @param goal The skills that should be learned (should not contain skills that are already known).
  * @param globalKnowledge The set of all skills (independent of what was already learned and what should be learned).
  * @param learningUnits All learning units of the system to learn new skills.
@@ -57,7 +63,7 @@ export function skillAnalysis<LU extends LearningUnit>(
     // Use goalString to find missing skills that does not have a requirement
     let goalString = `,`.concat(initialState.learnedSkills.join(",").concat(`,`));
     
-        while (openList.length > 0) {
+    while (openList.length > 0) {
         currentNode = openList.shift()!;
 
         // Stop searching in a sub-path for a skill if we reached a skill without requirement.
