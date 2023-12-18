@@ -4,7 +4,7 @@ import { State } from "./state";
 import { CostFunction, HeuristicFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNode } from "./searchNode";
-import { skillAnalysis } from "./analysis";
+import { skillAnalysis } from "./missingSkillDetection";
 
 /**
  * Searches for an optimal path to learn the desired Skills (goal) based on the given knowledge.
@@ -267,7 +267,8 @@ export function findLearningPath<LU extends LearningUnit>({
 }
 
 /**
- *
+ * Analyze skills of a goal by tracing backward the skill requirements and group skills for the skills 
+ * 
  * @param goal The skills that should be learned.
  * @param skills The set of all skills (independent of what was already learned and what should be learned).
  * @param learningUnits The set of all LearningUnits.
