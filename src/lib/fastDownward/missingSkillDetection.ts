@@ -60,12 +60,11 @@ export function skillAnalysis<LU extends LearningUnit>(
 
     const openList: SearchNode<LU>[] = [new SearchNode<LU>(initialState, null, null, 0, 0)];
     
-    // goalString is a string with all the skills for the request goal (or skill) to analyze.
+    // goalArray is a array of string with all the skills for the request goal (or skill) to analyze.
     // Case 1: If a skill does not have requirements, then we can't find it through skill requirements tracing.
     // Case 2: If a skill depends on skill groups (parent/child), then we can't find it through skill requirements tracing.
-    // We use goalString to find the missing skills that do not have requirements and the skill that uses skill groups.
-    // Note: I used a string to avoid performance issues in finding and deleting (I will do more research to compare it with other alternatives)
-    let goalString = `,`.concat(initialState.learnedSkills.join(",").concat(`,`));
+    // We use goalArray to find the missing skills that do not have requirements and the skill that uses skill groups.
+    const goalsArray = initialState.learnedSkills.slice(0);
     
     while (openList.length > 0) {
         currentNode = openList.shift()!;
@@ -81,18 +80,20 @@ export function skillAnalysis<LU extends LearningUnit>(
 
             // Removing found (reachable) skills from the goalString
             lu.teachingGoals.forEach(skill => {
-                goalString = goalString.replace(`,${skill.id},`,`,`);
+                if (goalsArray.indexOf(skill.id) >= 0) {
+                    goalsArray.splice(goalsArray.indexOf(skill.id), 1);
+                
+                    // Removing nested skills from the goalString if the parent skill is found (reachable)  
+                    skill.nestedSkills.forEach(nestedSkill =>
+                        goalsArray.splice(goalsArray.indexOf(nestedSkill), 1)
+                    );
 
-                // Removing nested skills from the goalString if the parent skill is found (reachable)  
-                skill.nestedSkills.forEach(nestedSkill =>
-                    goalString = goalString.replace(`,${nestedSkill},`,`,`)
-                );
-
-                // Removing parent skill from the goalString if the it has one child 
-                // And that child skill is found (reachable)
-                const allParents = globalKnowledge.getAllParents();
-                const parent = allParents.filter(parent => parent.nestedSkills.every(child => skill.id.includes(child)));
-                parent.forEach(sk => goalString = goalString.replace(`,${sk.id},`,`,`));
+                    // Removing parent skill from the goalString if the it has one child 
+                    // And that child skill is found (reachable)
+                    const allParents = globalKnowledge.getAllParents();
+                    const parent = allParents.filter(parent => parent.nestedSkills.every(child => skill.id == child));
+                    parent.forEach(sk => goalsArray.splice(goalsArray.indexOf(sk.id), 1));
+                }
             });
 
             // Find in reverse order LearningUnits for the required skills
@@ -130,22 +131,22 @@ export function skillAnalysis<LU extends LearningUnit>(
     // If goalString still has some goals, then we check the skill groups in globalKnowledge
     // To remove parent skill if all his children is found (Reachable)
     // We do loop over the goal skills, to void the order of the skills until no more changes on the goalString
-    if (goalString.length > 0) {
+    if (goalsArray.length > 0) {
         while (true) {
-            const goalSkills = goalString.split(",").filter(skill => skill.length > 0);
+            const goalSkills = goalsArray.slice(0);
             let goalSkillsCount = goalSkills.length;
             goalSkills.forEach(sk => {
                 const parentSkill = globalKnowledge.getAllParents().find(parentSkill => parentSkill.id == sk);
                 if (parentSkill) {
                     let parentSkillCount = parentSkill.nestedSkills.length;
                     parentSkill.nestedSkills.forEach(skill => {
-                            if (goalString.includes(`,`.concat(skill).concat(`,`))) {
+                            if (goalsArray.includes(skill)) {
                                 parentSkillCount--;
                             }
                         }
                     );
                     if (parentSkillCount == parentSkill.nestedSkills.length) {
-                        goalString = goalString.replace(`,${sk},`,`,`);
+                        goalsArray.splice(goalsArray.indexOf(sk), 1)
                         goalSkillsCount--;
                     }
                 } else {
@@ -153,11 +154,12 @@ export function skillAnalysis<LU extends LearningUnit>(
                     openListMap.set(sk, -1);
                 }
             });
+            
             if (goalSkillsCount == goalSkills.length) {
                 break;
             }
         }
-        goalString.split(",").filter(skill => skill.length > 0).forEach(sk => {
+        goalsArray.filter(skill => skill.length > 0).forEach(sk => {
             if (!openListMap.has(sk)) {
                 openListMap.set(sk, -1);
             }
