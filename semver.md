@@ -18,3 +18,16 @@ switch to the following versioning scheme:
 1. MINOR version when you add functionality in a backward compatible
    manner
 1. PATCH version when you make backward compatible bug fixes
+
+# Releasing
+
+Run the following commands
+
+```
+git tag <version>
+nx release version
+nx release changelog <version> --from <old-tagged-version>
+nx release publish --registry=https://npm.pkg.github.com
+```
+
+you can always use the `--dry-run` option to test. See https://nx.dev/core-features/manage-releases
