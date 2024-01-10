@@ -10,6 +10,8 @@ import {
 	getSkillAnalysis
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
+import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "./compositeLearningUnit"
+
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1572,8 +1574,12 @@ function newLearningUnit(
 
 	return {
 		id: id,
+		children: [],
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
-		suggestedSkills: suggestions
+		suggestedSkills: suggestions,
+		getTeachingGoals: getTeachingGoals,
+		getRequiredSkills: getRequiredSkills,
+		getSuggestedSkills: getSuggestedSkills,
 	};
 }

@@ -20,11 +20,15 @@ export type Edge = {
 
 export type LearningUnit = {
 	id: string;
+	children: LearningUnit[];
 	mediaTime?: number;
 	words?: number;
 	requiredSkills: Skill[];
 	teachingGoals: Skill[];
 	suggestedSkills: { weight: number; skill: Skill }[];
+	getTeachingGoals(): Skill[];
+	getRequiredSkills(): Skill[];
+	getSuggestedSkills(): { weight: number; skill: Skill }[];
 };
 
 export const isLearningUnit = (element: Skill | LearningUnit): element is LearningUnit => {

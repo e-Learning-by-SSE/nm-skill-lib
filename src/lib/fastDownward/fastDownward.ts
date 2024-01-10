@@ -3,6 +3,7 @@ import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
+import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "../compositeLearningUnit"
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
@@ -242,9 +243,13 @@ export function search<LU extends LearningUnit>(
 				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 				const tempLU = {
 					id: "-1",
+					children: [],
 					requiredSkills: remainSkills,
 					teachingGoals: [],
 					suggestedSkills:[],
+					getTeachingGoals: getTeachingGoals,
+					getRequiredSkills: getRequiredSkills,
+					getSuggestedSkills: getSuggestedSkills,
 				}
 				noPath.path.push(tempLU);
 				pathList.push(noPath);
@@ -272,9 +277,13 @@ export function search<LU extends LearningUnit>(
 	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 	const tempLU = {
         id: "-1",
-        requiredSkills: remainSkills,
+        children: [],
+		requiredSkills: remainSkills,
         teachingGoals: [],
 		suggestedSkills:[],
+		getTeachingGoals: getTeachingGoals,
+		getRequiredSkills: getRequiredSkills,
+		getSuggestedSkills: getSuggestedSkills,
     }
 	noPath.path.push(tempLU);
 	pathList.push(noPath);
