@@ -268,13 +268,17 @@ export async function computeSuggestedSkills(
 ) {
 	// Delete constraints for the very first unit
 	await fnUpdate(learningUnits[0], []);
+
 	// Iterate over all learningUnits starting at index 2 and set ordering condition to previous learningUnit
 	for (let i = 1; i < learningUnits.length; i++) {
 		const previousUnit = learningUnits[i - 1];
 		const currentUnit = learningUnits[i];
 		const missingSkills = previousUnit.teachingGoals
 			.map(goal => goal.id)
-			.filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId));
+			// Do not copy hard constraints also to soft constraints
+			.filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId))
+			// Do not copy currently taught skills to avoid cycles
+			.filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
 
 		await fnUpdate(currentUnit, missingSkills);
 	}
@@ -418,11 +422,11 @@ function findParentsOfSkills<S extends Skill>(
 
 /**
  * Finding the missing skills in a learning path By analyze the skills of a goal.
- * Tracing backward the skill requirements and group skills (parent/child) for the skills. 
- * 
+ * Tracing backward the skill requirements and group skills (parent/child) for the skills.
+ *
  * Analyzing skill requirements by using recursive tracing for each required skill to try to find the missing skills.
  * Analyzing the group skills (parent/child) by checking skill groups hierarchy.
- * 
+ *
  * @param goal The skills that should be learned.
  * @param skills The set of all skills (independent of what was already learned and what should be learned).
  * @param learningUnits The set of all LearningUnits.
@@ -439,11 +443,7 @@ export function getSkillAnalysis<LU extends LearningUnit>({
 }): SkillAnalyzedPath[] | null {
 	const globalKnowledge = new GlobalKnowledge(skills);
 
-	const skillAnalyzedPath = skillAnalysis(
-		globalKnowledge,
-		learningUnits,
-		goal
-	);
+	const skillAnalyzedPath = skillAnalysis(globalKnowledge, learningUnits, goal);
 
 	return skillAnalyzedPath;
 }

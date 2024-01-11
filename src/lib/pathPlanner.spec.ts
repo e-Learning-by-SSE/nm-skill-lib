@@ -971,6 +971,36 @@ describe("Path Planer", () => {
 			// Test: Verify that path has changed
 			expect(changedPath.path).toEqual(path.path);
 		});
+
+		it("Repeating taught skills", async () => {
+			const repeatingSkillsLus: LearningUnit[] = [
+				newLearningUnit(thirdMap, "lu:1", [], ["sk:1", "sk:2"]),
+				newLearningUnit(thirdMap, "lu:2", [], ["sk:2", "sk:3", "sk:4"]),
+				newLearningUnit(thirdMap, "lu:3", [], ["sk:1", "sk:3", "sk:5"])
+			];
+
+			// Test: Simulate
+			await computeSuggestedSkills(
+				repeatingSkillsLus,
+				async (lu: LearningUnit, missingSkills: string[]) => {
+					switch (lu.id) {
+						case "lu:1":
+							if (missingSkills.length > 0) {
+								throw new Error(
+									"Must not compute any constraints for the first LU"
+								);
+							}
+							break;
+						case "lu:2":
+							expect(missingSkills).toEqual(["sk:1"]);
+							break;
+						case "lu:3":
+							expect(missingSkills.sort()).toEqual(["sk:2", "sk:4"]);
+							break;
+					}
+				}
+			);
+		});
 	});
 
 	describe("findCycles", () => {
@@ -1282,8 +1312,8 @@ describe("Path Planer", () => {
 			});
 
 			// Assert: No paths are computed, due to timeout
-			expect(noPaths.length).toBe(1);
-			expect(noPaths[0].cost).toBe(-1);
+			expect(noPaths!.length).toBe(1);
+			expect(noPaths![0].cost).toBe(-1);
 		});
 
 		it("Compute some of the alternative paths due to timeout", async () => {
@@ -1313,9 +1343,7 @@ describe("Path Planer", () => {
 	});
 
 	describe("missing skills test", () => {
-
 		it("Find one missing skill", () => {
-
 			const structuredPathOfLusMissingSk8: LearningUnit[] = [
 				newLearningUnit(thirdMapHierarchy, "lu:7", [], ["sk:10"]),
 				newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
@@ -1344,7 +1372,6 @@ describe("Path Planer", () => {
 		});
 
 		it("No missing skill", () => {
-
 			// Test: Analyze skill
 			const analysis = getSkillAnalysis({
 				skills: [...firstMap, ...thirdMapHierarchy],
@@ -1362,7 +1389,6 @@ describe("Path Planer", () => {
 		});
 
 		it("Analysis one missing skill", () => {
-
 			const multipleRequirementsOfLuMissingSk2: LearningUnit[] = [
 				newLearningUnit(firstMap, "lu:10", [], ["sk:1"]),
 				newLearningUnit(firstMap, "lu:11", [], []),
@@ -1383,11 +1409,10 @@ describe("Path Planer", () => {
 
 			// Assert: Finds missing skill and nested skills:
 			expect(analysis!.length).toBeGreaterThan(0);
-			expect(analysis[0]!.missingSkill).toBe("sk:2");
+			expect(analysis![0].missingSkill).toBe("sk:2");
 		});
 
 		it("Analysis missing skills and nested skills", () => {
-			
 			const structuredPathOfLusMissingSk10: LearningUnit[] = [
 				newLearningUnit(thirdMapHierarchy, "lu:7", [], []),
 				newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
@@ -1408,11 +1433,10 @@ describe("Path Planer", () => {
 
 			// Assert: Finds missing skill and nested skills:
 			expect(analysis!.length).toBeGreaterThan(0);
-			expect(analysis[0]!.missingSkill).toBe("sk:12");
+			expect(analysis![0].missingSkill).toBe("sk:12");
 		});
 
 		it("Analysis missing skills with a sub paths", () => {
-
 			const multipleRequirementsOfLuMissingSk1: LearningUnit[] = [
 				newLearningUnit(thirdMap, "lu:10", [], []),
 				newLearningUnit(thirdMap, "lu:11", [], ["sk:2"]),
@@ -1425,19 +1449,16 @@ describe("Path Planer", () => {
 			const analysis = getSkillAnalysis({
 				skills: [...thirdMap],
 				learningUnits: [...multipleRequirementsOfLuMissingSk1],
-				goal: [
-					...thirdMap.filter(skill => skill.id === "sk:5")
-				]
+				goal: [...thirdMap.filter(skill => skill.id === "sk:5")]
 			});
 
 			// Assert: Finds missing skill with sub path:
 			expect(analysis!.length).toBeGreaterThan(0);
-			expect(analysis[0]!.missingSkill).toBe("sk:1");
-			expect(analysis[0]!.subPath.path.length).toBe(2);
+			expect(analysis![0].missingSkill).toBe("sk:1");
+			expect(analysis![0].subPath.path.length).toBe(2);
 		});
 
 		it("Analysis missing skills with nested skills", () => {
-
 			const thirdNestedMap: Skill[] = [
 				{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
 				{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
@@ -1456,20 +1477,17 @@ describe("Path Planer", () => {
 			const analysis = getSkillAnalysis({
 				skills: [...thirdNestedMap],
 				learningUnits: [...multipleRequirementsOfLuNested],
-				goal: [
-					...thirdNestedMap.filter(skill => skill.id === "sk:5")
-				]
+				goal: [...thirdNestedMap.filter(skill => skill.id === "sk:5")]
 			});
 
 			// Assert: Finds missing skill with nested skills:
 			expect(analysis!.length).toBeGreaterThan(0);
-			expect(analysis[0]!.missingSkill).toBe("sk:6");
-			expect(analysis[1]!.missingSkill).toBe("sk:4");
-			expect(analysis[2]!.missingSkill).toBe("sk:5");
+			expect(analysis![0].missingSkill).toBe("sk:6");
+			expect(analysis![1].missingSkill).toBe("sk:4");
+			expect(analysis![2].missingSkill).toBe("sk:5");
 		});
 
 		it("Analysis missing skills with multiple nested skills", () => {
-
 			const thirdNestedMap: Skill[] = [
 				{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
 				{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
@@ -1502,10 +1520,10 @@ describe("Path Planer", () => {
 
 			// Assert: Finds missing skill with nested skills:
 			expect(analysis!.length).toBeGreaterThan(0);
-			expect(analysis[0]!.missingSkill).toBe("sk:13");
-			expect(analysis[1]!.missingSkill).toBe("sk:6");
-			expect(analysis[2]!.missingSkill).toBe("sk:7");
-			expect(analysis[3]!.missingSkill).toBe("sk:8");
+			expect(analysis![0].missingSkill).toBe("sk:13");
+			expect(analysis![1].missingSkill).toBe("sk:6");
+			expect(analysis![2].missingSkill).toBe("sk:7");
+			expect(analysis![3].missingSkill).toBe("sk:8");
 		});
 	});
 });
