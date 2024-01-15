@@ -211,10 +211,13 @@ export function search<LU extends LearningUnit>(
 					while (low <= high) {
 						mid = Math.floor((low + high) / 2);
 						if (openList[mid].heuristic > newNode.heuristic && mid - low > 1) {
-							high = mid - 1;
+							high = mid;
 						} else if (openList[mid].heuristic < newNode.heuristic && high - mid > 1) {
-							low = mid + 1;
+							low = mid;
 						} else {
+							if (openList[mid].heuristic < newNode.heuristic) {
+								mid++;
+							}
 							openList.splice(mid, 0, newNode);
 							mid = -1;
 							break;
