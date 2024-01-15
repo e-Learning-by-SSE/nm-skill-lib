@@ -13,12 +13,12 @@ function availableActions<LU extends LearningUnit>(
 	globalKnowledge: GlobalKnowledge
 ) {
     // Find the LearningUnits for each goal in the state using teachingGoals.
-    let usefulLus = learningUnits.filter(lu => lu.teachingGoals.some(skill => currentState.learnedSkills.includes(skill.id)));
+    let usefulLus = learningUnits.filter(lu => lu.getTeachingGoals().some(skill => currentState.learnedSkills.includes(skill.id)));
     
     // Find the LearningUnits for each goal in the state using globalKnowledge (Skill groups).
     globalKnowledge.getAllParents().forEach(parent => {
         if (currentState.getHashCode().includes(parent.id) ) {
-            const lu = learningUnits.filter(lu => lu.teachingGoals.some(skill => parent.nestedSkills.includes(skill.id)));
+            const lu = learningUnits.filter(lu => lu.getTeachingGoals().some(skill => parent.nestedSkills.includes(skill.id)));
             usefulLus = usefulLus.concat(lu);
         }
     });
@@ -73,14 +73,15 @@ export function skillAnalysis<LU extends LearningUnit>(
         // Stop searching in a sub-path for a skill if we reached a skill without requirement.
         // Reaching a skill without requirement in a sub-path means that there is a path for learning this skill
         const unit = currentNode!.action!;
-        if (unit && unit.requiredSkills.length == 0) {
+        if (unit && unit.getRequiredSkills().length == 0) {
             continue;
         }
 
+        
         for (const lu of availableActions(currentNode.state, learningUnits, globalKnowledge)) {
 
             // Removing found (reachable) skills from the goalString
-            lu.teachingGoals.forEach(skill => {
+            lu.getTeachingGoals().forEach(skill => {
                 goalString = goalString.replace(`,${skill.id},`,`,`);
 
                 // Removing nested skills from the goalString if the parent skill is found (reachable)  
@@ -96,10 +97,11 @@ export function skillAnalysis<LU extends LearningUnit>(
             });
 
             // Find in reverse order LearningUnits for the required skills
-            lu.requiredSkills.forEach(skill => {
+            lu.getRequiredSkills().forEach(skill => {
+
 
                 // Find LearningUnits for the required skills
-                let requiredLus = learningUnits.filter(unit => unit.teachingGoals.map(sk => sk.id).includes(skill.id));
+                let requiredLus = learningUnits.filter(unit => unit.getTeachingGoals().map(sk => sk.id).includes(skill.id));
                 
                 // Check the nested skills (Skill groups) in globalKnowledge for the required skill
                 if (requiredLus.length == 0) {

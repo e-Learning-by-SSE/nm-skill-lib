@@ -226,16 +226,16 @@ function populateGraph({
 		learningUnits.forEach(lu => {
 			const luName = "lu" + lu.id;
 			graph.setNode("lu" + lu.id, lu);
-			lu.requiredSkills.forEach(req => {
+			lu.getRequiredSkills().forEach(req => {
 				graph.setEdge("sk" + req.id, luName);
 			});
 
-			lu.teachingGoals.forEach(goal => {
+			lu.getTeachingGoals().forEach(goal => {
 				graph.setEdge(luName, "sk" + goal.id);
 			});
 
 			if (suggestions) {
-				lu.suggestedSkills.forEach(suggestion => {
+				lu.getSuggestedSkills().forEach(suggestion => {
 					// Analogous to requirements: Skill -> LearningUnit
 					graph.setEdge("sk" + suggestion.skill.id, luName);
 				});
@@ -272,9 +272,9 @@ export async function computeSuggestedSkills(
 	for (let i = 1; i < learningUnits.length; i++) {
 		const previousUnit = learningUnits[i - 1];
 		const currentUnit = learningUnits[i];
-		const missingSkills = previousUnit.teachingGoals
+		const missingSkills = previousUnit.getTeachingGoals()
 			.map(goal => goal.id)
-			.filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId));
+			.filter(goalId => !currentUnit.getRequiredSkills().map(skill => skill.id).includes(goalId));
 
 		await fnUpdate(currentUnit, missingSkills);
 	}

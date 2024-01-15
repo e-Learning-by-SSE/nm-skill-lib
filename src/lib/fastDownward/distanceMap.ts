@@ -30,11 +30,11 @@ export class DistanceMap<LU extends LearningUnit> {
 		});
 		learningUnits.forEach(lu => {
 			graph.setNode("lu" + lu.id, lu);
-			lu.requiredSkills.forEach(req => {
+			lu.getRequiredSkills().forEach(req => {
 				graph.setEdge("sk" + req.id, "lu" + lu.id);
 			});
 
-			lu.teachingGoals.forEach(goal => {
+			lu.getTeachingGoals().forEach(goal => {
 				graph.setEdge("lu" + lu.id, "sk" + goal.id);
 			});
 		});

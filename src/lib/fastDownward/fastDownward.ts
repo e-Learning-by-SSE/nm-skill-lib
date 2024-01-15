@@ -17,11 +17,11 @@ function availableActions<LU extends LearningUnit>(
 	// However, we can also check that we always learn at least one new skill
 	const usefulLus = learningUnits
 		.filter(unit =>
-			unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
+			unit.getRequiredSkills().every(skill => currentState.learnedSkills.includes(skill.id))
 		)
 		.filter(lu =>
 			// Do not suggest learning units that do not teach any unknown skills
-			lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
+			lu.getTeachingGoals().some(skill => !currentState.learnedSkills.includes(skill.id))
 		);
 
 	// // Do not suggest learning units that do not teach any unknown skills
@@ -41,15 +41,15 @@ export function computeCost<LU extends LearningUnit>(
 	const sameContext =
 		contextSwitchPenalty !== 1
 			? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
-			  lu.teachingGoals.some(
-					skill => currentNode.action?.requiredSkills.includes(skill) ?? true
+			  lu.getTeachingGoals().some(
+					skill => currentNode.action?.getRequiredSkills().includes(skill) ?? true
 			  )
 			: true;
 
 	const suggestionPenalty = suggestionViolationPenalty
 		? // Identify all missing suggested skills in the current state
 		  1 +
-		  lu.suggestedSkills
+		  lu.getSuggestedSkills()
 				.filter(
 					suggestion => !currentNode.state.learnedSkills.includes(suggestion.skill.id)
 				)
