@@ -266,6 +266,11 @@ export async function computeSuggestedSkills(
 	learningUnits: LearningUnit[],
 	fnUpdate: UpdateSoftConstraintFunction
 ) {
+	// Do nothing and avoid any exception if an empty array was passed
+	if (learningUnits.length === 0) {
+		return;
+	}
+
 	// Delete constraints for the very first unit
 	await fnUpdate(learningUnits[0], []);
 
