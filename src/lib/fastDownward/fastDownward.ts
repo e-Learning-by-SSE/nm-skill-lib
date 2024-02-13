@@ -3,6 +3,7 @@ import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
+import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "../compositeLearningUnit"
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
@@ -16,11 +17,11 @@ function availableActions<LU extends LearningUnit>(
 	// However, we can also check that we always learn at least one new skill
 	const usefulLus = learningUnits
 		.filter(unit =>
-			unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
+			unit.getRequiredSkills().every(skill => currentState.learnedSkills.includes(skill.id))
 		)
 		.filter(lu =>
 			// Do not suggest learning units that do not teach any unknown skills
-			lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
+			lu.getTeachingGoals().some(skill => !currentState.learnedSkills.includes(skill.id))
 		);
 
 	// // Do not suggest learning units that do not teach any unknown skills
@@ -40,22 +41,24 @@ export function computeCost<LU extends LearningUnit>(
 	const sameContext =
 		contextSwitchPenalty !== 1
 			? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
-			  lu.teachingGoals.some(
-					skill => currentNode.action?.requiredSkills.includes(skill) ?? true
+			  lu.getTeachingGoals().some(
+					skill => currentNode.action?.getRequiredSkills().includes(skill) ?? true
 			  )
 			: true;
 
+	const luCost = lu.children.length > 0 ? lu.children.length * 0.95 : 1;
+
 	const suggestionPenalty = suggestionViolationPenalty
 		? // Identify all missing suggested skills in the current state
-		  1 +
-		  lu.suggestedSkills
+		  luCost +
+		  lu.getSuggestedSkills()
 				.filter(
 					suggestion => !currentNode.state.learnedSkills.includes(suggestion.skill.id)
 				)
 				.map(suggestion => suggestion.weight)
 				.reduce((a, b) => a + b, 0)
 		: // No penalty for not following suggestions
-		  1;
+		  luCost;
 
 	const cost = sameContext
 		? // Same context or no penalty defined
@@ -245,9 +248,13 @@ export function search<LU extends LearningUnit>(
 				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 				const tempLU = {
 					id: "-1",
+					children: [],
 					requiredSkills: remainSkills,
 					teachingGoals: [],
 					suggestedSkills:[],
+					getTeachingGoals: getTeachingGoals,
+					getRequiredSkills: getRequiredSkills,
+					getSuggestedSkills: getSuggestedSkills,
 				}
 				noPath.path.push(tempLU);
 				pathList.push(noPath);
@@ -275,9 +282,13 @@ export function search<LU extends LearningUnit>(
 	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 	const tempLU = {
         id: "-1",
-        requiredSkills: remainSkills,
+        children: [],
+		requiredSkills: remainSkills,
         teachingGoals: [],
 		suggestedSkills:[],
+		getTeachingGoals: getTeachingGoals,
+		getRequiredSkills: getRequiredSkills,
+		getSuggestedSkills: getSuggestedSkills,
     }
 	noPath.path.push(tempLU);
 	pathList.push(noPath);
