@@ -6,7 +6,7 @@ import {
 	toUnifiedLearningUnit
 } from "./compositeLearningUnit";
 
-describe("computeTaughtSkills", () => {
+describe("toUnifiedLearningUnit", () => {
 	let skill1: Skill, skill2: Skill, skill3: Skill, skill4: Skill;
 	let weightedSkill1: WeightedSkill;
 	let level3Child: CompositeLearningUnit,
