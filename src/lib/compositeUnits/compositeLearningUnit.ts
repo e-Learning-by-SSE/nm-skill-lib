@@ -1,10 +1,6 @@
 import { CompositeDefinition, LearningUnit } from "../types";
-import { flattenTree } from "../util/flatten-tree/flatte-tree";
-import {
-	computeHiddenRequiredSkills,
-	computeHiddenSuggestionsSkills,
-	computeTaughtSkills
-} from "./computation-helpers";
+import { duplicateRemover, idChecker } from "../util/duplicate-remover/duplicate-remover";
+import { flattenTree } from "../util/flatten-tree/flatten-tree";
 
 /**
  *
@@ -24,15 +20,43 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 		words: children.reduce((acc, child) => acc + (child.words || 0), 0),
 		mediaTime: children.reduce((acc, child) => acc + (child.mediaTime || 0), 0),
 		requiredSkills: unit.requiredExposedSkills.concat(unit.requiredSkills),
-		teachingGoals: computeTaughtSkills(unit),
+		teachingGoals: reduceTaughtSkills(unit),
 		suggestedSkills: unit.suggestedSkills.concat(unit.suggestedExposedSkills)
 	};
 }
 
+export function reduceTaughtSkills(unit: CompositeDefinition) {
+	const duplicateGoalFilter = duplicateRemover(unit.teachingGoals.map(skill => skill.id));
+	return unit.children.flatMap(child => child.teachingGoals).filter(duplicateGoalFilter);
+}
+
 export function analysisCompositeUnit({ unit }: { unit: CompositeDefinition }) {
 	return {
-		taughtSkills: computeTaughtSkills(unit),
+		taughtSkills: reduceTaughtSkills(unit),
 		hiddenRequiredSkills: computeHiddenRequiredSkills(unit),
 		hiddenSuggestedSkills: computeHiddenSuggestionsSkills(unit)
 	};
+}
+
+export function computeHiddenSuggestionsSkills(unit: CompositeDefinition) {
+	const addUniqueId = sug => ({ ...sug, id: `${sug.skill.id}-${sug.weight}` });
+	const isNoExposedSuggestedSkill = (sug: { id: string }) =>
+		!unit.suggestedExposedSkills.map(addUniqueId).some(idChecker(sug));
+
+	const suggestions = unit.children
+		.flatMap(child => child.suggestedSkills)
+		.map(addUniqueId)
+		.filter(duplicateRemover())
+		.filter(isNoExposedSuggestedSkill)
+		.map(({ id, ...rest }) => ({ ...rest }));
+	return suggestions;
+}
+
+export function computeHiddenRequiredSkills(unit: CompositeDefinition) {
+	const isNoExposedRequiredSkills = skill => !unit.requiredExposedSkills.some(idChecker(skill));
+
+	return unit.children
+		.flatMap(child => child.requiredSkills)
+		.filter(duplicateRemover())
+		.filter(isNoExposedRequiredSkills);
 }

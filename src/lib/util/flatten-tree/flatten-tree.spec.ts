@@ -1,4 +1,4 @@
-import { flattenTree } from "./flatte-tree";
+import { flattenTree } from "./flatten-tree";
 
 describe("flattenTree", () => {
 	it("should flatten a tree", () => {

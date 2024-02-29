@@ -1,2 +1,1 @@
-// export { analysisCompositeUnit, toUnifiedLearningUnit } from "./compositeLearningUnit";
-export * from "./compositeLearningUnit";
+export { analysisCompositeUnit, toUnifiedLearningUnit } from "./compositeLearningUnit";
