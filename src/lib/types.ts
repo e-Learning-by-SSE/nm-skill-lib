@@ -18,26 +18,41 @@ export type Edge = {
 	to: string;
 };
 
+export type WeightedSkill = {
+	weight: number;
+	skill: Skill;
+};
+
 export type LearningUnit = {
 	id: string;
-	children: LearningUnit[];
 	mediaTime?: number;
 	words?: number;
 	requiredSkills: Skill[];
 	teachingGoals: Skill[];
-	suggestedSkills: { weight: number; skill: Skill }[];
-	externalRequiredSkills?: Skill[];
-	exportedRequiredSkills?: Skill[];
-	unusedRequiredSkills?: Skill[];
-	taughtSkills?: Skill[];
-	externalRecommendedSkills?: { weight: number; skill: Skill }[];
-	exportedRecommendedSkills?: { weight: number; skill: Skill }[];
-	unusedRecommendedSkills?: { weight: number; skill: Skill }[];
-	getTeachingGoals(): Skill[];
-	getRequiredSkills(): Skill[];
-	getSuggestedSkills(): { weight: number; skill: Skill }[];
+	suggestedSkills: WeightedSkill[];
 };
 
+export type CompositeLearningUnit = LearningUnit & {
+	children?: CompositeLearningUnit[];
+};
+
+export function isCompositeUnit(
+	unit: LearningUnit | CompositeLearningUnit
+): unit is CompositeLearningUnit {
+	return (unit as CompositeLearningUnit).children !== undefined;
+}
+
+export type CompositeDefinition = {
+	id: string;
+	children: CompositeLearningUnit[];
+	teachingGoals: Skill[];
+	suggestedSkills: WeightedSkill[];
+	requiredSkills: Skill[];
+	requiredExposedSkills: Skill[];
+	suggestedExposedSkills: WeightedSkill[];
+};
+
+// NOT WORKING
 export const isLearningUnit = (element: Skill | LearningUnit): element is LearningUnit => {
 	return (element as LearningUnit).teachingGoals !== undefined;
 };

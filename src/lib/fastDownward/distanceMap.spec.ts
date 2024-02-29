@@ -1,6 +1,10 @@
 import { LearningUnit, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
-import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "../compositeLearningUnit"
+import {
+	getGoals,
+	getRequiredSkills,
+	getSuggestedSkills
+} from "../compositeUnits/compositeLearningUnit";
 
 describe("getDistance", () => {
 	it("2 connected Units; No nesting", () => {
@@ -85,8 +89,8 @@ function newLearningUnit(
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
 		suggestedSkills: [],
-		getTeachingGoals: getTeachingGoals,
+		getTeachingGoals: getGoals,
 		getRequiredSkills: getRequiredSkills,
-		getSuggestedSkills: getSuggestedSkills,
+		getSuggestedSkills: getSuggestedSkills
 	};
 }

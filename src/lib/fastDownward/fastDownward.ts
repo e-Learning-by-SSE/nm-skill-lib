@@ -1,9 +1,9 @@
-import { LearningUnit, Path, Skill } from "../types";
+import { CompositeLearningUnit, LearningUnit, Path, Skill } from "../types";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
-import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "../compositeLearningUnit"
+import { lutimes } from "fs";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
@@ -17,11 +17,11 @@ function availableActions<LU extends LearningUnit>(
 	// However, we can also check that we always learn at least one new skill
 	const usefulLus = learningUnits
 		.filter(unit =>
-			unit.getRequiredSkills().every(skill => currentState.learnedSkills.includes(skill.id))
+			unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
 		)
 		.filter(lu =>
 			// Do not suggest learning units that do not teach any unknown skills
-			lu.getTeachingGoals().some(skill => !currentState.learnedSkills.includes(skill.id))
+			lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
 		);
 
 	// // Do not suggest learning units that do not teach any unknown skills
@@ -29,6 +29,10 @@ function availableActions<LU extends LearningUnit>(
 	// 	lu.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
 	// );
 	return usefulLus;
+}
+
+function calculateCostForUnit(unit: CompositeLearningUnit | LearningUnit) {
+	return "children" in unit ? unit.children.length * 0.95 : 1;
 }
 
 export function computeCost<LU extends LearningUnit>(
@@ -41,17 +45,18 @@ export function computeCost<LU extends LearningUnit>(
 	const sameContext =
 		contextSwitchPenalty !== 1
 			? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
-			  lu.getTeachingGoals().some(
-					skill => currentNode.action?.getRequiredSkills().includes(skill) ?? true
+			  lu.teachingGoals.some(
+					skill => currentNode.action?.requiredSkills.includes(skill) ?? true
 			  )
 			: true;
-
-	const luCost = lu.children.length > 0 ? lu.children.length * 0.95 : 1;
+	const luCost = calculateCostForUnit(lu);
+	// TODO maybe implement this here
+	// fnCost = (lu: LU) => fnCost(lu) * calculateCostForUnit(lu);
 
 	const suggestionPenalty = suggestionViolationPenalty
 		? // Identify all missing suggested skills in the current state
 		  luCost +
-		  lu.getSuggestedSkills()
+		  lu.suggestedSkills
 				.filter(
 					suggestion => !currentNode.state.learnedSkills.includes(suggestion.skill.id)
 				)
@@ -245,17 +250,15 @@ export function search<LU extends LearningUnit>(
 				const noPath = new Path();
 				noPath.cost = -1;
 				let remainSkills: Skill[] = [];
-				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
+				skillsNotFound.forEach(sk =>
+					remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] })
+				);
 				const tempLU = {
 					id: "-1",
-					children: [],
 					requiredSkills: remainSkills,
 					teachingGoals: [],
-					suggestedSkills:[],
-					getTeachingGoals: getTeachingGoals,
-					getRequiredSkills: getRequiredSkills,
-					getSuggestedSkills: getSuggestedSkills,
-				}
+					suggestedSkills: []
+				};
 				noPath.path.push(tempLU);
 				pathList.push(noPath);
 
@@ -279,17 +282,15 @@ export function search<LU extends LearningUnit>(
 	const noPath = new Path();
 	noPath.cost = -1;
 	let remainSkills: Skill[] = [];
-	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
+	skillsNotFound.forEach(sk =>
+		remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] })
+	);
 	const tempLU = {
-        id: "-1",
-        children: [],
+		id: "-1",
 		requiredSkills: remainSkills,
-        teachingGoals: [],
-		suggestedSkills:[],
-		getTeachingGoals: getTeachingGoals,
-		getRequiredSkills: getRequiredSkills,
-		getSuggestedSkills: getSuggestedSkills,
-    }
+		teachingGoals: [],
+		suggestedSkills: []
+	};
 	noPath.path.push(tempLU);
 	pathList.push(noPath);
 

@@ -87,7 +87,7 @@ export class State {
 			mergedSkills.push(skill);
 		});
 
-		operator.getTeachingGoals().forEach(goal => {
+		operator.teachingGoals.forEach(goal => {
 			if (!mergedSkills.includes(goal.id)) {
 				mergedSkills.push(goal.id);
 			}

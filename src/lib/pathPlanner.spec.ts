@@ -10,7 +10,6 @@ import {
 	getSkillAnalysis
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
-import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "./compositeLearningUnit"
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -304,7 +303,7 @@ describe("Path Planer", () => {
 			expectPath(path, [expectedIDs], 4);
 		});
 
-		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction; Cheap path becomes expensive at the end", async () => {
+		it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction; ap path becomes expensive at the end", async () => {
 			// Test data preparation
 			const fnCost: CostFunction<LearningUnit & { cost: number }> = lu => {
 				// Simulate that the LearningUnits have any properties which are more expensive for a learner
@@ -1609,12 +1608,8 @@ function newLearningUnit(
 
 	return {
 		id: id,
-		children: [],
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
-		suggestedSkills: suggestions,
-		getTeachingGoals: getTeachingGoals,
-		getRequiredSkills: getRequiredSkills,
-		getSuggestedSkills: getSuggestedSkills,
+		suggestedSkills: suggestions
 	};
 }

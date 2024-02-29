@@ -8,7 +8,11 @@ import { DistanceMap } from "./distanceMap";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
-import { getTeachingGoals, getRequiredSkills, getSuggestedSkills} from "../compositeLearningUnit"
+import {
+	getGoals,
+	getRequiredSkills,
+	getSuggestedSkills
+} from "../compositeUnits/compositeLearningUnit";
 
 describe("toString() methods", () => {
 	// Test data to be used across al tests
@@ -103,8 +107,8 @@ function newLearningUnit(
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
 		suggestedSkills: [],
-		getTeachingGoals: getTeachingGoals,
+		getTeachingGoals: getGoals,
 		getRequiredSkills: getRequiredSkills,
-		getSuggestedSkills: getSuggestedSkills,
+		getSuggestedSkills: getSuggestedSkills
 	};
 }

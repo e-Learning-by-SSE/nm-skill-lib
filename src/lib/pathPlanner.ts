@@ -226,16 +226,16 @@ function populateGraph({
 		learningUnits.forEach(lu => {
 			const luName = "lu" + lu.id;
 			graph.setNode("lu" + lu.id, lu);
-			lu.getRequiredSkills().forEach(req => {
-				graph.setEdge("sk" + req.id, luName);
+			lu.suggestedSkills.forEach(req => {
+				graph.setEdge("sk" + req.skill.id, luName);
 			});
 
-			lu.getTeachingGoals().forEach(goal => {
+			lu.teachingGoals.forEach(goal => {
 				graph.setEdge(luName, "sk" + goal.id);
 			});
 
 			if (suggestions) {
-				lu.getSuggestedSkills().forEach(suggestion => {
+				lu.suggestedSkills.forEach(suggestion => {
 					// Analogous to requirements: Skill -> LearningUnit
 					graph.setEdge("sk" + suggestion.skill.id, luName);
 				});
@@ -278,12 +278,12 @@ export async function computeSuggestedSkills(
 	for (let i = 1; i < learningUnits.length; i++) {
 		const previousUnit = learningUnits[i - 1];
 		const currentUnit = learningUnits[i];
-		const missingSkills = previousUnit.getTeachingGoals()
+		const missingSkills = previousUnit.teachingGoals
 			.map(goal => goal.id)
 			// Do not copy hard constraints also to soft constraints
-			.filter(goalId => !currentUnit.getRequiredSkills().map(skill => skill.id).includes(goalId))
+			.filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId))
 			// Do not copy currently taught skills to avoid cycles
-			.filter(goalId => !currentUnit.getTeachingGoals().map(skill => skill.id).includes(goalId));
+			.filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
 
 		await fnUpdate(currentUnit, missingSkills);
 	}
