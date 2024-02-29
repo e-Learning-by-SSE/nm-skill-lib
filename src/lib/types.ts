@@ -32,19 +32,15 @@ export type LearningUnit = {
 	suggestedSkills: WeightedSkill[];
 };
 
-export type CompositeLearningUnit = LearningUnit & {
-	children?: CompositeLearningUnit[];
-};
-
 export function isCompositeUnit(
-	unit: LearningUnit | CompositeLearningUnit
-): unit is CompositeLearningUnit {
-	return (unit as CompositeLearningUnit).children !== undefined;
+	unit: LearningUnit | CompositeDefinition
+): unit is CompositeDefinition {
+	return (unit as CompositeDefinition).children !== undefined;
 }
 
 export type CompositeDefinition = {
 	id: string;
-	children: CompositeLearningUnit[];
+	children: (CompositeDefinition | LearningUnit)[];
 	teachingGoals: Skill[];
 	suggestedSkills: WeightedSkill[];
 	requiredSkills: Skill[];

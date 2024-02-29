@@ -1,3 +1,5 @@
+import { Skill } from "src/lib/types";
+
 type IdElement = { id: string };
 
 export const duplicateRemover = (initialBuffer: string[] = []) => {
@@ -14,3 +16,5 @@ export const duplicateRemover = (initialBuffer: string[] = []) => {
 
 export const idChecker = (elementA: IdElement) => (elementB: IdElement) =>
 	elementA.id === elementB.id;
+
+export const sortById = (a: IdElement, b: IdElement) => a.id.localeCompare(b.id);
