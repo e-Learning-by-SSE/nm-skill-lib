@@ -2,6 +2,24 @@ import { CompositeDefinition, LearningUnit, Skill, WeightedSkill } from "../type
 import { sortById } from "../util/duplicate-remover/duplicate-remover";
 import { toUnifiedLearningUnit } from "./compositeLearningUnit";
 
+const clone = org => JSON.parse(JSON.stringify(org));
+const sortWeighted = (a: WeightedSkill, b: WeightedSkill) =>
+	a.skill.id.localeCompare(b.skill.id) + a.weight - b.weight;
+
+describe("deepCloneTest", () => {
+	it("Test if different memory reference but it should contain same content", () => {
+		const orgObj = { id: "1" };
+		const result = clone(orgObj);
+
+		if (result !== orgObj) {
+			console.log("hallo");
+		}
+
+		expect(result).not.toBe(orgObj);
+		expect(result).toEqual(orgObj);
+	});
+});
+
 describe("toUnifiedLearningUnit", () => {
 	let skill1: Skill, skill2: Skill, skill3: Skill, skill4: Skill;
 	let weightedSkill1: WeightedSkill, weightedSkill2: WeightedSkill;
@@ -22,7 +40,7 @@ describe("toUnifiedLearningUnit", () => {
 		requiredExposedSkills: [],
 		suggestedExposedSkills: []
 	};
-	/*
+	/*General structure before each test-case:
 		baseUnit (CompositeDefinition)
 		└── compLevel1Child (CompositeLearningUnit)
 			├── compLevel2Child (CompositeLearningUnit)
@@ -79,10 +97,10 @@ describe("toUnifiedLearningUnit", () => {
 
 		expect(result.teachingGoals).toEqual(expect.arrayContaining(expectedSkills));
 	});
-	it("should correctly reduce exposed requiredSkills", () => {
+	it("should correctly reduce exposed requiredSkills by combining all non duplicates", () => {
 		compLevel1Child.requiredSkills = [skill1];
 		compLevel2Child.requiredExposedSkills = [skill2];
-		baseUnit.requiredSkills = [skill4];
+		baseUnit.requiredSkills = [skill4, clone(skill2)];
 
 		const expectedSkills = [skill1, skill2, skill4].sort(sortById);
 		const result = toUnifiedLearningUnit({ unit: baseUnit });
@@ -90,17 +108,28 @@ describe("toUnifiedLearningUnit", () => {
 		expect(result.requiredSkills.sort(sortById)).toEqual(expectedSkills);
 	});
 
-	it("should correctly reduce exposed suggestedSkills", () => {
-		const sort = (a: WeightedSkill, b: WeightedSkill) => a.skill.id.localeCompare(b.skill.id);
-
-		compLevel1Child.suggestedSkills = [weightedSkill1];
+	it("should correctly reduce exposed suggestedSkills by combining all non duplicates", () => {
+		compLevel1Child.suggestedSkills = [clone(weightedSkill1)];
 		compLevel2Child.suggestedExposedSkills = [weightedSkill2];
-		baseUnit.suggestedExposedSkills = [weightedSkill1];
+		baseUnit.suggestedExposedSkills = [clone(weightedSkill1)];
 
 		const expectedSkills = [weightedSkill1, weightedSkill2]; // union of exposed and normal but  no duplicate
-		const result = toUnifiedLearningUnit({ unit: baseUnit });
+		const result = toUnifiedLearningUnit({ unit: baseUnit }).suggestedSkills;
 
-		expect(result.suggestedSkills.sort(sort)).toEqual(expectedSkills.sort(sort));
+		expect(result.sort(sortWeighted)).toEqual(expectedSkills.sort(sortWeighted));
+	});
+	it("reduce exposed suggestedSkills but don't remove duplicates on different weights", () => {
+		// same but different weights
+		const weightedSkill1 = { skill: skill1, weight: 1 };
+		const weightedSkill2 = { skill: skill1, weight: 2 };
+
+		compLevel2Child.suggestedExposedSkills = [weightedSkill1];
+		baseUnit.suggestedExposedSkills = [weightedSkill2];
+
+		const expectedSkills = [weightedSkill1, weightedSkill2];
+		const result = toUnifiedLearningUnit({ unit: baseUnit }).suggestedSkills;
+
+		expect(result.sort(sortWeighted)).toEqual(expectedSkills.sort(sortWeighted));
 	});
 	it("should correctly reduce suggestedSkills", () => {
 		const sort = (a: WeightedSkill, b: WeightedSkill) => a.skill.id.localeCompare(b.skill.id);

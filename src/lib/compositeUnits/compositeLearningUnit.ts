@@ -1,5 +1,5 @@
-import { CompositeDefinition, LearningUnit, isCompositeUnit } from "../types";
-
+import { CompositeDefinition, LearningUnit, Skill, WeightedSkill, isCompositeUnit } from "../types";
+import { IdSet } from "../util/duplicate-remover/duplicate-remover";
 /**
  *
  * @param param0 The Composite Unit to transform
@@ -37,10 +37,12 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 		teachingGoals: [],
 		suggestedSkills: [],
 		mediaTime: 0,
-		words: 0
+		words: 0,
+		id: unit.id
 	};
-	const unifiedLearning = learningUnits.reduce((acc, learningUnit) => {
+	const unifiedLearning: LearningUnit = learningUnits.reduce((acc, learningUnit) => {
 		return {
+			id: acc.id,
 			requiredSkills: [...acc.requiredSkills, ...learningUnit.requiredSkills],
 			teachingGoals: [...acc.teachingGoals, ...learningUnit.teachingGoals],
 			suggestedSkills: [...acc.suggestedSkills, ...learningUnit.suggestedSkills],
@@ -50,15 +52,15 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 	}, startValue);
 
 	// remove duplicates
-	const requiredSkills = new Set([
+	const requiredSkills = new IdSet([
 		...unifiedComposite.requiredSkills,
 		...unifiedLearning.requiredSkills
 	]);
-	const suggestedSkills = new Set([
-		...unifiedComposite.suggestedSkills,
-		...unifiedLearning.suggestedSkills
+	const suggestedSkills = new IdSet([
+		...unifiedComposite.suggestedSkills.map(addUniqueId),
+		...unifiedLearning.suggestedSkills.map(addUniqueId)
 	]);
-	const teachingGoals = new Set([
+	const teachingGoals = new IdSet([
 		...unifiedComposite.teachingGoals,
 		...unifiedLearning.teachingGoals
 	]);
@@ -69,7 +71,7 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 		mediaTime: unifiedLearning.mediaTime,
 		requiredSkills: Array.from(requiredSkills),
 		teachingGoals: Array.from(teachingGoals),
-		suggestedSkills: Array.from(suggestedSkills)
+		suggestedSkills: Array.from(suggestedSkills).map(({ id, ...rest }) => ({ ...rest }))
 	};
 }
 
@@ -87,4 +89,8 @@ function flatten(unit: LearningUnit | CompositeDefinition) {
 		learningUnits.push(unit);
 	}
 	return { compositeUnits, learningUnits };
+}
+
+function addUniqueId(sug: WeightedSkill) {
+	return { ...sug, id: `${sug.skill.id}-${sug.weight}` };
 }
