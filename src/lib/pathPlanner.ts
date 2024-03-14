@@ -226,8 +226,8 @@ function populateGraph({
 		learningUnits.forEach(lu => {
 			const luName = "lu" + lu.id;
 			graph.setNode("lu" + lu.id, lu);
-			lu.suggestedSkills.forEach(req => {
-				graph.setEdge("sk" + req.skill.id, luName);
+			lu.requiredSkills.forEach(req => {
+				graph.setEdge("sk" + req.id, luName);
 			});
 
 			lu.teachingGoals.forEach(goal => {

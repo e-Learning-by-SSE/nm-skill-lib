@@ -104,7 +104,7 @@ export function skillAnalysis<LU extends LearningUnit>(
 			lu.requiredSkills.forEach(skill => {
 				// Find LearningUnits for the required skills
 				let requiredLus = learningUnits.filter(unit =>
-					unit.requiredSkills.map(sk => sk.id).includes(skill.id)
+					unit.teachingGoals.map(sk => sk.id).includes(skill.id)
 				);
 
 				// Check the nested skills (Skill groups) in globalKnowledge for the required skill

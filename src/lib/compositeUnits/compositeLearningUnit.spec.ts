@@ -166,13 +166,13 @@ describe("toUnifiedLearningUnit", () => {
 	it("should correctly calculate the cost of the learning units", () => {
 
 		const baseUnitResult = toUnifiedLearningUnit({ unit: baseUnit });
-		expect(baseUnitResult.cost).toEqual(2);
+		expect(baseUnitResult.compositeCost).toEqual(2);
 
 		const compLevel1ChildResult = toUnifiedLearningUnit({ unit: compLevel1Child });
-		expect(compLevel1ChildResult.cost).toEqual(2);
+		expect(compLevel1ChildResult.compositeCost).toEqual(2);
 
 		const compLevel2ChildResult = toUnifiedLearningUnit({ unit: compLevel2Child });
-		expect(compLevel2ChildResult.cost).toEqual(1);
+		expect(compLevel2ChildResult.compositeCost).toEqual(1);
 
 	});
 });

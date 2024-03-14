@@ -73,7 +73,7 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 		requiredSkills: Array.from(requiredSkills),
 		teachingGoals: Array.from(teachingGoals),
 		suggestedSkills: Array.from(suggestedSkills).map(({ id, ...rest }) => ({ ...rest })),
-		cost: calculateCost(unit)
+		compositeCost: calculateCost(unit)
 	};
 }
 

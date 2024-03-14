@@ -32,7 +32,7 @@ function availableActions<LU extends LearningUnit>(
 }
 
 function calculateCostForUnit(unit: LearningUnit) {
-	return unit.cost !== undefined  ? unit.cost * 0.95 : 1;
+	return unit.compositeCost !== undefined  ? unit.compositeCost * 0.95 : 1;
 } 
 
 export function computeCost<LU extends LearningUnit>(
