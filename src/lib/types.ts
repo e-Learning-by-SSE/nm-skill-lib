@@ -30,7 +30,6 @@ export type LearningUnit = {
 	requiredSkills: Skill[];
 	teachingGoals: Skill[];
 	suggestedSkills: WeightedSkill[];
-	compositeCost?: number;
 };
 
 export function isCompositeUnit(

@@ -4,7 +4,6 @@ import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { lutimes } from "fs";
-
 /**
  * Compute which LearningUnits are reachable based on the given state.
  */
@@ -32,7 +31,9 @@ function availableActions<LU extends LearningUnit>(
 }
 
 function calculateCostForUnit(unit: LearningUnit) {
-	return unit.compositeCost !== undefined  ? unit.compositeCost * 0.95 : 1;
+	const unitWithCost: any = unit;
+	
+	return unitWithCost.hasOwnProperty('compositeCost') ? unitWithCost.compositeCost * 0.95 : 1;
 } 
 
 export function computeCost<LU extends LearningUnit>(

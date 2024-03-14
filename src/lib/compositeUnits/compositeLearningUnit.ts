@@ -1,6 +1,10 @@
 import { CompositeDefinition, LearningUnit, Skill, WeightedSkill, isCompositeUnit } from "../types";
 import { IdSet } from "../util/duplicate-remover/duplicate-remover";
 
+export interface HasCost {
+	compositeCost: number;
+}
+
 /**
  *
  * @param param0 The Composite Unit to transform
@@ -11,7 +15,7 @@ import { IdSet } from "../util/duplicate-remover/duplicate-remover";
  * - teachingGoals: The teachingGoals of the whole composite unit (and all children)
  * - suggestedSkill: The suggestedSkills of the whole composite unit
  */
-export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): LearningUnit {
+export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): LearningUnit & HasCost {
 	const { compositeUnits, learningUnits } = flatten(unit);
 
 	const unifiedComposite = compositeUnits.reduce((acc, compUnit) => {
