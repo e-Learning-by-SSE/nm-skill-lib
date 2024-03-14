@@ -1,4 +1,4 @@
-import { CompositeLearningUnit, LearningUnit, Path, Skill } from "../types";
+import { LearningUnit, Path, Skill } from "../types";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
@@ -31,9 +31,9 @@ function availableActions<LU extends LearningUnit>(
 	return usefulLus;
 }
 
-function calculateCostForUnit(unit: CompositeLearningUnit | LearningUnit) {
-	return "children" in unit ? unit.children.length * 0.95 : 1;
-}
+function calculateCostForUnit(unit: LearningUnit) {
+	return unit.cost !== undefined  ? unit.cost * 0.95 : 1;
+} 
 
 export function computeCost<LU extends LearningUnit>(
 	contextSwitchPenalty: number,
@@ -52,7 +52,7 @@ export function computeCost<LU extends LearningUnit>(
 	const luCost = calculateCostForUnit(lu);
 	// TODO maybe implement this here
 	// fnCost = (lu: LU) => fnCost(lu) * calculateCostForUnit(lu);
-
+	
 	const suggestionPenalty = suggestionViolationPenalty
 		? // Identify all missing suggested skills in the current state
 		  luCost +

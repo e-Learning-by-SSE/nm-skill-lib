@@ -163,4 +163,16 @@ describe("toUnifiedLearningUnit", () => {
 		const result = toUnifiedLearningUnit({ unit: baseUnit });
 		expect(result.words).toBe(30);
 	});
+	it("should correctly calculate the cost of the learning units", () => {
+
+		const baseUnitResult = toUnifiedLearningUnit({ unit: baseUnit });
+		expect(baseUnitResult.cost).toEqual(2);
+
+		const compLevel1ChildResult = toUnifiedLearningUnit({ unit: compLevel1Child });
+		expect(compLevel1ChildResult.cost).toEqual(2);
+
+		const compLevel2ChildResult = toUnifiedLearningUnit({ unit: compLevel2Child });
+		expect(compLevel2ChildResult.cost).toEqual(1);
+
+	});
 });

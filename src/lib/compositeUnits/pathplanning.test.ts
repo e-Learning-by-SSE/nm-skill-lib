@@ -1,5 +1,6 @@
 import { CompositeDefinition, LearningUnit, Skill } from "../types";
 import { getPath, getSkillAnalysis } from "../pathPlanner";
+import { toUnifiedLearningUnit } from "./compositeLearningUnit";
 
 describe("Composite Unit", () => {
 	describe("testing composite unit", () => {
@@ -14,7 +15,7 @@ describe("Composite Unit", () => {
 			{ id: "sk:B", repositoryId: "3", nestedSkills: [] }
 		].sort((a, b) => a.id.localeCompare(b.id));
 
-		const compositeLus = [
+		const learningUnits: (LearningUnit)[] = [
 			newLearningUnit(skillsMap, "lu:10", [], ["sk:1"]),
 			newLearningUnit(skillsMap, "lu:20", [], ["sk:2"]),
 			newLearningUnit(skillsMap, "lu:50", [], ["sk:5"]),
@@ -22,21 +23,25 @@ describe("Composite Unit", () => {
 			newLearningUnit(skillsMap, "lu:1", ["sk:1", "sk:2"], ["sk:3"]),
 			newLearningUnit(skillsMap, "lu:2", ["sk:3", "sk:4"], ["sk:6"]),
 			newLearningUnit(skillsMap, "lu:3", ["sk:5"], ["sk:4"]),
-			newCompositeLearningUnit(skillsMap, "cu:A", ["sk:A"], ["sk:B"], [], ["sk:5"], [])
 		];
 
-		compositeLus
-			.find(lu => lu.id == "cu:A")
-			.children!.push(
-				compositeLus.find(lu => lu.id == "lu:1")!,
-				compositeLus.find(lu => lu.id == "lu:2")!,
-				compositeLus.find(lu => lu.id == "lu:3")!
-			);
-
-		computeSkills(compositeLus.filter(lu => lu.children.length > 0));
+		const children = learningUnits.filter(lu => ["lu:1","lu:2","lu:3"].includes(lu.id));
+		const compositeLus: (CompositeDefinition)[] = [
+			newCompositeLearningUnit(skillsMap, 
+									 "cu:A", 
+									 children, 
+									 ["sk:A"], 
+									 ["sk:B"], 
+									 [], 
+									 ["sk:5"], 
+									 [])
+		];
+		
+		const lus = learningUnits.concat(compositeLus.map(lu => toUnifiedLearningUnit({ unit: lu })));
 
 		it("check composite unit", () => {
-			const compositeLus: LearningUnit[] = [
+			
+			const learningUnits: LearningUnit[] = [
 				newLearningUnit(skillsMap, "lu:10", [], ["sk:1"]),
 				newLearningUnit(skillsMap, "lu:20", [], ["sk:2"]),
 				newLearningUnit(skillsMap, "lu:50", [], ["sk:5"]),
@@ -56,9 +61,14 @@ describe("Composite Unit", () => {
 					[{ weight: 0.3, skill: "sk:3" }]
 				),
 				newLearningUnit(skillsMap, "lu:3", ["sk:5"], ["sk:4"]),
+			];
+
+			const children = learningUnits.filter(lu => ["lu:1","lu:2","lu:3"].includes(lu.id));
+			const compositeLus: (CompositeDefinition)[] = [
 				newCompositeLearningUnit(
 					skillsMap,
 					"cu:A",
+					children,
 					["sk:A"],
 					["sk:B"],
 					[{ weight: 0.1, skill: "sk:1" }],
@@ -66,104 +76,47 @@ describe("Composite Unit", () => {
 					[{ weight: 0.4, skill: "sk:4" }]
 				)
 			];
+			
+			const lus = learningUnits.concat(compositeLus.map(lu => toUnifiedLearningUnit({ unit: lu })));
 
-			compositeLus
-				.find(lu => lu.id == "cu:A")
-				.children!.push(
-					compositeLus.find(lu => lu.id == "lu:1")!,
-					compositeLus.find(lu => lu.id == "lu:2")!,
-					compositeLus.find(lu => lu.id == "lu:3")!
-				);
-
-			computeSkills(compositeLus.filter(lu => lu.children.length > 0));
-
-			const externalRequiredSkills: Skill[] = [
-				{ id: "sk:A", repositoryId: "3", nestedSkills: [] }
-			];
-
-			const exportedRequiredSkills: Skill[] = [
+			const expectedRequiredSkills: Skill[] = [
+				{ id: "sk:A", repositoryId: "3", nestedSkills: [] },
 				{ id: "sk:5", repositoryId: "3", nestedSkills: [] }
 			];
 
-			const unusedRequiredSkills: Skill[] = [
-				{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
-				{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
-				{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
-				{ id: "sk:4", repositoryId: "3", nestedSkills: [] }
-			];
-
-			const taughtSkills: Skill[] = [
+			const expectedTeachingGoals: Skill[] = [
 				{ id: "sk:B", repositoryId: "3", nestedSkills: [] },
 				{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
 				{ id: "sk:6", repositoryId: "3", nestedSkills: [] },
 				{ id: "sk:4", repositoryId: "3", nestedSkills: [] }
 			];
 
-			const externalRecommendedSkills = [
-				{ weight: 0.1, skill: skillsMap.find(skill => skill.id == "sk:1") }
-			];
-
-			const exportedRecommendedSkills = [
+			const expectedSuggested = [
+				{ weight: 0.1, skill: skillsMap.find(skill => skill.id == "sk:1") },
 				{ weight: 0.4, skill: skillsMap.find(skill => skill.id == "sk:4") }
 			];
 
-			const unusedRecommendedSkills = [
-				{ weight: 0.3, skill: skillsMap.find(skill => skill.id == "sk:3") }
-			];
-
-			const cuA = compositeLus.find(lu => lu.id == "cu:A")!;
-			expect(cuA.externalRequiredSkills).toEqual(externalRequiredSkills);
-			expect(cuA.exportedRequiredSkills).toEqual(exportedRequiredSkills);
-			expect(cuA.unusedRequiredSkills).toEqual(unusedRequiredSkills);
-
-			expect(cuA.taughtSkills).toEqual(taughtSkills);
-
-			expect(cuA.externalRecommendedSkills).toEqual(externalRecommendedSkills);
-			expect(cuA.exportedRecommendedSkills).toEqual(exportedRecommendedSkills);
-			expect(cuA.unusedRecommendedSkills).toEqual(unusedRecommendedSkills);
+			const cuA = lus.find(lu => lu.id == "cu:A")!;
+			expect(cuA.requiredSkills).toEqual(expectedRequiredSkills);
+			expect(cuA.teachingGoals).toEqual(expectedTeachingGoals);
+			expect(cuA.suggestedSkills).toEqual(expectedSuggested);
 		});
-
-		/*it("check validity of composite unit", () => {
-
-			const skillMap: Skill[] = [
-				{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
-				{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
-				{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
-				{ id: "sk:4", repositoryId: "3", nestedSkills: [] }
-			].sort((a, b) => a.id.localeCompare(b.id));
-
-			const compositeLus: LearningUnit[] = [
-				newLearningUnit(skillMap, "lu:1", [], ["sk:1"]),
-				newLearningUnit(skillMap, "lu:2", [], ["sk:2"]),
-				newLearningUnit(skillMap, "lu:3", [], ["sk:3"])
-			];
-
-			compositeLus.find(lu => lu.id == "lu:1").children!.push(
-				compositeLus.find(lu => lu.id == "lu:2")!,
-				compositeLus.find(lu => lu.id == "lu:3")!
-			)
-
-			const lu1 = compositeLus.find(lu => lu.id == "lu:1")!;
-			const lu1Validity = checkCompositeUnitValidity(lu1);
-
-			expect(lu1Validity).toBeFalsy();
-		});*/
 
 		it("check path for skill 3", () => {
 			const goals = [...skillsMap.filter(skill => skill.id === "sk:3")];
 
 			const path = getPath({
 				skills: skillsMap,
-				learningUnits: compositeLus,
+				learningUnits: lus,
 				goal: goals,
 				optimalSolution: true,
 				contextSwitchPenalty: 1.2
 			});
 
 			const expectedPath = [
-				...compositeLus.filter(skill => skill.id === "lu:10"),
-				...compositeLus.filter(skill => skill.id === "lu:20"),
-				...compositeLus.filter(skill => skill.id === "lu:1")
+				...lus.filter(lu => lu.id === "lu:10"),
+				...lus.filter(lu => lu.id === "lu:20"),
+				...lus.filter(lu => lu.id === "lu:1")
 			];
 
 			expect(path.cost).toBe(3.4);
@@ -176,15 +129,15 @@ describe("Composite Unit", () => {
 
 			const path = getPath({
 				skills: skillsMap,
-				learningUnits: compositeLus,
+				learningUnits: lus,
 				goal: goals,
 				optimalSolution: true,
 				contextSwitchPenalty: 1.2
 			});
 
 			const expectedPath = [
-				...compositeLus.filter(skill => skill.id === "lu:50"),
-				...compositeLus.filter(skill => skill.id === "lu:3")
+				...lus.filter(lu => lu.id === "lu:50"),
+				...lus.filter(lu => lu.id === "lu:3")
 			];
 
 			expect(path.cost).toBe(2.2);
@@ -197,16 +150,16 @@ describe("Composite Unit", () => {
 
 			const path = getPath({
 				skills: skillsMap,
-				learningUnits: compositeLus,
+				learningUnits: lus,
 				goal: goals,
 				optimalSolution: true,
 				contextSwitchPenalty: 1.2
 			});
 
 			const expectedPath = [
-				...compositeLus.filter(skill => skill.id === "lu:A10"),
-				...compositeLus.filter(skill => skill.id === "lu:50"),
-				...compositeLus.filter(skill => skill.id === "cu:A")
+				...lus.filter(lu => lu.id === "lu:A10"),
+				...lus.filter(lu => lu.id === "lu:50"),
+				...lus.filter(lu => lu.id === "cu:A")
 			];
 
 			expect(path.cost).toBe(5.62);
@@ -219,16 +172,16 @@ describe("Composite Unit", () => {
 
 			const path = getPath({
 				skills: skillsMap,
-				learningUnits: compositeLus,
+				learningUnits: lus,
 				goal: goals,
 				optimalSolution: true,
 				contextSwitchPenalty: 1.2
 			});
 
 			const expectedPath = [
-				...compositeLus.filter(skill => skill.id === "lu:50"),
-				...compositeLus.filter(skill => skill.id === "lu:A10"),
-				...compositeLus.filter(skill => skill.id === "cu:A")
+				...lus.filter(lu => lu.id === "lu:50"),
+				...lus.filter(lu => lu.id === "lu:A10"),
+				...lus.filter(lu => lu.id === "cu:A")
 			];
 
 			expect(path.cost).toBe(5.62);
@@ -237,24 +190,28 @@ describe("Composite Unit", () => {
 		});
 
 		it("check path for Composite unit against multi Learning units", () => {
-			const compositeLus: LearningUnit[] = [
+			const learningUnits: LearningUnit[] = [
 				newLearningUnit(skillsMap, "lu:A", [], ["sk:1", "sk:2"]),
 				newLearningUnit(skillsMap, "lu:1", ["sk:1", "sk:2"], ["sk:3"]),
 				newLearningUnit(skillsMap, "lu:2", ["sk:3", "sk:4"], ["sk:6"]),
-				newLearningUnit(skillsMap, "lu:3", [], ["sk:4"]),
-				newCompositeLearningUnit(skillsMap, "cu:A", [], [], [], [], [])
+				newLearningUnit(skillsMap, "lu:3", [], ["sk:4"])
 			];
 
-			compositeLus
-				.find(lu => lu.id == "cu:A")
-				.children!.push(
-					compositeLus.find(lu => lu.id == "lu:1")!,
-					compositeLus.find(lu => lu.id == "lu:2")!,
-					compositeLus.find(lu => lu.id == "lu:3")!,
-					compositeLus.find(lu => lu.id == "lu:A")!
-				);
-
-			computeSkills(compositeLus.filter(lu => lu.children.length > 0));
+			const children = learningUnits.filter(lu => ["lu:A", "lu:1","lu:2","lu:3"].includes(lu.id));
+			const compositeLus: (CompositeDefinition)[] = [
+				newCompositeLearningUnit(
+					skillsMap,
+					"cu:A",
+					children,
+					[],
+					[],
+					[],
+					[],
+					[]
+				)
+			];
+			
+			const lus = learningUnits.concat(compositeLus.map(lu => toUnifiedLearningUnit({ unit: lu })));
 
 			const goals = [
 				...skillsMap.filter(skill => skill.id === "sk:1"),
@@ -266,13 +223,13 @@ describe("Composite Unit", () => {
 
 			const path = getPath({
 				skills: skillsMap,
-				learningUnits: compositeLus,
+				learningUnits: lus,
 				goal: goals,
 				optimalSolution: true,
 				contextSwitchPenalty: 1.2
 			});
 
-			const expectedPath = [...compositeLus.filter(skill => skill.id === "cu:A")];
+			const expectedPath = [...lus.filter(lu => lu.id === "cu:A")];
 
 			expect(path.cost).toBe(3.8);
 			expect(path.path.length).toBe(1);
@@ -280,30 +237,39 @@ describe("Composite Unit", () => {
 		});
 
 		it("check path for two Composite units", () => {
-			const compositeLus: LearningUnit[] = [
+			const learningUnits: LearningUnit[] = [
 				newLearningUnit(skillsMap, "lu:A", [], ["sk:1", "sk:2"]),
 				newLearningUnit(skillsMap, "lu:1", ["sk:1", "sk:2"], ["sk:3"]),
 				newLearningUnit(skillsMap, "lu:2", ["sk:4"], ["sk:6"]),
-				newLearningUnit(skillsMap, "lu:3", [], ["sk:4"]),
-				newCompositeLearningUnit(skillsMap, "cu:A", [], [], [], [], []),
-				newCompositeLearningUnit(skillsMap, "cu:B", [], [], [], [], [])
+				newLearningUnit(skillsMap, "lu:3", [], ["sk:4"])
 			];
 
-			compositeLus
-				.find(lu => lu.id == "cu:A")
-				.children!.push(
-					compositeLus.find(lu => lu.id == "lu:1")!,
-					compositeLus.find(lu => lu.id == "lu:A")!
-				);
+			const childrenForA = learningUnits.filter(lu => ["lu:A", "lu:1"].includes(lu.id));
+			const childrenForB = learningUnits.filter(lu => ["lu:2","lu:3"].includes(lu.id));
+			const compositeLus: (CompositeDefinition)[] = [
+				newCompositeLearningUnit(
+					skillsMap,
+					"cu:A",
+					childrenForA,
+					[],
+					[],
+					[],
+					[],
+					[]
+				),
+				newCompositeLearningUnit(
+					skillsMap,
+					"cu:B",
+					childrenForB,
+					[],
+					[],
+					[],
+					[],
+					[]
+				),
+			];
 
-			compositeLus
-				.find(lu => lu.id == "cu:B")
-				.children!.push(
-					compositeLus.find(lu => lu.id == "lu:2")!,
-					compositeLus.find(lu => lu.id == "lu:3")!
-				);
-
-			computeSkills(compositeLus.filter(lu => lu.children.length > 0));
+			const lus = learningUnits.concat(compositeLus.map(lu => toUnifiedLearningUnit({ unit: lu })));
 
 			const goals = [
 				...skillsMap.filter(skill => skill.id === "sk:3"),
@@ -312,15 +278,15 @@ describe("Composite Unit", () => {
 
 			const path = getPath({
 				skills: skillsMap,
-				learningUnits: compositeLus,
+				learningUnits: lus,
 				goal: goals,
 				optimalSolution: true,
 				contextSwitchPenalty: 1.2
 			});
 
 			const expectedPath = [
-				...compositeLus.filter(skill => skill.id === "cu:B"),
-				...compositeLus.filter(skill => skill.id === "cu:A")
+				...lus.filter(lu => lu.id === "cu:B"),
+				...lus.filter(lu => lu.id === "cu:A")
 			];
 
 			expect(path.cost).toBe(4.18);
@@ -349,24 +315,21 @@ function newLearningUnit(
 
 	return {
 		id: id,
-		children: [],
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
-		suggestedSkills: suggestions,
-		getTeachingGoals: getTeachingGoals,
-		getRequiredSkills: getRequiredSkills,
-		getSuggestedSkills: getSuggestedSkills
+		suggestedSkills: suggestions
 	};
 }
 
 function newCompositeLearningUnit(
 	map: Skill[],
 	id: string,
+	children: (LearningUnit | CompositeDefinition)[],
 	requiredSkills: string[],
 	teachingGoals: string[],
 	suggestedSkills: { weight: number; skill: string }[] = [],
-	exportedRequiredSkills: string[],
-	exportedRecommendedSkills: { weight: number; skill: string }[] = []
+	requiredExposedSkills: string[],
+	suggestedExposedSkills: { weight: number; skill: string }[] = []
 ): CompositeDefinition {
 	const suggestions: { weight: number; skill: Skill }[] = [];
 	if (suggestedSkills.length > 0) {
@@ -379,8 +342,8 @@ function newCompositeLearningUnit(
 	}
 
 	const exportedSuggestions: { weight: number; skill: Skill }[] = [];
-	if (exportedRecommendedSkills.length > 0) {
-		for (const suggestion of exportedRecommendedSkills) {
+	if (suggestedExposedSkills.length > 0) {
+		for (const suggestion of suggestedExposedSkills) {
 			const skill = map.find(skill => suggestion.skill.includes(skill.id));
 			if (skill) {
 				exportedSuggestions.push({ weight: suggestion.weight, skill: skill });
@@ -390,14 +353,11 @@ function newCompositeLearningUnit(
 
 	return {
 		id: id,
-		children: [],
+		children: children,
 		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
 		suggestedSkills: suggestions,
-		exportedRequiredSkills: map.filter(skill => exportedRequiredSkills.includes(skill.id)),
-		exportedRecommendedSkills: exportedSuggestions,
-		getTeachingGoals: getTeachingGoals,
-		getRequiredSkills: getRequiredSkills,
-		getSuggestedSkills: getSuggestedSkills
+		requiredExposedSkills: map.filter(skill => requiredExposedSkills.includes(skill.id)),
+		suggestedExposedSkills: exportedSuggestions
 	};
 }

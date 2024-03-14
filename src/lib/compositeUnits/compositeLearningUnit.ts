@@ -1,5 +1,6 @@
 import { CompositeDefinition, LearningUnit, Skill, WeightedSkill, isCompositeUnit } from "../types";
 import { IdSet } from "../util/duplicate-remover/duplicate-remover";
+
 /**
  *
  * @param param0 The Composite Unit to transform
@@ -54,11 +55,11 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 	// remove duplicates
 	const requiredSkills = new IdSet([
 		...unifiedComposite.requiredSkills,
-		...unifiedLearning.requiredSkills
+		//...unifiedLearning.requiredSkills
 	]);
 	const suggestedSkills = new IdSet([
 		...unifiedComposite.suggestedSkills.map(addUniqueId),
-		...unifiedLearning.suggestedSkills.map(addUniqueId)
+		//...unifiedLearning.suggestedSkills.map(addUniqueId)
 	]);
 	const teachingGoals = new IdSet([
 		...unifiedComposite.teachingGoals,
@@ -71,7 +72,8 @@ export function toUnifiedLearningUnit({ unit }: { unit: CompositeDefinition }): 
 		mediaTime: unifiedLearning.mediaTime,
 		requiredSkills: Array.from(requiredSkills),
 		teachingGoals: Array.from(teachingGoals),
-		suggestedSkills: Array.from(suggestedSkills).map(({ id, ...rest }) => ({ ...rest }))
+		suggestedSkills: Array.from(suggestedSkills).map(({ id, ...rest }) => ({ ...rest })),
+		cost: calculateCost(unit)
 	};
 }
 
@@ -93,4 +95,17 @@ function flatten(unit: LearningUnit | CompositeDefinition) {
 
 function addUniqueId(sug: WeightedSkill) {
 	return { ...sug, id: `${sug.skill.id}-${sug.weight}` };
+}
+
+function calculateCost(unit: LearningUnit | CompositeDefinition): number {
+	
+	let cost: number = 0;
+	if (isCompositeUnit(unit)) {
+		unit.children.forEach(child => {
+			cost = cost + calculateCost(child);
+		});
+	} else {
+		cost = 1;
+	}
+	return cost;
 }
