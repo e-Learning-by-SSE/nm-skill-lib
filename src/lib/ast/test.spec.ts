@@ -78,7 +78,7 @@ describe("precondition formula", () => {
 
 	});
 
-	it("convert Json format string to skill expression", () => {
+	it("convert and Json format string to skill expression", () => {
 
         const jsonSkillExpression = "{\"operator\":\"And\",\"skills\":[{\"id\":\"skill:3\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]},{\"id\":\"skill:4\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]}],\"expression\":[]}"
 
@@ -87,6 +87,17 @@ describe("precondition formula", () => {
 		expect(skillExpression.extractSkills().length).toBe(2);
 		expect(skillExpression.evaluate(["skill:3"])).toBeFalsy();
 		expect(skillExpression.evaluate(["skill:3", "skill:4"])).toBeTruthy();
+
+	});
+
+	it("convert or Json format string to skill expression", () => {
+
+        const jsonSkillExpression = "{\"operator\":\"Or\",\"skills\":[{\"id\":\"skill:1\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]}],\"expression\":[]}";
+
+		const skillExpression = parseJsonExpression(jsonSkillExpression);
+
+		expect(skillExpression.extractSkills().length).toBe(1);
+		expect(skillExpression.evaluate(["skill:1"])).toBeTruthy();
 
 	});
 
@@ -101,6 +112,17 @@ describe("precondition formula", () => {
 
 		expect(orSkillExpressionJson).toBe("{\"operator\":\"Or\",\"skills\":[],\"expression\":[\"{\\\"operator\\\":\\\"Or\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:1\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:2\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\",\"{\\\"operator\\\":\\\"And\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:3\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:4\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\"]}")
 
+	});
+
+	it("convert nested Json format string to skill expression", () => {
+
+		const jsonSkillExpression = "{\"operator\":\"Or\",\"skills\":[],\"expression\":[\"{\\\"operator\\\":\\\"Or\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:1\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:2\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\",\"{\\\"operator\\\":\\\"And\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:3\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:4\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\"]}";
+		
+		const skillExpression = parseJsonExpression(jsonSkillExpression);
+
+		expect(skillExpression.extractSkills().length).toBe(4);
+		expect(skillExpression.evaluate(["skill:3"])).toBeFalsy();
+		expect(skillExpression.evaluate(["skill:1"])).toBeTruthy();
 	});
 
 	it("learning units filtering by precondition formula", () => {
