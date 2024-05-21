@@ -3,6 +3,7 @@
  * which are explicity written to support debugging.
  * Tests meaningful output and avoidance of null pointers.
  */
+import { And } from "../ast/and";
 import { LearningUnit, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
 import { GlobalKnowledge } from "./global-knowledge";
@@ -96,9 +97,11 @@ function newLearningUnit(
 	requiredSkills: string[],
 	teachingGoals: string[]
 ) {
+	const skillExpression = new And(map.filter(skill => requiredSkills.includes(skill.id)));
+
 	return {
 		id: id,
-		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+		requiredSkills: skillExpression,
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
 		suggestedSkills: []
 	};

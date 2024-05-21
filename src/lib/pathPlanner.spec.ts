@@ -10,6 +10,7 @@ import {
 	getSkillAnalysis
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
+import { And } from "./ast/and";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1385,8 +1386,8 @@ describe("Path Planer", () => {
 			// Assert: Find missing skill:
 			expect(path!.path.length).toBe(1);
 			expect(path!.cost).toBe(-1);
-			expect(path!.path[0].requiredSkills.length).toBe(1);
-			expect(path!.path[0].requiredSkills[0].id).toBe("sk:8");
+			expect(path!.path[0].requiredSkills.extractSkills().length).toBe(1);
+			expect(path!.path[0].requiredSkills.extractSkills().at(0).id).toBe("sk:8");
 		});
 
 		it("No missing skill", () => {
@@ -1606,9 +1607,11 @@ function newLearningUnit(
 		}
 	}
 
+	const skillExpression = new And(map.filter(skill => requiredSkills.includes(skill.id)));
+
 	return {
 		id: id,
-		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+		requiredSkills: skillExpression,
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
 		suggestedSkills: suggestions
 	};

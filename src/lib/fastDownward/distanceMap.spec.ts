@@ -1,3 +1,4 @@
+import { And } from "../ast/and";
 import { LearningUnit, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
 
@@ -78,9 +79,11 @@ function newLearningUnit(
 	requiredSkills: string[],
 	teachingGoals: string[]
 ) {
+	const skillExpression = new And(map.filter(skill => requiredSkills.includes(skill.id)));
+
 	return {
 		id: id,
-		requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+		requiredSkills: skillExpression,
 		teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
 		suggestedSkills: []
 	};

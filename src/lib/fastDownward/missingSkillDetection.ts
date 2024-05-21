@@ -73,7 +73,7 @@ export function skillAnalysis<LU extends LearningUnit>(
         // Stop searching in a sub-path for a skill if we reached a skill without requirement.
         // Reaching a skill without requirement in a sub-path means that there is a path for learning this skill
         const unit = currentNode!.action!;
-        if (unit && unit.requiredSkills.length == 0) {
+        if (unit && unit.requiredSkills.extractSkills().length == 0) {
             continue;
         }
 
@@ -96,7 +96,7 @@ export function skillAnalysis<LU extends LearningUnit>(
             });
 
             // Find in reverse order LearningUnits for the required skills
-            lu.requiredSkills.forEach(skill => {
+            lu.requiredSkills.extractSkills().forEach(skill => {
 
                 // Find LearningUnits for the required skills
                 let requiredLus = learningUnits.filter(unit => unit.teachingGoals.map(sk => sk.id).includes(skill.id));

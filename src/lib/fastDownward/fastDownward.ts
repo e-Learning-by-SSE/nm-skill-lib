@@ -3,6 +3,7 @@ import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
+import { And } from "../ast/and";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
@@ -16,7 +17,8 @@ function availableActions<LU extends LearningUnit>(
 	// However, we can also check that we always learn at least one new skill
 	const usefulLus = learningUnits
 		.filter(unit =>
-			unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
+			unit.requiredSkills.evaluate(currentState.learnedSkills)
+			//.every(skill => currentState.learnedSkills.includes(skill.id))
 		)
 		.filter(lu =>
 			// Do not suggest learning units that do not teach any unknown skills
@@ -41,7 +43,7 @@ export function computeCost<LU extends LearningUnit>(
 		contextSwitchPenalty !== 1
 			? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
 			  lu.teachingGoals.some(
-					skill => currentNode.action?.requiredSkills.includes(skill) ?? true
+					skill => currentNode.action?.requiredSkills.extractSkills().includes(skill) ?? true
 			  )
 			: true;
 
@@ -245,7 +247,7 @@ export function search<LU extends LearningUnit>(
 				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 				const tempLU = {
 					id: "-1",
-					requiredSkills: remainSkills,
+					requiredSkills: new And(remainSkills),
 					teachingGoals: [],
 					suggestedSkills:[],
 				}
@@ -275,7 +277,7 @@ export function search<LU extends LearningUnit>(
 	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 	const tempLU = {
         id: "-1",
-        requiredSkills: remainSkills,
+        requiredSkills: new And(remainSkills),
         teachingGoals: [],
 		suggestedSkills:[],
     }
