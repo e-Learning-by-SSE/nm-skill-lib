@@ -48,6 +48,11 @@ export class SkillAnalyzedPath {
 	subPath: Path;
 }
 
+export class ExpressionValues {
+	children: ReadonlyArray<Skill>;
+	skillExpression?: SkillExpression[];
+}
+
 /**
  * Part of the computeSuggestedSkills function, which will be used to apply the computed skills to the database.
  * @param learningUnit The learning unit for which the skills should be updated.

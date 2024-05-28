@@ -1,17 +1,17 @@
-import { Skill } from "../types";
+import { ExpressionValues, Skill } from "../types";
 import { SkillExpression } from "./formula";
 import { createJson } from "./jsonHandler";
 
 // Or skill expression
 export class Or extends SkillExpression {
-	constructor(private children: ReadonlyArray<Skill>, private skillExpression?: SkillExpression[]) {
+	constructor(private values: ExpressionValues) {
 		super();
 	}
 
 	evaluate(skills: ReadonlyArray<string>): boolean {
-        let skillsCheck = this.children.some(child => skills.includes(child.id));
-        if (this.skillExpression) {
-            const skillExpressionCheck = this.skillExpression.some(expression => expression.evaluate(skills));
+        let skillsCheck = this.values.children.some(child => skills.includes(child.id));
+        if (this.values.skillExpression) {
+            const skillExpressionCheck = this.values.skillExpression.some(expression => expression.evaluate(skills));
             skillsCheck = (skillsCheck || skillExpressionCheck) ? true : false;
         }
 
@@ -19,9 +19,9 @@ export class Or extends SkillExpression {
 	}
 
 	extractSkills(): Skill[] {
-        let skillsCheck = this.children.map(skill => skill);
-        if (this.skillExpression) {
-			this.skillExpression.forEach(expression => {
+        let skillsCheck = this.values.children.map(skill => skill);
+        if (this.values.skillExpression) {
+			this.values.skillExpression.forEach(expression => {
 				skillsCheck = skillsCheck.concat(expression.extractSkills())
 			});
         }
@@ -30,7 +30,7 @@ export class Or extends SkillExpression {
 	}
 
 	toJson(): string {
-		return createJson(Or.name, this.children.map(skill => skill), this.skillExpression);
+		return createJson(Or.name, this.values.children.map(skill => skill), this.values.skillExpression);
 	}
 
 }

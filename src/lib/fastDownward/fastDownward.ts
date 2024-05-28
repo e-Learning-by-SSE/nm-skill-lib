@@ -247,7 +247,7 @@ export function search<LU extends LearningUnit>(
 				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 				const tempLU = {
 					id: "-1",
-					requiredSkills: new And(remainSkills),
+					requiredSkills: new And({children: remainSkills}),
 					teachingGoals: [],
 					suggestedSkills:[],
 				}
@@ -277,7 +277,7 @@ export function search<LU extends LearningUnit>(
 	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 	const tempLU = {
         id: "-1",
-        requiredSkills: new And(remainSkills),
+        requiredSkills: new And({children: remainSkills}),
         teachingGoals: [],
 		suggestedSkills:[],
     }

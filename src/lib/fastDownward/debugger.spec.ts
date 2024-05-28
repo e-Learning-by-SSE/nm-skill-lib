@@ -97,7 +97,7 @@ function newLearningUnit(
 	requiredSkills: string[],
 	teachingGoals: string[]
 ) {
-	const skillExpression = new And(map.filter(skill => requiredSkills.includes(skill.id)));
+	const skillExpression = new And({children: map.filter(skill => requiredSkills.includes(skill.id))});
 
 	return {
 		id: id,

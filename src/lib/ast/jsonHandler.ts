@@ -1,4 +1,4 @@
-import { Skill } from "../types";
+import { ExpressionValues, Skill } from "../types";
 import { And } from "./and";
 import { SkillExpression } from "./formula";
 import { Or } from "./or";
@@ -44,9 +44,9 @@ export function parseJsonExpression(json: string): SkillExpression {
     });
 
     if (jsonExpression.operator == And.name) {
-        return new And(jsonExpression.skills, nestedSkillExpression);
+        return new And({children: jsonExpression.skills, skillExpression: nestedSkillExpression});
     } else if (jsonExpression.operator == Or.name) {
-        return new Or(jsonExpression.skills, nestedSkillExpression);
+        return new Or({children: jsonExpression.skills, skillExpression: nestedSkillExpression});
     }
 
 }
