@@ -11,7 +11,7 @@ import {
 } from "./pathPlanner";
 import { CostFunction } from "./fastDownward/fdTypes";
 import { And } from "./ast/and";
-import { Variable } from "./ast/formula";
+import { Variable } from "./ast/variable";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1607,7 +1607,7 @@ function newLearningUnit(
 			}
 		}
 	}
-	
+
 	const variables = map.filter(skill => requiredSkills.includes(skill.id))
 	   					 .map(skill => new Variable(skill));
 

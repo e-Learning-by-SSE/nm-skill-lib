@@ -1,5 +1,5 @@
 import { And } from "../ast/and";
-import { Variable } from "../ast/formula";
+import { Variable } from "../ast/variable";
 import { LearningUnit, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
 

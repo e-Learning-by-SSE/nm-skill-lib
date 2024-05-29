@@ -1,4 +1,4 @@
-import { SkillExpression } from "./ast/formula";
+import { SkillExpression } from "./ast/skillExpression";
 
 export type Graph = {
 	nodes: Node[];

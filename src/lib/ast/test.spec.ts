@@ -1,8 +1,10 @@
 import { LearningUnit, Skill } from "../types";
 import { Or } from "./or";
 import { And } from "./and";
-import { SkillExpression, Variable } from "./formula";
+import { SkillExpression } from "./skillExpression";
 import { parseJsonExpression } from "./jsonHandler";
+import { Variable } from "./variable";
+
 
 describe("precondition formula", () => {
 

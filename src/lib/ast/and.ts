@@ -1,10 +1,10 @@
 import { Skill } from "../types";
-import { SkillExpression, Variable } from "./formula";
+import { SkillExpression } from "./skillExpression";
 import { createJson } from "./jsonHandler";
 
 // And skill expression
 export class And extends SkillExpression {
-	constructor(private variable: SkillExpression[]) {
+	constructor(private terms: SkillExpression[]) {
 		super();
 	}
 
@@ -13,12 +13,12 @@ export class And extends SkillExpression {
         //let skillsCheck = skillList.every(child => skills.includes(child.id));
 		//const skillExpressionCheck = this.variable.every(expression => expression.evaluate(skills));
 		//skillsCheck = (skillsCheck && skillExpressionCheck) ? true : false;
-        return this.variable.every(value => value.evaluate(skills));
+        return this.terms.every(value => value.evaluate(skills));
 	}
 
 	extractSkills(): Skill[] {
 		let skillList: Skill[] = [];
-		this.variable.forEach(expression => {
+		this.terms.forEach(expression => {
 			skillList = skillList.concat(expression.extractSkills())
 		});
 
@@ -26,7 +26,7 @@ export class And extends SkillExpression {
 	}
 
 	toJson(): string {
-		return createJson(And.name, this.variable);
+		return createJson(And.name, this.terms);
 	}
 
 }

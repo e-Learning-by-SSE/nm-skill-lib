@@ -1,20 +1,20 @@
 import { Skill } from "../types";
-import { SkillExpression } from "./formula";
+import { SkillExpression } from "./skillExpression";
 import { createJson } from "./jsonHandler";
 
 // Or skill expression
 export class Or extends SkillExpression {
-	constructor(private variable: SkillExpression[]) {
+	constructor(private terms: SkillExpression[]) {
 		super();
 	}
 	
 	evaluate(skills: ReadonlyArray<string>): boolean {
-        return this.variable.some(value => value.evaluate(skills));
+        return this.terms.some(value => value.evaluate(skills));
 	}
 
 	extractSkills(): Skill[] {
 		let skillList: Skill[] = [];
-		this.variable.forEach(expression => {
+		this.terms.forEach(expression => {
 			skillList = skillList.concat(expression.extractSkills())
 		});
 
@@ -22,7 +22,7 @@ export class Or extends SkillExpression {
 	}
 
 	toJson(): string {
-		return createJson(Or.name, this.variable);
+		return createJson(Or.name, this.terms);
 	}
 
 }

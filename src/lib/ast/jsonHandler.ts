@@ -1,7 +1,8 @@
 import { Skill } from "../types";
 import { And } from "./and";
-import { SkillExpression, Variable } from "./formula";
+import { SkillExpression } from "./skillExpression";
 import { Or } from "./or";
+import { Variable } from "./variable";
 
 // An internal type used within this file to handle the parse Json to SkillExpression
 type JsonExpression = {
@@ -10,10 +11,10 @@ type JsonExpression = {
 };
 
 // Convert a SkillExpression to a Json format
-export function createJson(operator: string, variable: SkillExpression[]): string {			
+export function createJson(operator: string, terms: SkillExpression[]): string {			
     let nestedVariable: string[] = [];
-    if (variable) {
-        variable.forEach(expression => {
+    if (terms) {
+        terms.forEach(expression => {
             nestedVariable.push(expression.toJson())
         });
     }
