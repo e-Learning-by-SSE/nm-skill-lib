@@ -1,4 +1,5 @@
 import { And } from "../ast/and";
+import { Variable } from "../ast/formula";
 import { LearningUnit, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
 
@@ -79,7 +80,11 @@ function newLearningUnit(
 	requiredSkills: string[],
 	teachingGoals: string[]
 ) {
-	const skillExpression = new And({children: map.filter(skill => requiredSkills.includes(skill.id))});
+
+	const variables = map.filter(skill => requiredSkills.includes(skill.id))
+						 .map(skill => new Variable(skill));
+
+	const skillExpression = new And(variables);
 
 	return {
 		id: id,

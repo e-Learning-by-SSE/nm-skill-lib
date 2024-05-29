@@ -4,6 +4,7 @@ import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { And } from "../ast/and";
+import { Variable } from "../ast/formula";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
@@ -247,7 +248,7 @@ export function search<LU extends LearningUnit>(
 				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 				const tempLU = {
 					id: "-1",
-					requiredSkills: new And({children: remainSkills}),
+					requiredSkills: new And(remainSkills.map(skill => new Variable(skill))),
 					teachingGoals: [],
 					suggestedSkills:[],
 				}
@@ -277,7 +278,7 @@ export function search<LU extends LearningUnit>(
 	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
 	const tempLU = {
         id: "-1",
-        requiredSkills: new And({children: remainSkills}),
+        requiredSkills: new And(remainSkills.map(skill => new Variable(skill))),
         teachingGoals: [],
 		suggestedSkills:[],
     }

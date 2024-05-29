@@ -1,7 +1,7 @@
 import { LearningUnit, Skill } from "../types";
 import { Or } from "./or";
 import { And } from "./and";
-import { SkillExpression } from "./formula";
+import { SkillExpression, Variable } from "./formula";
 import { parseJsonExpression } from "./jsonHandler";
 
 describe("precondition formula", () => {
@@ -21,8 +21,8 @@ describe("precondition formula", () => {
 	it("skills in precondition formula", () => {
 
 
-        const orSkills = new Or({children: [skill1, skill2]});
-        const andSkills = new And({children: [skill3, skill4]});
+        const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
+        const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
 
         expect(orSkills.evaluate(["skill:1"])).toBeTruthy();
         expect(andSkills.evaluate(["skill:1"])).toBeFalsy();
@@ -31,13 +31,11 @@ describe("precondition formula", () => {
 
 	it("nested skill expression in precondition formula", () => {
 
-        const orSkills = new Or({children: [skill1, skill2]});
-        const andSkills = new And({children: [skill3, skill4]});
+        const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
+        const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
 
-        const orSkillExpression = new Or({children: [], 
-										  skillExpression: [orSkills, andSkills]});
-        const andSkillExpression = new And({children: [], 
-											skillExpression: [orSkills, andSkills]});
+        const orSkillExpression = new Or([orSkills, andSkills]);
+        const andSkillExpression = new And([orSkills, andSkills]);
 
         expect(orSkillExpression.evaluate(["skill:1"])).toBeTruthy();
         expect(andSkillExpression.evaluate(["skill:1"])).toBeFalsy();
@@ -46,13 +44,11 @@ describe("precondition formula", () => {
 
 	it("complex skills expression with nested skills expressions precondition formula", () => {
 
-        const andSkills = new And({children: [skill1, skill2]});
-        const orSkills = new Or({children: [skill3, skill4]});
+        const andSkills = new And([new Variable(skill1), new Variable(skill2)]);
+        const orSkills = new Or([new Variable(skill3), new Variable(skill4)]);
 
-		const skillExpression3 = new And({children: [], 
-										  skillExpression: [new Or({children: [skill5, skill6]}), 
-										  new And({children: [], 
-												   skillExpression: [andSkills, orSkills]})]});
+		const skillExpression3 = new And([new Or([new Variable(skill5), new Variable(skill6)]), 
+										  new And([andSkills, orSkills])]);
 
 		expect(skillExpression3.evaluate(["skill:5", "skill:6"])).toBeFalsy();
 		expect(skillExpression3.evaluate(["skill:1", "skill:2", "skill:3", "skill:5"])).toBeTruthy();
@@ -60,13 +56,11 @@ describe("precondition formula", () => {
 
 	it("extract all skills from skill expression", () => {
 
-        const orSkills = new Or({children: [skill1, skill2]});
-        const andSkills = new And({children: [skill3, skill4]});
+        const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
+        const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
 
-        const orSkillExpression = new Or({children: [], 
-										  skillExpression: [orSkills, andSkills]});
-        const andSkillExpression = new And({children: [], 
-											skillExpression: [orSkills, andSkills]});
+        const orSkillExpression = new Or([orSkills, andSkills]);
+        const andSkillExpression = new And([orSkills, andSkills]);
 
 		expect(orSkillExpression.extractSkills()).toEqual([skill1, skill2, skill3, skill4]);
 		expect(andSkillExpression.extractSkills()).toEqual([skill1, skill2, skill3, skill4]);
@@ -75,22 +69,22 @@ describe("precondition formula", () => {
 
 	it("convert skill expression to Json format string", () => {
 
-        const orSkills = new Or({children: [skill1]});
-        const andSkills = new And({children: [skill3, skill4]});
+        const orSkills = new Or([new Variable(skill1)]);
+        const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
 
 		const orSkillsJson = orSkills.toJson();
 		const andSkillsJson = andSkills.toJson();
 
-        expect(orSkillsJson).toBe("{\"operator\":\"Or\",\"skills\":[{\"id\":\"skill:1\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]}],\"expression\":[]}")
-        expect(andSkillsJson).toBe("{\"operator\":\"And\",\"skills\":[{\"id\":\"skill:3\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]},{\"id\":\"skill:4\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]}],\"expression\":[]}")
+        expect(orSkillsJson).toBe('{"operator":"Or","skills":["skill:1"]}')
+        expect(andSkillsJson).toBe('{"operator":"And","skills":["skill:3","skill:4"]}')
 
 	});
 
-	it("convert and Json format string to skill expression", () => {
+	it("convert 'and Json' format string to skill expression", () => {
 
-        const jsonSkillExpression = "{\"operator\":\"And\",\"skills\":[{\"id\":\"skill:3\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]},{\"id\":\"skill:4\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]}],\"expression\":[]}"
+        const jsonSkillExpression = '{"operator":"And","skills":["skill:3","skill:4"]}'
 
-		const skillExpression = parseJsonExpression(jsonSkillExpression);
+		const skillExpression = parseJsonExpression(jsonSkillExpression, firstMap);
 
 		expect(skillExpression.extractSkills().length).toBe(2);
 		expect(skillExpression.evaluate(["skill:3"])).toBeFalsy();
@@ -98,11 +92,11 @@ describe("precondition formula", () => {
 
 	});
 
-	it("convert or Json format string to skill expression", () => {
+	it("convert 'or Json' format string to skill expression", () => {
 
-        const jsonSkillExpression = "{\"operator\":\"Or\",\"skills\":[{\"id\":\"skill:1\",\"repositoryId\":\"Map 1\",\"nestedSkills\":[]}],\"expression\":[]}";
+        const jsonSkillExpression = '{"operator":"Or","skills":["skill:1"]}';
 
-		const skillExpression = parseJsonExpression(jsonSkillExpression);
+		const skillExpression = parseJsonExpression(jsonSkillExpression, firstMap);
 
 		expect(skillExpression.extractSkills().length).toBe(1);
 		expect(skillExpression.evaluate(["skill:1"])).toBeTruthy();
@@ -111,23 +105,22 @@ describe("precondition formula", () => {
 
 	it("convert nested skill expression to Json format string", () => {
 
-        const orSkills = new Or({children: [skill1, skill2]});
-        const andSkills = new And({children: [skill3, skill4]});
+        const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
+        const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
 
-        const orSkillExpression = new Or({children: [], 
-										  skillExpression: [orSkills, andSkills]});
+        const orSkillExpression = new Or([orSkills, andSkills]);
 
 		const orSkillExpressionJson = orSkillExpression.toJson()
 
-		expect(orSkillExpressionJson).toBe("{\"operator\":\"Or\",\"skills\":[],\"expression\":[\"{\\\"operator\\\":\\\"Or\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:1\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:2\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\",\"{\\\"operator\\\":\\\"And\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:3\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:4\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\"]}")
+		expect(orSkillExpressionJson).toBe("{\"operator\":\"Or\",\"skills\":[\"{\\\"operator\\\":\\\"Or\\\",\\\"skills\\\":[\\\"skill:1\\\",\\\"skill:2\\\"]}\",\"{\\\"operator\\\":\\\"And\\\",\\\"skills\\\":[\\\"skill:3\\\",\\\"skill:4\\\"]}\"]}")
 
 	});
 
 	it("convert nested Json format string to skill expression", () => {
 
-		const jsonSkillExpression = "{\"operator\":\"Or\",\"skills\":[],\"expression\":[\"{\\\"operator\\\":\\\"Or\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:1\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:2\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\",\"{\\\"operator\\\":\\\"And\\\",\\\"skills\\\":[{\\\"id\\\":\\\"skill:3\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]},{\\\"id\\\":\\\"skill:4\\\",\\\"repositoryId\\\":\\\"Map 1\\\",\\\"nestedSkills\\\":[]}],\\\"expression\\\":[]}\"]}";
+		const jsonSkillExpression = "{\"operator\":\"Or\",\"skills\":[\"{\\\"operator\\\":\\\"Or\\\",\\\"skills\\\":[\\\"skill:1\\\",\\\"skill:2\\\"]}\",\"{\\\"operator\\\":\\\"And\\\",\\\"skills\\\":[\\\"skill:3\\\",\\\"skill:4\\\"]}\"]}";
 		
-		const skillExpression = parseJsonExpression(jsonSkillExpression);
+		const skillExpression = parseJsonExpression(jsonSkillExpression, firstMap);
 
 		expect(skillExpression.extractSkills().length).toBe(4);
 		expect(skillExpression.evaluate(["skill:3"])).toBeFalsy();
@@ -136,10 +129,10 @@ describe("precondition formula", () => {
 
 	it("learning units filtering by precondition formula", () => {
 
-		const skillExpression1 = new And({children: [skill1, skill2, skill3]});
-		const skillExpression2 = new Or({children: [skill4, skill5]});
-		const skillExpression3 = new Or({children: [skill5, skill6], 
-										 skillExpression: [new And({children: [skill7, skill8]})]});
+		const skillExpression1 = new And([new Variable(skill1), new Variable(skill2), new Variable(skill3)]);
+		const skillExpression2 = new Or([new Variable(skill4), new Variable(skill5)]);
+		const skillExpression3 = new Or([new Variable(skill5), new Variable(skill6), 
+										new And([new Variable(skill7), new Variable(skill8)])]);
 
 		const unit1 = newLearningUnit(firstMap,
 			"unit1",
