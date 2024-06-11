@@ -1,19 +1,20 @@
 import { Skill } from "../types";
 import { SkillExpression } from "./skillExpression";
 import { createJson } from "./jsonHandler";
+import { Variable } from "./variable";
+import { SkillsRelations } from "./skillsRelation";
 
 // And skill expression
 export class And extends SkillExpression {
+	type: string = "And";
+
 	constructor(private terms: SkillExpression[]) {
 		super();
 	}
 
-	evaluate(skills: ReadonlyArray<string>): boolean {
-		//const skillList = this.variable.map(variable => variable.skill);
-        //let skillsCheck = skillList.every(child => skills.includes(child.id));
-		//const skillExpressionCheck = this.variable.every(expression => expression.evaluate(skills));
-		//skillsCheck = (skillsCheck && skillExpressionCheck) ? true : false;
-        return this.terms.every(value => value.evaluate(skills));
+	evaluate(learnedSkills: ReadonlyArray<string>, skillsRelations: SkillsRelations, without?: Variable[]): boolean {
+		let filterTerms = this.filterSkillsByWithout(skillsRelations, without);
+		return filterTerms.every(value => value.evaluate(learnedSkills, skillsRelations, without));
 	}
 
 	extractSkills(): Skill[] {
@@ -27,6 +28,18 @@ export class And extends SkillExpression {
 
 	toJson(): string {
 		return createJson(And.name, this.terms);
+	}
+
+	filterSkillsByWithout(skillsRelations: SkillsRelations, without?: Variable[]): SkillExpression[] {
+		let filteredTerms: SkillExpression[] = [];
+		this.terms.forEach(expression => {
+			if (expression.type == "Variable") {
+				filteredTerms.push(...expression.filterSkillsByWithout(skillsRelations, without));
+			} else {
+				filteredTerms.push(expression);
+			}
+		});
+		return filteredTerms;
 	}
 
 }

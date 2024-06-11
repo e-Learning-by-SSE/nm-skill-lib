@@ -3,6 +3,7 @@ import { And } from "./and";
 import { SkillExpression } from "./skillExpression";
 import { Or } from "./or";
 import { Variable } from "./variable";
+import { SkillsRelations } from "./skillsRelation";
 
 // An internal type used within this file to handle the parse Json to SkillExpression
 type JsonExpression = {
@@ -28,9 +29,9 @@ export function createJson(operator: string, terms: SkillExpression[]): string {
 }
 
 // Parse a Json format to a SkillExpression
-export function parseJsonExpression(json: string, firstMap: Skill[]): SkillExpression {	
+export function parseJsonExpression(json: string, skillsRelations: SkillsRelations): SkillExpression {	
 
-    const skill = firstMap.find(sk => json == sk.id);
+    const skill = skillsRelations.skills.find(sk => json == sk.id);
     if (skill) {
         return new Variable(skill);
     }
@@ -44,7 +45,7 @@ export function parseJsonExpression(json: string, firstMap: Skill[]): SkillExpre
 
     const variables: SkillExpression[] = [];
     jsonExpression.skills.forEach(skill => {
-        variables.push(parseJsonExpression(skill, firstMap));
+        variables.push(parseJsonExpression(skill, skillsRelations));
     });
 
     if (jsonExpression.operator == And.name) {

@@ -1,4 +1,6 @@
 import { Skill } from "../types";
+import { SkillsRelations } from "./skillsRelation";
+import { Variable } from "./variable";
 
 // An abstract class for all skill expressions
 // With three main methods; 
@@ -7,29 +9,13 @@ import { Skill } from "../types";
 // toJson: convert the expression into Json format
 
 export abstract class SkillExpression {
-	abstract evaluate(skills: ReadonlyArray<string>): boolean;
+	abstract type: string;
+
+	abstract evaluate(learnedSkills: ReadonlyArray<string>, skillsRelations: SkillsRelations, without?: Variable[]): boolean;
 
 	abstract extractSkills(): Skill[];
 
 	abstract toJson(): string;
 
-}
-
-export class Variable extends SkillExpression{
-	constructor(private skill: Skill) {
-		super();
-	}
-
-	evaluate(skills: readonly string[]): boolean {
-		return skills.includes(this.skill.id);
-	}
-
-	extractSkills(): Skill[] {
-		return [this.skill];
-	}
-
-	toJson(): string {
-		return this.skill.id;
-	}
-
+	abstract filterSkillsByWithout(skillsRelations: SkillsRelations, without?: Variable[]): SkillExpression[];
 }

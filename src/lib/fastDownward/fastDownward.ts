@@ -4,7 +4,7 @@ import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { And } from "../ast/and";
-import { Variable } from "../ast/skillExpression";
+import { Variable } from "../ast/variable";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
