@@ -138,7 +138,10 @@ export function getPaths<LU extends LearningUnit>({
 }): Path[] | null {
 	const startTime = new Date().getTime();
 
-	const distances = new DistanceMap(skills, learningUnits, fnCost);
+	const inScopeLearningUnits = filterOutOfScopeLus(goal, learningUnits, knowledge);
+	const inScopeSkills = filterOutOfScopeSkills(inScopeLearningUnits)
+
+	const distances = new DistanceMap(skills, inScopeLearningUnits, fnCost);
 	const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
 		const min = distances.getDistances(
 			lu.id,
@@ -149,7 +152,7 @@ export function getPaths<LU extends LearningUnit>({
 
 	// Filter LearningUnits which cannot reach the goal
 	const goalIds = goal.map(skill => skill.id);
-	const filteredLearningUnits = learningUnits.filter(
+	const filteredLearningUnits = inScopeLearningUnits.filter(
 		lu => distances.getDistances(lu.id, goalIds) !== Infinity
 	);
 
@@ -451,4 +454,65 @@ export function getSkillAnalysis<LU extends LearningUnit>({
 	const skillAnalyzedPath = skillAnalysis(globalKnowledge, learningUnits, goal);
 
 	return skillAnalyzedPath;
+}
+
+export function filterOutOfScopeLus<LU extends LearningUnit>(goal: Skill[], learningUnits: ReadonlyArray<LU>, knowledge: Skill[]): LU[] {
+	
+	const filteredLearningUnits = learningUnits.filter(lu => 
+				lu.teachingGoals.some(skill => goal.includes(skill)));
+	
+	goal.forEach(skill => {
+		skill.nestedSkills.forEach(nestedSkill => {
+			const lus = learningUnits.filter(learningUnit => learningUnit.teachingGoals.some(skill => skill.id == nestedSkill));
+			const luNotExist = lus.filter(lu => !filteredLearningUnits.includes(lu));
+			filteredLearningUnits.push(...luNotExist);
+		});
+	});
+
+	const inScopeLearningUnits = filteredLearningUnits.slice();
+	
+	while (filteredLearningUnits.length > 0) {
+		const learningUnit = filteredLearningUnits.pop();
+		if (learningUnit.requiredSkills.length == 0 
+			|| learningUnit.requiredSkills.every(skill => knowledge.includes(skill)))
+		{
+			continue;
+		}
+		let requiredLearningUnit = learningUnits.filter(lu => 
+			lu.teachingGoals.some(skill => learningUnit.requiredSkills.includes(skill)));
+
+		learningUnit.requiredSkills.forEach(skill => {
+			requiredLearningUnit.push(
+				...learningUnits.filter(lu => 
+									lu.teachingGoals.some(goal => skill.nestedSkills.includes(goal.id)))
+								.filter(lu => 
+									lu.teachingGoals.every(sk => !knowledge.includes(sk)))
+					)
+		});
+
+		const luNotExist = requiredLearningUnit.filter(lu => !inScopeLearningUnits.includes(lu));
+	
+		filteredLearningUnits.push(...luNotExist);
+		inScopeLearningUnits.push(...luNotExist);
+	}
+
+	return inScopeLearningUnits;
+}
+
+export function filterOutOfScopeSkills<LU extends LearningUnit>(learningUnits: ReadonlyArray<LU>): Skill[] {
+	
+	let filteredSkills: Skill[] = [];
+	learningUnits.forEach(learningUnit => {
+		learningUnit.requiredSkills.forEach(skill => {
+			filteredSkills.push(skill);
+		});
+		learningUnit.teachingGoals.forEach(skill => {
+			filteredSkills.push(skill);
+		});
+		learningUnit.suggestedSkills.forEach(suggest => {
+			filteredSkills.push(suggest.skill);
+		});
+	});
+
+	return filteredSkills;
 }

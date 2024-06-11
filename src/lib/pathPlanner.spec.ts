@@ -1,6 +1,8 @@
 import { LearningUnit, Skill, Graph, Path } from "./types";
 import {
 	computeSuggestedSkills,
+	filterOutOfScopeLus,
+	filterOutOfScopeSkills,
 	findCycles,
 	findParentsOfCycledSkills,
 	getConnectedGraphForLearningUnit,
@@ -341,9 +343,9 @@ describe("Path Planer", () => {
 			it("Only necessary skills / skip suggested skills", async () => {
 				// Test: Compute path
 				const path = getPath({
-					skills: thirdMap,
+					skills: firstMap,
 					learningUnits: suggestedOrderingOfLus,
-					goal: thirdMap.filter(skill => skill.id === "sk:3"),
+					goal: firstMap.filter(skill => skill.id === "sk:3"),
 					optimalSolution: true,
 					contextSwitchPenalty: 1
 				});
@@ -462,6 +464,24 @@ describe("Path Planer", () => {
 					"lu:29",
 					"lu:24",
 					"lu:25"
+				],
+				[
+					"lu:1",
+					"lu:2",
+					"lu:3",
+					"lu:4",
+					"lu:6",
+					"lu:7",
+					"lu:8",
+					"lu:22",
+					"lu:12",
+					"lu:23",
+					"lu:29",
+					"lu:24",
+					"lu:25",
+					"lu:26",
+					"lu:27",
+					"lu:28"
 				]
 			];
 
@@ -1544,6 +1564,114 @@ describe("Path Planer", () => {
 			expect(analysis![3].missingSkill).toBe("sk:8");
 		});
 	});
+
+	describe("filter out of scope learning units", () => {
+
+		const largeSkillMap: Skill[] = [];
+		const largeLearningUnits: LearningUnit[] = [];
+
+		for (let index = 1; index < 1501; index++) {
+			largeSkillMap.push(
+				{ id: "sk:" + index, repositoryId: "1", nestedSkills: [] }
+			)
+			largeLearningUnits.push(
+				newLearningUnit(largeSkillMap, "lu:" + index, [], ["sk:" + index]),
+			)
+		}
+
+		for (let index = 1; index < 100; index++) {
+			largeLearningUnits[index].requiredSkills.push(largeSkillMap[index - 1])
+		}
+
+		const parentSkillMap: Skill[] = [
+			{ id: "sk:1", repositoryId: "3", nestedSkills: [] },
+			{ id: "sk:2", repositoryId: "3", nestedSkills: [] },
+			{ id: "sk:3", repositoryId: "3", nestedSkills: [] },
+			{ id: "sk:4", repositoryId: "3", nestedSkills: [] },
+			{ id: "sk:5", repositoryId: "3", nestedSkills: [] },
+			{ id: "sk:6", repositoryId: "3", nestedSkills: ["sk:1", "sk:2"] },
+			{ id: "sk:7", repositoryId: "3", nestedSkills: ["sk:3", "sk:4"] },
+			{ id: "sk:8", repositoryId: "3", nestedSkills: [] },
+			{ id: "sk:9", repositoryId: "3", nestedSkills: [] }
+		].sort((a, b) => a.id.localeCompare(b.id));
+		
+		const parentLearningUnit: LearningUnit[] = [
+			newLearningUnit(parentSkillMap, "lu:1", [], ["sk:1"]),
+			newLearningUnit(parentSkillMap, "lu:2", [], ["sk:2"]),
+			newLearningUnit(parentSkillMap, "lu:3", [], ["sk:3"]),
+			newLearningUnit(parentSkillMap, "lu:4", [], ["sk:4"]),
+			newLearningUnit(parentSkillMap, "lu:5", [], ["sk:5"]),
+			newLearningUnit(parentSkillMap, "lu:8", ["sk:6", "sk:7"], ["sk:8"]),
+			newLearningUnit(parentSkillMap, "lu:9", [], ["sk:9"])
+		];
+
+		it("filter learning units without knowledge", () => {
+			const goal = largeSkillMap.filter(skill => skill.id === "sk:8");
+			const knowledge = [];
+
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge)
+			
+			expect(inScopeLearningUnits.length).toBe(8);
+		});
+
+		it("filter learning units with knowledge", () => {
+			const goal = largeSkillMap.filter(skill => skill.id === "sk:8");
+			const knowledge = largeSkillMap.filter(skill => skill.id === "sk:4");
+
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge)
+			
+			expect(inScopeLearningUnits.length).toBe(4);
+		});
+
+		it("filter learning units and parent skills without knowledge", () => {
+			const goal = parentSkillMap.filter(skill => skill.id === "sk:8");
+			const knowledge = [];
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, parentLearningUnit, knowledge)
+			
+			expect(inScopeLearningUnits.length).toBe(5);
+		});
+
+		it("filter learning units and parent skills with knowledge", () => {
+			const goal = parentSkillMap.filter(skill => skill.id === "sk:8");
+			const knowledge = parentSkillMap.filter(skill =>
+				["sk:2","sk:4"].includes(skill.id)
+			);
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, parentLearningUnit, knowledge)
+			
+			expect(inScopeLearningUnits.length).toBe(3);
+		});
+
+		it("find path in a large learning units without knowledge", () => {
+			const goal = largeSkillMap.filter(skill => skill.id === "sk:8");
+			const knowledge = [];
+
+			let startTime = new Date().getTime();
+			const path = getPath({
+				skills: largeSkillMap,
+				learningUnits: largeLearningUnits,
+				goal: goal,
+				optimalSolution: true,
+				contextSwitchPenalty: 1
+			});
+			const pathDuration = new Date().getTime() - startTime;
+
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge)
+			const inScopeSkills = filterOutOfScopeSkills(inScopeLearningUnits)
+
+			startTime = new Date().getTime();
+			const pathFiltered = getPath({
+				skills: inScopeSkills,
+				learningUnits: inScopeLearningUnits,
+				goal: goal,
+				optimalSolution: true,
+				contextSwitchPenalty: 1
+			});
+			const pathFilteredDuration = new Date().getTime() - startTime;
+
+			expect(pathDuration).toBeGreaterThan(pathFilteredDuration);
+		});
+	});
+
 });
 
 function extractElements(graph: Graph): [string[], (Skill | LearningUnit)[]] {
