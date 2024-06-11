@@ -9,7 +9,11 @@ export class SkillsRelations{
 	}
 
 	getChildren(parent: Skill): Skill[] {
-		return this.skills.filter(skill => parent.nestedSkills.includes(skill.id));
+		const childrenSkills = this.skills.filter(skill => parent.nestedSkills.includes(skill.id));
+		childrenSkills.forEach(child => {
+			childrenSkills.push(...this.getChildren(child));
+		});
+		return childrenSkills;
 	}
 
 }

@@ -6,21 +6,27 @@ import { SkillsRelations } from "./skillsRelation";
 
 // And skill expression
 export class And extends SkillExpression {
-	type: string = "And";
 
 	constructor(private terms: SkillExpression[]) {
 		super();
+		this.type = "And";
+
 	}
 
 	evaluate(learnedSkills: ReadonlyArray<string>, skillsRelations: SkillsRelations, without?: Variable[]): boolean {
-		let filterTerms = this.filterSkillsByWithout(skillsRelations, without);
+		let filterTerms:SkillExpression[] = [];
+		if (without) {
+			filterTerms = this.filterSkillsByWithout(skillsRelations, without);
+		} else {
+			filterTerms = this.terms;
+		}
 		return filterTerms.every(value => value.evaluate(learnedSkills, skillsRelations, without));
 	}
 
 	extractSkills(): Skill[] {
 		let skillList: Skill[] = [];
 		this.terms.forEach(expression => {
-			skillList = skillList.concat(expression.extractSkills())
+			skillList.push(...expression.extractSkills());
 		});
 
         return skillList;
@@ -33,7 +39,7 @@ export class And extends SkillExpression {
 	filterSkillsByWithout(skillsRelations: SkillsRelations, without?: Variable[]): SkillExpression[] {
 		let filteredTerms: SkillExpression[] = [];
 		this.terms.forEach(expression => {
-			if (expression.type == "Variable") {
+			if (expression.getExpressionType() == "Variable") {
 				filteredTerms.push(...expression.filterSkillsByWithout(skillsRelations, without));
 			} else {
 				filteredTerms.push(expression);

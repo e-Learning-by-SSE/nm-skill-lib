@@ -1,10 +1,11 @@
-import { LearningUnit, Skill } from "../types";
+import { Skill } from "../types";
 import { Or } from "./or";
 import { And } from "./and";
 import { SkillExpression } from "./skillExpression";
 import { parseJsonExpression } from "./jsonHandler";
 import { Variable } from "./variable";
 import { SkillsRelations } from "./skillsRelation";
+import { Empty } from "./empty";
 
 describe("precondition formula", () => {
 
@@ -24,6 +25,29 @@ describe("precondition formula", () => {
 		skill5, skill6, skill7, skill8, skill9, skill10];
 
 	const skillsRelations = new SkillsRelations(skills);
+
+	it("skillExpression type", () => {
+
+        const emptySkills = new Empty([]);
+        const orSkills = new Or([new Variable(skill1)]);
+        const andSkills = new And([new Variable(skill2)]);
+		const variable = new Variable(skill3);
+
+        expect(emptySkills.getExpressionType()).toBe("Empty");
+        expect(orSkills.getExpressionType()).toBe("Or");
+        expect(andSkills.getExpressionType()).toBe("And");
+		expect(variable.getExpressionType()).toBe("Variable");
+
+	});
+
+	it("empty expression, no required skill for the expression", () => {
+
+        const emptySkills = new Empty([]);
+
+        expect(emptySkills.evaluate([], skillsRelations)).toBeTruthy();
+        expect(emptySkills.extractSkills().length).toBe(0);
+		expect(emptySkills.toJson()).toBe("");
+	});
 
 	it("skills in precondition formula", () => {
 
@@ -143,7 +167,7 @@ describe("precondition formula", () => {
 		expect(andSkillsWithoutSkill1.evaluate(["skill:2", "skill:3"], skillsRelations, without)).toBeTruthy();
 
 	});
-	
+
 	it("parent skills check without", () => {
 
         const without = [new Variable(skill1), new Variable(skill2), new Variable(skill3)];

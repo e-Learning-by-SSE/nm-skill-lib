@@ -3,10 +3,10 @@ import { SkillExpression } from "./skillExpression";
 import { SkillsRelations } from "./skillsRelation";
 
 export class Variable extends SkillExpression{
-	type: string = "Variable";
 	
 	constructor(private skill: Skill) {
 		super();
+		this.type = "Variable";
 	}
 
 	evaluate(learnedSkills: readonly string[], skillsRelations: SkillsRelations, without?: Variable[]): boolean {

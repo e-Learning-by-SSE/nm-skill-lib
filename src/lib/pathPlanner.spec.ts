@@ -12,6 +12,7 @@ import {
 import { CostFunction } from "./fastDownward/fdTypes";
 import { And } from "./ast/and";
 import { Variable } from "./ast/variable";
+import { Empty } from "./ast/empty"
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1611,7 +1612,7 @@ function newLearningUnit(
 	const variables = map.filter(skill => requiredSkills.includes(skill.id))
 	   					 .map(skill => new Variable(skill));
 
-	const skillExpression = new And(variables);
+	const skillExpression = (variables.length > 0 ? new And(variables) : new Empty(variables));
 
 	return {
 		id: id,

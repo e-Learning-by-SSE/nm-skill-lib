@@ -9,7 +9,11 @@ import { Variable } from "./variable";
 // toJson: convert the expression into Json format
 
 export abstract class SkillExpression {
-	abstract type: string;
+	protected type: string;
+
+	getExpressionType(){
+		return this.type;
+	}
 
 	abstract evaluate(learnedSkills: ReadonlyArray<string>, skillsRelations: SkillsRelations, without?: Variable[]): boolean;
 

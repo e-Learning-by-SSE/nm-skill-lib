@@ -5,20 +5,24 @@ import { HeuristicFunction, CostFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { And } from "../ast/and";
 import { Variable } from "../ast/variable";
+import { SkillsRelations } from "../ast/skillsRelation";
 
 /**
  * Compute which LearningUnits are reachable based on the given state.
  */
 function availableActions<LU extends LearningUnit>(
 	currentState: State,
-	learningUnits: ReadonlyArray<LU>
+	learningUnits: ReadonlyArray<LU>,
+	globalKnowledge: GlobalKnowledge
 ) {
 	// Avoid operators that are already in the current state
 	// Ideally we would check that the LearningUnits are not learned twice
 	// However, we can also check that we always learn at least one new skill
+	const skillsRelations = new SkillsRelations(globalKnowledge.skills);
+
 	const usefulLus = learningUnits
 		.filter(unit =>
-			unit.requiredSkills.evaluate(currentState.learnedSkills)
+			unit.requiredSkills.evaluate(currentState.learnedSkills, skillsRelations)
 			//.every(skill => currentState.learnedSkills.includes(skill.id))
 		)
 		.filter(lu =>
@@ -156,7 +160,7 @@ export function search<LU extends LearningUnit>(
 		closedSet.add(currentNode.state.getHashCode());
 
 		// Generate successors and add them to openList
-		for (const lu of availableActions(currentNode.state, learningUnits)) {
+		for (const lu of availableActions(currentNode.state, learningUnits, globalKnowledge)) {
 			// Check if the LU of the currentNode provides any skills that are used by the current LU
 			const cost = computeCost<LU>(
 				contextSwitchPenalty,
