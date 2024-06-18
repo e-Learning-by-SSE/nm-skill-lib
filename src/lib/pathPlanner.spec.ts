@@ -1566,21 +1566,18 @@ describe("Path Planer", () => {
 	});
 
 	describe("filter out of scope learning units", () => {
-
 		const largeSkillMap: Skill[] = [];
 		const largeLearningUnits: LearningUnit[] = [];
 
 		for (let index = 1; index < 1501; index++) {
-			largeSkillMap.push(
-				{ id: "sk:" + index, repositoryId: "1", nestedSkills: [] }
-			)
+			largeSkillMap.push({ id: "sk:" + index, repositoryId: "1", nestedSkills: [] });
 			largeLearningUnits.push(
-				newLearningUnit(largeSkillMap, "lu:" + index, [], ["sk:" + index]),
-			)
+				newLearningUnit(largeSkillMap, "lu:" + index, [], ["sk:" + index])
+			);
 		}
 
 		for (let index = 1; index < 100; index++) {
-			largeLearningUnits[index].requiredSkills.push(largeSkillMap[index - 1])
+			largeLearningUnits[index].requiredSkills.push(largeSkillMap[index - 1]);
 		}
 
 		const parentSkillMap: Skill[] = [
@@ -1594,7 +1591,7 @@ describe("Path Planer", () => {
 			{ id: "sk:8", repositoryId: "3", nestedSkills: [] },
 			{ id: "sk:9", repositoryId: "3", nestedSkills: [] }
 		].sort((a, b) => a.id.localeCompare(b.id));
-		
+
 		const parentLearningUnit: LearningUnit[] = [
 			newLearningUnit(parentSkillMap, "lu:1", [], ["sk:1"]),
 			newLearningUnit(parentSkillMap, "lu:2", [], ["sk:2"]),
@@ -1609,8 +1606,8 @@ describe("Path Planer", () => {
 			const goal = largeSkillMap.filter(skill => skill.id === "sk:8");
 			const knowledge = [];
 
-			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge)
-			
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge);
+
 			expect(inScopeLearningUnits.length).toBe(8);
 		});
 
@@ -1618,26 +1615,24 @@ describe("Path Planer", () => {
 			const goal = largeSkillMap.filter(skill => skill.id === "sk:8");
 			const knowledge = largeSkillMap.filter(skill => skill.id === "sk:4");
 
-			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge)
-			
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge);
+
 			expect(inScopeLearningUnits.length).toBe(4);
 		});
 
 		it("filter learning units and parent skills without knowledge", () => {
 			const goal = parentSkillMap.filter(skill => skill.id === "sk:8");
 			const knowledge = [];
-			const inScopeLearningUnits = filterOutOfScopeLus(goal, parentLearningUnit, knowledge)
-			
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, parentLearningUnit, knowledge);
+
 			expect(inScopeLearningUnits.length).toBe(5);
 		});
 
 		it("filter learning units and parent skills with knowledge", () => {
 			const goal = parentSkillMap.filter(skill => skill.id === "sk:8");
-			const knowledge = parentSkillMap.filter(skill =>
-				["sk:2","sk:4"].includes(skill.id)
-			);
-			const inScopeLearningUnits = filterOutOfScopeLus(goal, parentLearningUnit, knowledge)
-			
+			const knowledge = parentSkillMap.filter(skill => ["sk:2", "sk:4"].includes(skill.id));
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, parentLearningUnit, knowledge);
+
 			expect(inScopeLearningUnits.length).toBe(3);
 		});
 
@@ -1655,8 +1650,8 @@ describe("Path Planer", () => {
 			});
 			const pathDuration = new Date().getTime() - startTime;
 
-			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge)
-			const inScopeSkills = filterOutOfScopeSkills(inScopeLearningUnits)
+			const inScopeLearningUnits = filterOutOfScopeLus(goal, largeLearningUnits, knowledge);
+			const inScopeSkills = filterOutOfScopeSkills(inScopeLearningUnits);
 
 			startTime = new Date().getTime();
 			const pathFiltered = getPath({
@@ -1671,7 +1666,6 @@ describe("Path Planer", () => {
 			expect(pathDuration).toBeGreaterThan(pathFilteredDuration);
 		});
 	});
-
 });
 
 function extractElements(graph: Graph): [string[], (Skill | LearningUnit)[]] {
