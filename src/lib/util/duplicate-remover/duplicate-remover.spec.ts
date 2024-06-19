@@ -1,4 +1,4 @@
-import { IdSet, duplicateRemover } from "./duplicate-remover";
+import { IdSet, duplicateRemover, idChecker, sortById } from "./duplicate-remover";
 
 describe("duplicateRemover", () => {
     it("should return true for unique ids", () => {
@@ -32,6 +32,40 @@ describe("duplicateRemover", () => {
     });
 });
 
+describe("idChecker", () => {
+    const item1 = { id: "1" };
+    const item2 = { id: "2" };
+    const item3 = { id: "1" };
+
+    it("Different IDs -> false", () => {
+        const result = idChecker(item1)(item2);
+        expect(result).toBe(false);
+    });
+
+    it("Same IDs -> true", () => {
+        const result = idChecker(item1)(item3);
+        expect(result).toBe(true);
+    });
+});
+
+describe("sortById", () => {
+    it("Sort by string", () => {
+        const items = [{ id: "1" }, { id: "5" }, { id: "3" }, { id: "4" }, { id: "2" }];
+        const expected = [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }, { id: "5" }];
+
+        const result = items.sort(sortById);
+        expect(result).toEqual(expected);
+    });
+
+    it("Sort by number", () => {
+        const items = [{ id: 1 }, { id: 5 }, { id: 3 }, { id: 4 }, { id: 2 }];
+        const expected = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }];
+
+        const result = items.sort(sortById);
+        expect(result).toEqual(expected);
+    });
+});
+
 describe("IdSet", () => {
     it("should add, check, and delete items correctly", () => {
         const idSet = new IdSet();
@@ -56,7 +90,7 @@ describe("IdSet", () => {
         expect(idSet.has(item2)).toBe(false);
     });
 
-    it("Add elements twice -> Only first is added", () => {
+    it("ADD elements twice -> Only first is added", () => {
         const idSet = new IdSet();
 
         const item1 = { id: "1", name: "item1" };
@@ -73,6 +107,15 @@ describe("IdSet", () => {
         // Item 3 must not be added
         expect(idSet.add(item3)).toBe(false);
         expect(idSet.size).toBe(2);
+    });
+
+    it("DELETE elements that are not in the set", () => {
+        const idSet = new IdSet();
+
+        const item1 = { id: "1", name: "item1" };
+
+        // Test deleting items
+        expect(idSet.delete(item1)).toBe(false);
     });
 
     it("should iterate over every item with forEach", () => {
