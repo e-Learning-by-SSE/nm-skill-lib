@@ -1753,7 +1753,7 @@ describe("Path Planer", () => {
             });
             const pathDuration = new Date().getTime() - startTime;
 
-            expect(path.path.length).toBe(8);
+            expect(path!.path.length).toBe(8);
             expect(pathDuration).toBeLessThan(5000);
         });
     });
