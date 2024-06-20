@@ -479,6 +479,7 @@ export function filterOutOfScopeLus<LU extends LearningUnit>(
         if (knowledge.map(skill => skill.id).includes(skill.id)) {
             continue;
         }
+
         // Find learning units that teach the current required skill
         const lus = learningUnits.filter(learningUnit =>
             learningUnit.teachingGoals.some(sk => sk.id == skill.id)
