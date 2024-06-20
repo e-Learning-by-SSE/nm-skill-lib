@@ -1626,7 +1626,9 @@ describe("Path Planer", () => {
             { id: "sk:7", repositoryId: "1", nestedSkills: ["sk:3", "sk:4"] },
             { id: "sk:8", repositoryId: "1", nestedSkills: [] },
             { id: "sk:9", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:10", repositoryId: "1", nestedSkills: [] }
+            { id: "sk:10", repositoryId: "1", nestedSkills: [] },
+            { id: "sk:11", repositoryId: "1", nestedSkills: [] },
+            { id: "sk:12", repositoryId: "1", nestedSkills: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
 
         const parentLearningUnit: LearningUnit[] = [
@@ -1637,7 +1639,9 @@ describe("Path Planer", () => {
             newLearningUnit(parentSkillMap, "lu:5", [], ["sk:5"]),
             newLearningUnit(parentSkillMap, "lu:8", ["sk:6", "sk:7"], ["sk:8"]),
             newLearningUnit(parentSkillMap, "lu:9", [], ["sk:9"]),
-            newLearningUnit(parentSkillMap, "lu:10", ["sk:8"], ["sk:10"])
+            newLearningUnit(parentSkillMap, "lu:10", ["sk:8"], ["sk:10"]),
+            newLearningUnit(parentSkillMap, "lu:11", ["sk:8"], ["sk:11"]),
+            newLearningUnit(parentSkillMap, "lu:12", ["sk:11", "sk:10"], ["sk:12"])
         ];
 
         it("filter learning units 'without knowledge'", () => {
@@ -1705,6 +1709,19 @@ describe("Path Planer", () => {
             );
 
             expect(inScopeLearningUnits.length).toBe(6);
+        });
+
+        it("filter learning units with same required skills 'without knowledge'", () => {
+            const goal = parentSkillMap.filter(skill => skill.id === "sk:12");
+            const knowledge = [];
+            const inScopeLearningUnits = filterOutOfScopeLus(
+                goal,
+                parentLearningUnit,
+                largeSkillMap,
+                knowledge
+            );
+
+            expect(inScopeLearningUnits.length).toBe(8);
         });
     });
 
