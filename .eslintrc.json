@@ -1,38 +1,38 @@
 {
-	"root": true,
-	"ignorePatterns": ["**/*"],
-	"plugins": ["@nx"],
-	"overrides": [
-		{
-			"files": ["*.ts", "*.tsx", "*.js", "*.jsx"]
-		},
-		{
-			"files": ["*.ts", "*.tsx"],
-			"extends": ["plugin:@nx/typescript"],
-			"rules": {
-				"prefer-template": "warn",
-				"no-useless-concat": "warn",
-				"indent": ["off", "tab", { "SwitchCase": 1 }],
-				"semi": "off",
-				"no-empty": "off",
-				"no-empty-function": "off",
-				"@typescript-eslint/no-empty-function": "off",
-				"jsx-a11y/anchor-is-valid": ["off"],
-				"no-unused-vars": "off",
-				"@typescript-eslint/no-unused-vars": [
-					"warn",
-					{
-						"argsIgnorePattern": "^_",
-						"varsIgnorePattern": "^_",
-						"caughtErrorsIgnorePattern": "^_"
-					}
-				]
-			}
-		},
-		{
-			"files": ["*.js", "*.jsx"],
-			"extends": ["plugin:@nx/javascript"],
-			"rules": {}
-		}
-	]
+    "root": true,
+    "ignorePatterns": ["**/*"],
+    "plugins": ["@nx"],
+    "overrides": [
+        {
+            "files": ["*.ts", "*.tsx", "*.js", "*.jsx"]
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "extends": ["plugin:@nx/typescript"],
+            "rules": {
+                "prefer-template": "warn",
+                "no-useless-concat": "warn",
+                "indent": ["off", "tab", { "SwitchCase": 1 }],
+                "semi": "off",
+                "no-empty": "off",
+                "no-empty-function": "off",
+                "@typescript-eslint/no-empty-function": "off",
+                "jsx-a11y/anchor-is-valid": ["off"],
+                "no-unused-vars": "off",
+                "@typescript-eslint/no-unused-vars": [
+                    "warn",
+                    {
+                        "argsIgnorePattern": "^_",
+                        "varsIgnorePattern": "^_",
+                        "caughtErrorsIgnorePattern": "^_"
+                    }
+                ]
+            }
+        },
+        {
+            "files": ["*.js", "*.jsx"],
+            "extends": ["plugin:@nx/javascript"],
+            "rules": {}
+        }
+    ]
 }
