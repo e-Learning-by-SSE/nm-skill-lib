@@ -519,32 +519,34 @@ export function filterOutOfScopeSkills<LU extends LearningUnit>(
     inScopeLearningUnits: ReadonlyArray<LU>,
     skills: ReadonlyArray<Skill>
 ): Skill[] {
-    let filteredSkills: Skill[] = [];
+    let filteredSkills = new Set<Skill>();
     // Loop over the potential learning units
     inScopeLearningUnits.forEach(learningUnit => {
         // Add the required skills for the learning units to the potential skills list
         learningUnit.requiredSkills.forEach(skill => {
-            filteredSkills.push(skill);
+            filteredSkills.add(skill);
         });
         // Add the teaching goals skills for the learning units to the potential skills list
         learningUnit.teachingGoals.forEach(skill => {
-            filteredSkills.push(skill);
+            filteredSkills.add(skill);
         });
         // Add the suggested skills for the learning units to the potential skills list
         learningUnit.suggestedSkills.forEach(suggest => {
-            filteredSkills.push(suggest.skill);
+            filteredSkills.add(suggest.skill);
         });
     });
 
     // Find parent skills for any of nested skills included in the potential skills list
+    const skillIds = [...filteredSkills.values()].map(sk => sk.id);
     const parentSkills = skills
         .filter(skill => skill.nestedSkills.length > 0)
-        .filter(skill =>
-            skill.nestedSkills.some(skillId => filteredSkills.map(sk => sk.id).includes(skillId))
-        );
+        .filter(skill => skill.nestedSkills.some(skillId => skillIds.includes(skillId)));
 
     // Add the parent skills to the potential skills list
-    filteredSkills.push(...parentSkills);
+    parentSkills.forEach(skill => {
+        filteredSkills.add(skill);
+    });
+
     // Return the potential skills list (without duplication)
-    return [...new Set(filteredSkills)];
+    return [...filteredSkills];
 }
