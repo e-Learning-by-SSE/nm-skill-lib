@@ -31,7 +31,7 @@ export class Variable extends SkillExpression {
 		let childSkills = skillsRelations.getChildren(this.skill);
 		if (childSkills.length > 0) {
 			childSkills = childSkills.filter(childSkill =>
-				without.every(
+				without!.every(
 					variable => !variable.evaluate([childSkill.id], skillsRelations, without)
 				)
 			);

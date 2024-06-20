@@ -4,7 +4,7 @@ import { Skill } from "../types";
 type ParentSkills = {
 	skill: Skill;
 	children: Skill[];
-}
+};
 
 /*
  * Stores all available Skills in a more structured way (Parent/Children), to allow for faster access.
@@ -15,14 +15,14 @@ export class SkillsRelations {
 	private parentSkills: ParentSkills[] = [];
 
 	constructor(public skills: ReadonlyArray<Skill>) {
-		skills.filter(skill => skill.nestedSkills.length > 0).forEach(parent => {
-			this.parentSkills.push(
-				{
+		skills
+			.filter(skill => skill.nestedSkills.length > 0)
+			.forEach(parent => {
+				this.parentSkills.push({
 					skill: parent,
 					children: this.skills.filter(skill => parent.nestedSkills.includes(skill.id))
-				}
-			);
-		});
+				});
+			});
 	}
 
 	getAllParents() {
@@ -36,7 +36,7 @@ export class SkillsRelations {
 			const Skills: Skill[] = [];
 			parentSkill.children.forEach(child => {
 				const children = this.getChildren(child);
-				(children.length == 0 ? children.push(child) : null);
+				children.length == 0 ? children.push(child) : null;
 				Skills.push(...children);
 			});
 			return Skills;

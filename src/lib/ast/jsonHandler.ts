@@ -4,6 +4,7 @@ import { SkillExpression } from "./skillExpression";
 import { Or } from "./or";
 import { Variable } from "./variable";
 import { SkillsRelations } from "./skillsRelation";
+import { Empty } from "./empty";
 
 // An internal type used within this file to handle the parse Json to SkillExpression
 type JsonExpression = {
@@ -33,9 +34,11 @@ export function parseJsonExpression(
 	json: string,
 	skillsRelations: SkillsRelations
 ): SkillExpression {
-	const skill = skillsRelations.skills.find(sk => json == sk.id);
-	if (skill) {
-		return new Variable(skill);
+	if (!json.includes("operator")) {
+		const skill = skillsRelations.skills.find(sk => json == sk.id);
+		if (skill) {
+			return new Variable(skill);
+		}
 	}
 
 	const parsedSkillExpression = JSON.parse(json);
@@ -50,9 +53,11 @@ export function parseJsonExpression(
 		expressions.push(parseJsonExpression(skill, skillsRelations));
 	});
 
+	let expression: SkillExpression = new Empty(expressions);
 	if (jsonExpression.operator == And.name) {
-		return new And(expressions);
+		expression = new And(expressions);
 	} else if (jsonExpression.operator == Or.name) {
-		return new Or(expressions);
+		expression = new Or(expressions);
 	}
+	return expression;
 }
