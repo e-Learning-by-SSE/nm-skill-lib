@@ -476,31 +476,36 @@ export function filterOutOfScopeLus<LU extends LearningUnit>(
     while (skillsToFilteredLu.length > 0) {
         const skill = skillsToFilteredLu.pop();
 
-        // Skip the current required skill if the skill exist in the learned skills (knowledge)
-        if (knowledge.map(skill => skill.id).includes(skill.id) || processedSkills.has(skill.id)) {
-            continue;
+        if (skill) {
+            // Skip the current required skill if the skill exist in the learned skills (knowledge)
+            if (
+                knowledge.map(skill => skill.id).includes(skill.id) ||
+                processedSkills.has(skill.id)
+            ) {
+                continue;
+            }
+
+            // Find learning units that teach the current required skill
+            const lus = learningUnits.filter(learningUnit =>
+                learningUnit.teachingGoals.some(sk => sk.id == skill.id)
+            );
+
+            // Add the learning units to the potential learning units list
+            lus.forEach(unit => {
+                inScopeLearningUnits.add(unit);
+            });
+
+            // Add the required skills for the learning units to the required skills list
+            lus.forEach(unit => {
+                skillsToFilteredLu.push(...unit.requiredSkills);
+            });
+
+            // Find the nested skills for current required skill
+            const nestedSkills = skills.filter(sk => skill.nestedSkills.includes(sk.id));
+            // Add nested skills to the required skills list
+            skillsToFilteredLu.push(...nestedSkills);
+            processedSkills.add(skill.id);
         }
-
-        // Find learning units that teach the current required skill
-        const lus = learningUnits.filter(learningUnit =>
-            learningUnit.teachingGoals.some(sk => sk.id == skill.id)
-        );
-
-        // Add the learning units to the potential learning units list
-        lus.forEach(unit => {
-            inScopeLearningUnits.add(unit);
-        });
-
-        // Add the required skills for the learning units to the required skills list
-        lus.forEach(unit => {
-            skillsToFilteredLu.push(...unit.requiredSkills);
-        });
-
-        // Find the nested skills for current required skill
-        const nestedSkills = skills.filter(sk => skill.nestedSkills.includes(sk.id));
-        // Add nested skills to the required skills list
-        skillsToFilteredLu.push(...nestedSkills);
-        processedSkills.add(skill.id);
     }
 
     // Return the potential learning units list (without duplication)
