@@ -468,12 +468,13 @@ export function filterOutOfScopeLus<LU extends LearningUnit>(
     knowledge: Skill[]
 ): LU[] {
     // Extract the required skills from the goal into a required skills list
-    let skillsToFilteredLu = goal.slice();
-    let inScopeLearningUnits: LU[] = [];
+    const skillsToFilteredLu = goal.slice();
+    const inScopeLearningUnits = new Set<LU>();
 
     // Loop over the required skills
     while (skillsToFilteredLu.length > 0) {
         const skill = skillsToFilteredLu.pop();
+
         // Skip the current required skill if the skill exist in the learned skills (knowledge)
         if (knowledge.map(skill => skill.id).includes(skill.id)) {
             continue;
@@ -482,8 +483,11 @@ export function filterOutOfScopeLus<LU extends LearningUnit>(
         const lus = learningUnits.filter(learningUnit =>
             learningUnit.teachingGoals.some(sk => sk.id == skill.id)
         );
+
         // Add the learning units to the potential learning units list
-        inScopeLearningUnits.push(...lus);
+        lus.forEach(unit => {
+            inScopeLearningUnits.add(unit);
+        });
 
         // Add the required skills for the learning units to the required skills list
         lus.forEach(unit => {
@@ -497,7 +501,7 @@ export function filterOutOfScopeLus<LU extends LearningUnit>(
     }
 
     // Return the potential learning units list (without duplication)
-    return [...new Set(inScopeLearningUnits)];
+    return [...inScopeLearningUnits];
 }
 
 /**
