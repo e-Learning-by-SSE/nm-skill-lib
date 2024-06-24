@@ -26,7 +26,7 @@ export class SkillsRelations {
 	}
 
 	getAllParents() {
-		return this.parentSkills;
+		return Array.from(this.parentSkills.values());
 	}
 
 	// Get the children skills for a given skill
