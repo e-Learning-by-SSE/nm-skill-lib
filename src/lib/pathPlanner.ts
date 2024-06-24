@@ -1,14 +1,14 @@
 import { Graph as GraphLib, alg } from "@dagrejs/graphlib";
 import {
-	Edge,
-	Graph,
-	Skill,
-	Node,
-	LearningUnit,
-	Path,
-	UpdateSoftConstraintFunction,
-	CycledSkills,
-	SkillAnalyzedPath
+    Edge,
+    Graph,
+    Skill,
+    Node,
+    LearningUnit,
+    Path,
+    UpdateSoftConstraintFunction,
+    CycledSkills,
+    SkillAnalyzedPath
 } from "./types";
 import { findLearningPath } from "./fastDownward/fdFrontend";
 import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
@@ -22,8 +22,8 @@ import { skillAnalysis } from "./fastDownward/missingSkillDetection";
  * @returns A Promise that resolves to the connected graph.
  */
 export function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Graph {
-	const graph = populateGraph({ skills, parentChild: true, childParent: false });
-	return buildReturnGraph(graph);
+    const graph = populateGraph({ skills, parentChild: true, childParent: false });
+    return buildReturnGraph(graph);
 }
 
 /**
@@ -33,11 +33,11 @@ export function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Graph {
  * @returns A Promise that resolves to the connected graph.
  */
 export function getConnectedGraphForLearningUnit(
-	learningUnits: ReadonlyArray<LearningUnit>,
-	skills: ReadonlyArray<Skill>
+    learningUnits: ReadonlyArray<LearningUnit>,
+    skills: ReadonlyArray<Skill>
 ): Graph {
-	const graph = populateGraph({ skills, learningUnits });
-	return buildReturnGraph(graph);
+    const graph = populateGraph({ skills, learningUnits });
+    return buildReturnGraph(graph);
 }
 
 /**
@@ -46,11 +46,11 @@ export function getConnectedGraphForLearningUnit(
  * @returns A Promise that resolves to a boolean indicating whether the graph is acyclic.
  */
 export function isAcyclic(
-	skills: ReadonlyArray<Skill>,
-	learningUnits: ReadonlyArray<LearningUnit>
+    skills: ReadonlyArray<Skill>,
+    learningUnits: ReadonlyArray<LearningUnit>
 ): boolean {
-	const graph = populateGraph({ skills, learningUnits });
-	return alg.isAcyclic(graph);
+    const graph = populateGraph({ skills, learningUnits });
+    return alg.isAcyclic(graph);
 }
 
 /**
@@ -65,39 +65,39 @@ export function isAcyclic(
  * @returns An optimal path of LearningUnits that leads to the specified skills (goal) or null if no path was found.
  */
 export function getPath<LU extends LearningUnit>({
-	skills,
-	goal,
-	learningUnits,
-	knowledge = [],
-	optimalSolution = false,
-	fnCost,
-	contextSwitchPenalty = 1.2
+    skills,
+    goal,
+    learningUnits,
+    knowledge = [],
+    optimalSolution = false,
+    fnCost,
+    contextSwitchPenalty = 1.2
 }: {
-	skills: ReadonlyArray<Skill>;
-	learningUnits: ReadonlyArray<LU>;
-	goal: Skill[];
-	knowledge?: Skill[];
-	optimalSolution?: boolean;
-	fnCost?: CostFunction<LU>;
-	contextSwitchPenalty?: number;
+    skills: ReadonlyArray<Skill>;
+    learningUnits: ReadonlyArray<LU>;
+    goal: Skill[];
+    knowledge?: Skill[];
+    optimalSolution?: boolean;
+    fnCost?: CostFunction<LU>;
+    contextSwitchPenalty?: number;
 }): Path | null {
-	const paths = getPaths({
-		skills,
-		goal,
-		learningUnits,
-		knowledge,
-		optimalSolution,
-		fnCost,
-		contextSwitchPenalty,
-		alternatives: 1,
-		alternativesTimeout: null
-	});
+    const paths = getPaths({
+        skills,
+        goal,
+        learningUnits,
+        knowledge,
+        optimalSolution,
+        fnCost,
+        contextSwitchPenalty,
+        alternatives: 1,
+        alternativesTimeout: null
+    });
 
-	if (paths && paths.length > 0) {
-		return paths[0];
-	} else {
-		return null;
-	}
+    if (paths && paths.length > 0) {
+        return paths[0];
+    } else {
+        return null;
+    }
 }
 
 /**
@@ -116,65 +116,62 @@ export function getPath<LU extends LearningUnit>({
  * @returns Optimal paths of LearningUnits that leads to the specified skills (goal) or null if no path was found.
  */
 export function getPaths<LU extends LearningUnit>({
-	skills,
-	goal,
-	learningUnits,
-	knowledge = [],
-	optimalSolution = false,
-	fnCost,
-	contextSwitchPenalty = 1.2,
-	alternatives = 5,
-	alternativesTimeout = 5000
+    skills,
+    goal,
+    learningUnits,
+    knowledge = [],
+    optimalSolution = false,
+    fnCost,
+    contextSwitchPenalty = 1.2,
+    alternatives = 5,
+    alternativesTimeout = 5000
 }: {
-	skills: ReadonlyArray<Skill>;
-	learningUnits: ReadonlyArray<LU>;
-	goal: Skill[];
-	knowledge?: Skill[];
-	optimalSolution?: boolean;
-	fnCost?: CostFunction<LU>;
-	contextSwitchPenalty?: number;
-	alternatives: number;
-	alternativesTimeout: number | null;
+    skills: ReadonlyArray<Skill>;
+    learningUnits: ReadonlyArray<LU>;
+    goal: Skill[];
+    knowledge?: Skill[];
+    optimalSolution?: boolean;
+    fnCost?: CostFunction<LU>;
+    contextSwitchPenalty?: number;
+    alternatives: number;
+    alternativesTimeout: number | null;
 }): Path[] | null {
-	const startTime = new Date().getTime();
+    const startTime = new Date().getTime();
 
-	const distances = new DistanceMap(skills, learningUnits, fnCost);
-	const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
-		const min = distances.getDistances(
-			lu.id,
-			goal.map(skill => skill.id)
-		);
-		return min;
-	};
+    const inScopeLearningUnits = filterOutOfScopeLus(goal, learningUnits, skills, knowledge);
+    const inScopeSkills = filterOutOfScopeSkills(inScopeLearningUnits, skills);
 
-	// Filter LearningUnits which cannot reach the goal
-	const goalIds = goal.map(skill => skill.id);
-	const filteredLearningUnits = learningUnits.filter(
-		lu => distances.getDistances(lu.id, goalIds) !== Infinity
-	);
+    const distances = new DistanceMap(inScopeSkills, inScopeLearningUnits, fnCost);
+    const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
+        const min = distances.getDistances(
+            lu.id,
+            goal.map(skill => skill.id)
+        );
+        return min;
+    };
 
-	// Ensure timeout if more than one path should be computed
-	if (alternatives > 1 && alternativesTimeout === null) {
-		alternativesTimeout = 5000;
-	}
+    // Ensure timeout if more than one path should be computed
+    if (alternatives > 1 && alternativesTimeout === null) {
+        alternativesTimeout = 5000;
+    }
 
-	const path = findLearningPath({
-		knowledge: knowledge,
-		goal: goal,
-		skills: skills,
-		learningUnits: filteredLearningUnits,
-		optimalSolution: optimalSolution,
-		fnCost: fnCost,
-		fnHeuristic: fnHeuristic,
-		contextSwitchPenalty: contextSwitchPenalty,
-		alternatives,
-		alternativesTimeout
-	});
+    const path = findLearningPath({
+        knowledge: knowledge,
+        goal: goal,
+        skills: inScopeSkills,
+        learningUnits: inScopeLearningUnits,
+        optimalSolution: optimalSolution,
+        fnCost: fnCost,
+        fnHeuristic: fnHeuristic,
+        contextSwitchPenalty: contextSwitchPenalty,
+        alternatives,
+        alternativesTimeout
+    });
 
-	const duration = new Date().getTime() - startTime;
-	console.log(`Path planning took ${duration}ms`);
+    const duration = new Date().getTime() - startTime;
+    console.log(`Path planning took ${duration}ms`);
 
-	return path;
+    return path;
 }
 
 /**
@@ -188,73 +185,73 @@ export function getPaths<LU extends LearningUnit>({
  * @returns The graph which may be used for graph-based algorithms.
  */
 function populateGraph({
-	skills,
-	learningUnits,
-	parentChild = true,
-	childParent = false,
-	suggestions = true
+    skills,
+    learningUnits,
+    parentChild = true,
+    childParent = false,
+    suggestions = true
 }: {
-	skills: ReadonlyArray<Skill>;
-	learningUnits?: ReadonlyArray<LearningUnit>;
-	parentChild?: boolean;
-	childParent?: boolean;
-	suggestions?: boolean;
+    skills: ReadonlyArray<Skill>;
+    learningUnits?: ReadonlyArray<LearningUnit>;
+    parentChild?: boolean;
+    childParent?: boolean;
+    suggestions?: boolean;
 }): GraphLib {
-	const graph = new GraphLib({ directed: true, multigraph: true });
+    const graph = new GraphLib({ directed: true, multigraph: true });
 
-	// Add Skills
-	skills.forEach(skill => {
-		const nodeName = "sk" + skill.id;
-		graph.setNode(nodeName, skill);
-		if (parentChild || childParent) {
-			skill.nestedSkills.forEach(child => {
-				const childName = "sk" + child;
-				if (parentChild) {
-					// Parent -> Child
-					graph.setEdge(nodeName, childName);
-				}
-				if (childParent) {
-					// Child -> Parent
-					graph.setEdge(childName, nodeName);
-				}
-			});
-		}
-	});
+    // Add Skills
+    skills.forEach(skill => {
+        const nodeName = "sk" + skill.id;
+        graph.setNode(nodeName, skill);
+        if (parentChild || childParent) {
+            skill.nestedSkills.forEach(child => {
+                const childName = "sk" + child;
+                if (parentChild) {
+                    // Parent -> Child
+                    graph.setEdge(nodeName, childName);
+                }
+                if (childParent) {
+                    // Child -> Parent
+                    graph.setEdge(childName, nodeName);
+                }
+            });
+        }
+    });
 
-	// Add LearningUnits, if defined
-	if (learningUnits) {
-		learningUnits.forEach(lu => {
-			const luName = "lu" + lu.id;
-			graph.setNode("lu" + lu.id, lu);
-			lu.requiredSkills.extractSkills().forEach(req => {
-				graph.setEdge("sk" + req.id, luName);
-			});
+    // Add LearningUnits, if defined
+    if (learningUnits) {
+        learningUnits.forEach(lu => {
+            const luName = "lu" + lu.id;
+            graph.setNode("lu" + lu.id, lu);
+            lu.requiredSkills.extractSkills().forEach(req => {
+                graph.setEdge("sk" + req.id, luName);
+            });
 
-			lu.teachingGoals.forEach(goal => {
-				graph.setEdge(luName, "sk" + goal.id);
-			});
+            lu.teachingGoals.forEach(goal => {
+                graph.setEdge(luName, "sk" + goal.id);
+            });
 
-			if (suggestions) {
-				lu.suggestedSkills.forEach(suggestion => {
-					// Analogous to requirements: Skill -> LearningUnit
-					graph.setEdge("sk" + suggestion.skill.id, luName);
-				});
-			}
-		});
-	}
-	return graph;
+            if (suggestions) {
+                lu.suggestedSkills.forEach(suggestion => {
+                    // Analogous to requirements: Skill -> LearningUnit
+                    graph.setEdge("sk" + suggestion.skill.id, luName);
+                });
+            }
+        });
+    }
+    return graph;
 }
 
 function buildReturnGraph(graph: GraphLib): Graph {
-	const nodeList: Node[] = graph.nodes().map(nodeId => {
-		const label = graph.node(nodeId);
-		return { id: nodeId.slice(2), element: label };
-	});
+    const nodeList: Node[] = graph.nodes().map(nodeId => {
+        const label = graph.node(nodeId);
+        return { id: nodeId.slice(2), element: label };
+    });
 
-	const edgeList: Edge[] = graph.edges().map(element => {
-		return { from: element.v.slice(2), to: element.w.slice(2) };
-	});
-	return { nodes: nodeList, edges: edgeList };
+    const edgeList: Edge[] = graph.edges().map(element => {
+        return { from: element.v.slice(2), to: element.w.slice(2) };
+    });
+    return { nodes: nodeList, edges: edgeList };
 }
 
 /**
@@ -263,30 +260,36 @@ function buildReturnGraph(graph: GraphLib): Graph {
  * @param fnUpdate The CREATE/UPDATE/DELETE function to apply the computed constraints.
  */
 export async function computeSuggestedSkills(
-	learningUnits: LearningUnit[],
-	fnUpdate: UpdateSoftConstraintFunction
+    learningUnits: LearningUnit[],
+    fnUpdate: UpdateSoftConstraintFunction
 ) {
-	// Do nothing and avoid any exception if an empty array was passed
-	if (learningUnits.length === 0) {
-		return;
-	}
+    // Do nothing and avoid any exception if an empty array was passed
+    if (learningUnits.length === 0) {
+        return;
+    }
 
-	// Delete constraints for the very first unit
-	await fnUpdate(learningUnits[0], []);
+    // Delete constraints for the very first unit
+    await fnUpdate(learningUnits[0], []);
 
-	// Iterate over all learningUnits starting at index 2 and set ordering condition to previous learningUnit
-	for (let i = 1; i < learningUnits.length; i++) {
-		const previousUnit = learningUnits[i - 1];
-		const currentUnit = learningUnits[i];
-		const missingSkills = previousUnit.teachingGoals
-			.map(goal => goal.id)
-			// Do not copy hard constraints also to soft constraints
-			.filter(goalId => !currentUnit.requiredSkills.extractSkills().map(skill => skill.id).includes(goalId))
-			// Do not copy currently taught skills to avoid cycles
-			.filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
+    // Iterate over all learningUnits starting at index 2 and set ordering condition to previous learningUnit
+    for (let i = 1; i < learningUnits.length; i++) {
+        const previousUnit = learningUnits[i - 1];
+        const currentUnit = learningUnits[i];
+        const missingSkills = previousUnit.teachingGoals
+            .map(goal => goal.id)
+            // Do not copy hard constraints also to soft constraints
+            .filter(
+                goalId =>
+                    !currentUnit.requiredSkills
+                        .extractSkills()
+                        .map(skill => skill.id)
+                        .includes(goalId)
+            )
+            // Do not copy currently taught skills to avoid cycles
+            .filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
 
-		await fnUpdate(currentUnit, missingSkills);
-	}
+        await fnUpdate(currentUnit, missingSkills);
+    }
 }
 
 /**
@@ -297,45 +300,45 @@ export async function computeSuggestedSkills(
  * @returns An empty array if no cycles were detected or an array of detected cycles.
  */
 export function findCycles<S extends Skill, LU extends LearningUnit>(
-	skills: ReadonlyArray<S>,
-	learningUnits?: ReadonlyArray<LU>
+    skills: ReadonlyArray<S>,
+    learningUnits?: ReadonlyArray<LU>
 ) {
-	// Mapping of internal IDs to objects
-	const mapping = new Map<string, S | LU>();
-	for (const skill of skills) {
-		mapping.set("sk" + skill.id, skill);
-	}
-	if (learningUnits) {
-		for (const lu of learningUnits) {
-			mapping.set("lu" + lu.id, lu);
-		}
-	}
+    // Mapping of internal IDs to objects
+    const mapping = new Map<string, S | LU>();
+    for (const skill of skills) {
+        mapping.set("sk" + skill.id, skill);
+    }
+    if (learningUnits) {
+        for (const lu of learningUnits) {
+            mapping.set("lu" + lu.id, lu);
+        }
+    }
 
-	// Build graph
-	const graph = populateGraph({
-		skills,
-		learningUnits,
-		parentChild: false,
-		childParent: true,
-		suggestions: true
-	});
+    // Build graph
+    const graph = populateGraph({
+        skills,
+        learningUnits,
+        parentChild: false,
+        childParent: true,
+        suggestions: true
+    });
 
-	const result: (S | LU)[][] = [];
+    const result: (S | LU)[][] = [];
 
-	// isAcyclic is much more performant than findCycles -> Used as pre-check
-	if (!alg.isAcyclic(graph)) {
-		const cycles = alg.findCycles(graph);
+    // isAcyclic is much more performant than findCycles -> Used as pre-check
+    if (!alg.isAcyclic(graph)) {
+        const cycles = alg.findCycles(graph);
 
-		// Map (internal) IDs back to objects
-		for (const cycle of cycles) {
-			const cycleElements = cycle
-				.map(nodeId => mapping.get(nodeId))
-				.filter(element => element !== undefined) as (S | LU)[];
-			result.push(cycleElements);
-		}
-	}
+        // Map (internal) IDs back to objects
+        for (const cycle of cycles) {
+            const cycleElements = cycle
+                .map(nodeId => mapping.get(nodeId))
+                .filter(element => element !== undefined) as (S | LU)[];
+            result.push(cycleElements);
+        }
+    }
 
-	return result;
+    return result;
 }
 
 /**
@@ -345,44 +348,44 @@ export function findCycles<S extends Skill, LU extends LearningUnit>(
  * Or `null` if no cycles found.
  */
 export function findParentsOfCycledSkills<S extends Skill>(
-	skills: ReadonlyArray<S>
+    skills: ReadonlyArray<S>
 ): CycledSkills<S> | null {
-	const cycles = findCycles(skills);
+    const cycles = findCycles(skills);
 
-	if (cycles.length === 0) {
-		return null;
-	}
+    if (cycles.length === 0) {
+        return null;
+    }
 
-	// skillId -> skill
-	const skillMap = new Map<string, S>();
-	// childId -> all parents
-	const parentMap = new Map<string, string[]>();
-	skills.forEach(skill => {
-		skillMap.set(skill.id, skill);
-		if (skill.nestedSkills) {
-			const parent = skill.id;
-			skill.nestedSkills.forEach(childId => {
-				if (!parentMap.has(childId)) {
-					parentMap.set(childId, []);
-				}
-				parentMap.get(childId)!.push(parent);
-			});
-		}
-	});
+    // skillId -> skill
+    const skillMap = new Map<string, S>();
+    // childId -> all parents
+    const parentMap = new Map<string, string[]>();
+    skills.forEach(skill => {
+        skillMap.set(skill.id, skill);
+        if (skill.nestedSkills) {
+            const parent = skill.id;
+            skill.nestedSkills.forEach(childId => {
+                if (!parentMap.has(childId)) {
+                    parentMap.set(childId, []);
+                }
+                parentMap.get(childId)!.push(parent);
+            });
+        }
+    });
 
-	// Determine all skills that are part of a cycle (avoid duplicates)
-	const cycledSkills = Array.from(
-		new Set(cycles.flatMap(cycle => cycle.map(element => element.id)))
-	);
-	const cycleParents = new Set<S>();
-	cycledSkills.forEach(skillId => {
-		findParentsOfSkills(skillId, cycledSkills, parentMap, skillMap, cycleParents);
-	});
+    // Determine all skills that are part of a cycle (avoid duplicates)
+    const cycledSkills = Array.from(
+        new Set(cycles.flatMap(cycle => cycle.map(element => element.id)))
+    );
+    const cycleParents = new Set<S>();
+    cycledSkills.forEach(skillId => {
+        findParentsOfSkills(skillId, cycledSkills, parentMap, skillMap, cycleParents);
+    });
 
-	return {
-		cycles: cycles as S[][],
-		nestingSkills: Array.from(cycleParents)
-	};
+    return {
+        cycles: cycles as S[][],
+        nestingSkills: Array.from(cycleParents)
+    };
 }
 
 /**
@@ -393,36 +396,36 @@ export function findParentsOfCycledSkills<S extends Skill>(
  * @param resultSet Will be filled with all (indirect) parents of the given skill as a side effect.
  */
 function findParentsOfSkills<S extends Skill>(
-	skillId: string,
-	cycledSkills: string[],
-	parentMap: Map<string, string[]>,
-	skillMap: Map<string, S>,
-	resultSet: Set<S>,
-	alreadyVisited: Set<string> = new Set()
+    skillId: string,
+    cycledSkills: string[],
+    parentMap: Map<string, string[]>,
+    skillMap: Map<string, S>,
+    resultSet: Set<S>,
+    alreadyVisited: Set<string> = new Set()
 ) {
-	const skill = skillMap.get(skillId);
-	alreadyVisited.add(skillId);
+    const skill = skillMap.get(skillId);
+    alreadyVisited.add(skillId);
 
-	// Do not add the cycled skills to the result set
-	if (!cycledSkills.includes(skillId)) {
-		resultSet.add(skill!);
-	}
+    // Do not add the cycled skills to the result set
+    if (!cycledSkills.includes(skillId)) {
+        resultSet.add(skill!);
+    }
 
-	const parents = parentMap.get(skillId);
-	if (parents) {
-		for (const parentId of parents) {
-			if (!alreadyVisited.has(parentId)) {
-				findParentsOfSkills(
-					parentId,
-					cycledSkills,
-					parentMap,
-					skillMap,
-					resultSet,
-					alreadyVisited
-				);
-			}
-		}
-	}
+    const parents = parentMap.get(skillId);
+    if (parents) {
+        for (const parentId of parents) {
+            if (!alreadyVisited.has(parentId)) {
+                findParentsOfSkills(
+                    parentId,
+                    cycledSkills,
+                    parentMap,
+                    skillMap,
+                    resultSet,
+                    alreadyVisited
+                );
+            }
+        }
+    }
 }
 
 /**
@@ -438,17 +441,125 @@ function findParentsOfSkills<S extends Skill>(
  * @returns A list of the missing skills with the sub paths for them.
  */
 export function getSkillAnalysis<LU extends LearningUnit>({
-	skills,
-	goal,
-	learningUnits
+    skills,
+    goal,
+    learningUnits
 }: {
-	skills: ReadonlyArray<Skill>;
-	goal: Skill[];
-	learningUnits: ReadonlyArray<LU>;
+    skills: ReadonlyArray<Skill>;
+    goal: Skill[];
+    learningUnits: ReadonlyArray<LU>;
 }): SkillAnalyzedPath[] | null {
-	const globalKnowledge = new GlobalKnowledge(skills);
+    const globalKnowledge = new GlobalKnowledge(skills);
 
-	const skillAnalyzedPath = skillAnalysis(globalKnowledge, learningUnits, goal);
+    const skillAnalyzedPath = skillAnalysis(globalKnowledge, learningUnits, goal);
 
-	return skillAnalyzedPath;
+    return skillAnalyzedPath;
+}
+
+/**
+ * Filter the learning units to reduce the size of the potential candidate for the algorithm.
+ * Tracing backward the potential learning units from the goal using required skills.
+ * Taking in consideration the parent/children relation.
+ *
+ * @param goal The skills that should be learned.
+ * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param learningUnits The set of all LearningUnits.
+ * @param knowledge The knowledge of the user (skills already learned).
+ * @returns A list of potential learning units that could find a path.
+ */
+export function filterOutOfScopeLus<LU extends LearningUnit>(
+    goal: Skill[],
+    learningUnits: ReadonlyArray<LU>,
+    skills: ReadonlyArray<Skill>,
+    knowledge: Skill[]
+): LU[] {
+    // Extract the required skills from the goal into a required skills list
+    const skillsToFilteredLu = goal.slice();
+    const inScopeLearningUnits = new Set<LU>();
+    const processedSkills = new Set<string>();
+
+    // Loop over the required skills
+    while (skillsToFilteredLu.length > 0) {
+        const skill = skillsToFilteredLu.pop();
+
+        if (skill) {
+            // Skip the current required skill if the skill exist in the learned skills (knowledge)
+            if (
+                knowledge.map(skill => skill.id).includes(skill.id) ||
+                processedSkills.has(skill.id)
+            ) {
+                continue;
+            }
+
+            // Find learning units that teach the current required skill
+            const lus = learningUnits.filter(learningUnit =>
+                learningUnit.teachingGoals.some(sk => sk.id == skill.id)
+            );
+
+            // Add the learning units to the potential learning units list
+            lus.forEach(unit => {
+                inScopeLearningUnits.add(unit);
+            });
+
+            // Add the required skills for the learning units to the required skills list
+            lus.forEach(unit => {
+                skillsToFilteredLu.push(...unit.requiredSkills.extractSkills());
+            });
+
+            // Find the nested skills for current required skill
+            const nestedSkills = skills.filter(sk => skill.nestedSkills.includes(sk.id));
+            // Add nested skills to the required skills list
+            skillsToFilteredLu.push(...nestedSkills);
+            processedSkills.add(skill.id);
+        }
+    }
+
+    // Return the potential learning units list (without duplication)
+    return [...inScopeLearningUnits];
+}
+
+/**
+ * Filter the skills to reduce the size of the potential candidate for the algorithm.
+ * Trace all the skills involved in the potential learning units.
+ * (requiredSkills, teachingGoals, suggestedSkills).
+ * Taking in consideration the parent/children relation.
+ *
+ * @param skills The set of all skills (independent of what was already learned and what should be learned).
+ * @param inScopeLearningUnits The set of the potential learning units.
+ * @returns A list of potential skills that could find a path.
+ */
+export function filterOutOfScopeSkills<LU extends LearningUnit>(
+    inScopeLearningUnits: ReadonlyArray<LU>,
+    skills: ReadonlyArray<Skill>
+): Skill[] {
+    let filteredSkills = new Set<Skill>();
+    // Loop over the potential learning units
+    inScopeLearningUnits.forEach(learningUnit => {
+        // Add the required skills for the learning units to the potential skills list
+        learningUnit.requiredSkills.extractSkills().forEach(skill => {
+            filteredSkills.add(skill);
+        });
+        // Add the teaching goals skills for the learning units to the potential skills list
+        learningUnit.teachingGoals.forEach(skill => {
+            filteredSkills.add(skill);
+        });
+        // Add the suggested skills for the learning units to the potential skills list
+        learningUnit.suggestedSkills.forEach(suggest => {
+            filteredSkills.add(suggest.skill);
+        });
+    });
+
+    // Find parent skills for any of nested skills included in the potential skills list
+    const skillIds = [...filteredSkills.values()].map(sk => sk.id);
+    const parentSkills = skills
+        .filter(skill => skill.nestedSkills.length > 0)
+        .filter(skill => skill.nestedSkills.some(skillId => skillIds.includes(skillId)));
+
+    // Add the parent skills to the potential skills list
+    parentSkills.forEach(skill => {
+        filteredSkills.add(skill);
+    });
+
+    // Return the potential skills list (without duplication)
+    return [...filteredSkills];
 }
