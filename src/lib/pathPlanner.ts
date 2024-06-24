@@ -223,7 +223,7 @@ function populateGraph({
         learningUnits.forEach(lu => {
             const luName = "lu" + lu.id;
             graph.setNode("lu" + lu.id, lu);
-            lu.requiredSkills.forEach(req => {
+            lu.requiredSkills.extractSkills().forEach(req => {
                 graph.setEdge("sk" + req.id, luName);
             });
 
@@ -278,7 +278,13 @@ export async function computeSuggestedSkills(
         const missingSkills = previousUnit.teachingGoals
             .map(goal => goal.id)
             // Do not copy hard constraints also to soft constraints
-            .filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId))
+            .filter(
+                goalId =>
+                    !currentUnit.requiredSkills
+                        .extractSkills()
+                        .map(skill => skill.id)
+                        .includes(goalId)
+            )
             // Do not copy currently taught skills to avoid cycles
             .filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
 
@@ -497,7 +503,7 @@ export function filterOutOfScopeLus<LU extends LearningUnit>(
 
             // Add the required skills for the learning units to the required skills list
             lus.forEach(unit => {
-                skillsToFilteredLu.push(...unit.requiredSkills);
+                skillsToFilteredLu.push(...unit.requiredSkills.extractSkills());
             });
 
             // Find the nested skills for current required skill
@@ -530,7 +536,7 @@ export function filterOutOfScopeSkills<LU extends LearningUnit>(
     // Loop over the potential learning units
     inScopeLearningUnits.forEach(learningUnit => {
         // Add the required skills for the learning units to the potential skills list
-        learningUnit.requiredSkills.forEach(skill => {
+        learningUnit.requiredSkills.extractSkills().forEach(skill => {
             filteredSkills.add(skill);
         });
         // Add the teaching goals skills for the learning units to the potential skills list
