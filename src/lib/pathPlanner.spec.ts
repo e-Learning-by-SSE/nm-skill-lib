@@ -12,7 +12,7 @@ import {
 import { CostFunction } from "./fastDownward/fdTypes";
 import { And } from "./ast/and";
 import { Variable } from "./ast/variable";
-import { Empty } from "./ast/empty"
+import { Empty } from "./ast/empty";
 
 describe("Path Planer", () => {
 	// Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1389,7 +1389,7 @@ describe("Path Planer", () => {
 			expect(path!.path.length).toBe(1);
 			expect(path!.cost).toBe(-1);
 			expect(path!.path[0].requiredSkills.extractSkills().length).toBe(1);
-			expect(path!.path[0].requiredSkills.extractSkills().at(0).id).toBe("sk:8");
+			expect(path!.path[0].requiredSkills.extractSkills().at(0)!.id).toBe("sk:8");
 		});
 
 		it("No missing skill", () => {
@@ -1609,10 +1609,11 @@ function newLearningUnit(
 		}
 	}
 
-	const variables = map.filter(skill => requiredSkills.includes(skill.id))
-	   					 .map(skill => new Variable(skill));
+	const variables = map
+		.filter(skill => requiredSkills.includes(skill.id))
+		.map(skill => new Variable(skill));
 
-	const skillExpression = (variables.length > 0 ? new And(variables) : new Empty(variables));
+	const skillExpression = variables.length > 0 ? new And(variables) : new Empty(variables);
 
 	return {
 		id: id,

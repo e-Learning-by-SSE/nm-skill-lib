@@ -409,17 +409,17 @@ describe("precondition formula", () => {
 			);
 
 			expect(firstCheck.length).toBe(1);
-			expect(firstCheck.at(0).id).toBe(unit1.id);
+			expect(firstCheck.at(0)!.id).toBe(unit1.id);
 
 			expect(secondCheck.length).toBe(1);
-			expect(secondCheck.at(0).id).toBe(unit2.id);
+			expect(secondCheck.at(0)!.id).toBe(unit2.id);
 
 			expect(thirdCheck.length).toBe(2);
-			expect(thirdCheck.at(0).id).toBe(unit2.id);
-			expect(thirdCheck.at(1).id).toBe(unit3.id);
+			expect(thirdCheck.at(0)!.id).toBe(unit2.id);
+			expect(thirdCheck.at(1)!.id).toBe(unit3.id);
 
 			expect(fourCheck.length).toBe(1);
-			expect(fourCheck.at(0).id).toBe(unit3.id);
+			expect(fourCheck.at(0)!.id).toBe(unit3.id);
 		});
 	});
 });

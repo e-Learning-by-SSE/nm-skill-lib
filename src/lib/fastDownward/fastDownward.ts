@@ -13,16 +13,14 @@ import { SkillsRelations } from "../ast/skillsRelation";
 function availableActions<LU extends LearningUnit>(
 	currentState: State,
 	learningUnits: ReadonlyArray<LU>,
-	globalKnowledge: GlobalKnowledge
+	skillsRelations: SkillsRelations
 ) {
 	// Avoid operators that are already in the current state
 	// Ideally we would check that the LearningUnits are not learned twice
 	// However, we can also check that we always learn at least one new skill
-	const skillsRelations = new SkillsRelations(globalKnowledge.skills);
-
 	const usefulLus = learningUnits
-		.filter(unit =>
-			unit.requiredSkills.evaluate(currentState.learnedSkills, skillsRelations)
+		.filter(
+			unit => unit.requiredSkills.evaluate(currentState.learnedSkills, skillsRelations)
 			//.every(skill => currentState.learnedSkills.includes(skill.id))
 		)
 		.filter(lu =>
@@ -48,7 +46,8 @@ export function computeCost<LU extends LearningUnit>(
 		contextSwitchPenalty !== 1
 			? // Check if the current LU requires any skills that are provided by the LU of the currentNode, only if a penalty is defined
 			  lu.teachingGoals.some(
-					skill => currentNode.action?.requiredSkills.extractSkills().includes(skill) ?? true
+					skill =>
+						currentNode.action?.requiredSkills.extractSkills().includes(skill) ?? true
 			  )
 			: true;
 
@@ -106,6 +105,7 @@ export function search<LU extends LearningUnit>(
 	const openListExtra = [];
 	let duration = 0;
 	let skillsNotFound: string[] = [];
+	const skillsRelations = new SkillsRelations(globalKnowledge.skills);
 
 	while (openList.length > 0) {
 		//openList.sort((a, b) => a.heuristic - b.heuristic); // Replaced by inserting newNode to openList in sorted manner
@@ -160,7 +160,7 @@ export function search<LU extends LearningUnit>(
 		closedSet.add(currentNode.state.getHashCode());
 
 		// Generate successors and add them to openList
-		for (const lu of availableActions(currentNode.state, learningUnits, globalKnowledge)) {
+		for (const lu of availableActions(currentNode.state, learningUnits, skillsRelations)) {
 			// Check if the LU of the currentNode provides any skills that are used by the current LU
 			const cost = computeCost<LU>(
 				contextSwitchPenalty,
@@ -249,13 +249,15 @@ export function search<LU extends LearningUnit>(
 				const noPath = new Path();
 				noPath.cost = -1;
 				let remainSkills: Skill[] = [];
-				skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
+				skillsNotFound.forEach(sk =>
+					remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] })
+				);
 				const tempLU = {
 					id: "-1",
 					requiredSkills: new And(remainSkills.map(skill => new Variable(skill))),
 					teachingGoals: [],
-					suggestedSkills:[],
-				}
+					suggestedSkills: []
+				};
 				noPath.path.push(tempLU);
 				pathList.push(noPath);
 
@@ -279,13 +281,15 @@ export function search<LU extends LearningUnit>(
 	const noPath = new Path();
 	noPath.cost = -1;
 	let remainSkills: Skill[] = [];
-	skillsNotFound.forEach(sk => remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] }));
+	skillsNotFound.forEach(sk =>
+		remainSkills.push({ id: sk, repositoryId: "0", nestedSkills: [] })
+	);
 	const tempLU = {
-        id: "-1",
-        requiredSkills: new And(remainSkills.map(skill => new Variable(skill))),
-        teachingGoals: [],
-		suggestedSkills:[],
-    }
+		id: "-1",
+		requiredSkills: new And(remainSkills.map(skill => new Variable(skill))),
+		teachingGoals: [],
+		suggestedSkills: []
+	};
 	noPath.path.push(tempLU);
 	pathList.push(noPath);
 
