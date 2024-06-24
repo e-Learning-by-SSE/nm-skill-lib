@@ -12,13 +12,13 @@ type ParentSkills = {
  * @author Alamoush
  */
 export class SkillsRelations {
-	private parentSkills: ParentSkills[] = [];
+	private parentSkills = new Map<string, ParentSkills>();
 
 	constructor(public skills: ReadonlyArray<Skill>) {
 		skills
 			.filter(skill => skill.nestedSkills.length > 0)
 			.forEach(parent => {
-				this.parentSkills.push({
+				this.parentSkills.set(parent.id, {
 					skill: parent,
 					children: this.skills.filter(skill => parent.nestedSkills.includes(skill.id))
 				});
@@ -31,7 +31,7 @@ export class SkillsRelations {
 
 	// Get the children skills for a given skill
 	getChildren(skill: Skill): Skill[] {
-		const parentSkill = this.parentSkills.find(parent => skill.id == parent.skill.id);
+		const parentSkill = this.parentSkills.get(skill.id);
 		if (parentSkill) {
 			const Skills: Skill[] = [];
 			parentSkill.children.forEach(child => {
