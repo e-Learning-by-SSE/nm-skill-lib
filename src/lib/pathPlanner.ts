@@ -228,7 +228,7 @@ function populateGraph({
         learningUnits.forEach(lu => {
             const luName = "lu" + lu.id;
             graph.setNode("lu" + lu.id, lu);
-            lu.requiredSkills.extractSkills().forEach(req => {
+            lu.requiredSkills.forEach(req => {
                 graph.setEdge("sk" + req.id, luName);
             });
 
@@ -283,13 +283,7 @@ export async function computeSuggestedSkills(
         const missingSkills = previousUnit.teachingGoals
             .map(goal => goal.id)
             // Do not copy hard constraints also to soft constraints
-            .filter(
-                goalId =>
-                    !currentUnit.requiredSkills
-                        .extractSkills()
-                        .map(skill => skill.id)
-                        .includes(goalId)
-            )
+            .filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId))
             // Do not copy currently taught skills to avoid cycles
             .filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
 
