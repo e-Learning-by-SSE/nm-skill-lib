@@ -15,6 +15,7 @@ import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
 import { DistanceMap } from "./fastDownward/distanceMap";
 import { GlobalKnowledge } from "./fastDownward/global-knowledge";
 import { skillAnalysis } from "./fastDownward/missingSkillDetection";
+import { filterForUnitsAndSkills } from "./backward-search/backward-search";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -138,8 +139,12 @@ export function getPaths<LU extends LearningUnit>({
 }): Path[] | null {
     const startTime = new Date().getTime();
 
-    const inScopeLearningUnits = filterOutOfScopeLus(goal, learningUnits, skills, knowledge);
-    const inScopeSkills = filterOutOfScopeSkills(inScopeLearningUnits, skills);
+    const [inScopeLearningUnits, inScopeSkills] = filterForUnitsAndSkills(
+        goal,
+        learningUnits,
+        skills,
+        knowledge
+    );
 
     const distances = new DistanceMap(inScopeSkills, inScopeLearningUnits, fnCost);
     const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
@@ -223,7 +228,7 @@ function populateGraph({
         learningUnits.forEach(lu => {
             const luName = "lu" + lu.id;
             graph.setNode("lu" + lu.id, lu);
-            lu.requiredSkills.forEach(req => {
+            lu.requiredSkills.extractSkills().forEach(req => {
                 graph.setEdge("sk" + req.id, luName);
             });
 
@@ -278,7 +283,13 @@ export async function computeSuggestedSkills(
         const missingSkills = previousUnit.teachingGoals
             .map(goal => goal.id)
             // Do not copy hard constraints also to soft constraints
-            .filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId))
+            .filter(
+                goalId =>
+                    !currentUnit.requiredSkills
+                        .extractSkills()
+                        .map(skill => skill.id)
+                        .includes(goalId)
+            )
             // Do not copy currently taught skills to avoid cycles
             .filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
 
@@ -448,112 +459,4 @@ export function getSkillAnalysis<LU extends LearningUnit>({
     const skillAnalyzedPath = skillAnalysis(globalKnowledge, learningUnits, goal);
 
     return skillAnalyzedPath;
-}
-
-/**
- * Filter the learning units to reduce the size of the potential candidate for the algorithm.
- * Tracing backward the potential learning units from the goal using required skills.
- * Taking in consideration the parent/children relation.
- *
- * @param goal The skills that should be learned.
- * @param skills The set of all skills (independent of what was already learned and what should be learned).
- * @param learningUnits The set of all LearningUnits.
- * @param knowledge The knowledge of the user (skills already learned).
- * @returns A list of potential learning units that could find a path.
- */
-export function filterOutOfScopeLus<LU extends LearningUnit>(
-    goal: Skill[],
-    learningUnits: ReadonlyArray<LU>,
-    skills: ReadonlyArray<Skill>,
-    knowledge: Skill[]
-): LU[] {
-    // Extract the required skills from the goal into a required skills list
-    const skillsToFilteredLu = goal.slice();
-    const inScopeLearningUnits = new Set<LU>();
-    const processedSkills = new Set<string>();
-
-    // Loop over the required skills
-    while (skillsToFilteredLu.length > 0) {
-        const skill = skillsToFilteredLu.pop();
-
-        if (skill) {
-            // Skip the current required skill if the skill exist in the learned skills (knowledge)
-            if (
-                knowledge.map(skill => skill.id).includes(skill.id) ||
-                processedSkills.has(skill.id)
-            ) {
-                continue;
-            }
-
-            // Find learning units that teach the current required skill
-            const lus = learningUnits.filter(learningUnit =>
-                learningUnit.teachingGoals.some(sk => sk.id == skill.id)
-            );
-
-            // Add the learning units to the potential learning units list
-            lus.forEach(unit => {
-                inScopeLearningUnits.add(unit);
-            });
-
-            // Add the required skills for the learning units to the required skills list
-            lus.forEach(unit => {
-                skillsToFilteredLu.push(...unit.requiredSkills);
-            });
-
-            // Find the nested skills for current required skill
-            const nestedSkills = skills.filter(sk => skill.nestedSkills.includes(sk.id));
-            // Add nested skills to the required skills list
-            skillsToFilteredLu.push(...nestedSkills);
-            processedSkills.add(skill.id);
-        }
-    }
-
-    // Return the potential learning units list (without duplication)
-    return [...inScopeLearningUnits];
-}
-
-/**
- * Filter the skills to reduce the size of the potential candidate for the algorithm.
- * Trace all the skills involved in the potential learning units.
- * (requiredSkills, teachingGoals, suggestedSkills).
- * Taking in consideration the parent/children relation.
- *
- * @param skills The set of all skills (independent of what was already learned and what should be learned).
- * @param inScopeLearningUnits The set of the potential learning units.
- * @returns A list of potential skills that could find a path.
- */
-export function filterOutOfScopeSkills<LU extends LearningUnit>(
-    inScopeLearningUnits: ReadonlyArray<LU>,
-    skills: ReadonlyArray<Skill>
-): Skill[] {
-    let filteredSkills = new Set<Skill>();
-    // Loop over the potential learning units
-    inScopeLearningUnits.forEach(learningUnit => {
-        // Add the required skills for the learning units to the potential skills list
-        learningUnit.requiredSkills.forEach(skill => {
-            filteredSkills.add(skill);
-        });
-        // Add the teaching goals skills for the learning units to the potential skills list
-        learningUnit.teachingGoals.forEach(skill => {
-            filteredSkills.add(skill);
-        });
-        // Add the suggested skills for the learning units to the potential skills list
-        learningUnit.suggestedSkills.forEach(suggest => {
-            filteredSkills.add(suggest.skill);
-        });
-    });
-
-    // Find parent skills for any of nested skills included in the potential skills list
-    const skillIds = [...filteredSkills.values()].map(sk => sk.id);
-    const parentSkills = skills
-        .filter(skill => skill.nestedSkills.length > 0)
-        .filter(skill => skill.nestedSkills.some(skillId => skillIds.includes(skillId)));
-
-    // Add the parent skills to the potential skills list
-    parentSkills.forEach(skill => {
-        filteredSkills.add(skill);
-    });
-
-    // Return the potential skills list (without duplication)
-    return [...filteredSkills];
 }
