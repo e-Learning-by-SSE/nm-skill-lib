@@ -1,4 +1,4 @@
-import { LearningUnit, Path, Skill } from "../types";
+import { LearningUnit, Path, PathUnit, Skill } from "../types";
 import { SearchNode } from "./searchNode";
 import { State } from "./state";
 import { HeuristicFunction, CostFunction } from "./fdTypes";
@@ -137,7 +137,10 @@ export function search<LU extends LearningUnit>(
             while (node.parent !== null) {
                 const lu = node.action;
                 if (lu) {
-                    path.path.unshift(lu);
+                    const pathUnit: PathUnit = {
+                        unit: lu
+                    };
+                    path.path.unshift(pathUnit);
                 }
                 node = node.parent;
             }
@@ -172,7 +175,7 @@ export function search<LU extends LearningUnit>(
                 continue;
             }
 
-            const newState = currentNode.state.deriveState(lu, globalKnowledge);
+            const newState = currentNode.state.deriveState(lu, undefined, globalKnowledge);
             const newNode = new SearchNode<LU>(newState, lu, currentNode, cost, cost + heuristic);
 
             // Skip states that are already analyzed
@@ -249,7 +252,10 @@ export function search<LU extends LearningUnit>(
                     teachingGoals: [],
                     suggestedSkills: []
                 };
-                noPath.path.push(tempLU);
+                const pathUnit: PathUnit = {
+                    unit: tempLU
+                };
+                noPath.path.push(pathUnit);
                 pathList.push(noPath);
 
                 return pathList;
@@ -281,7 +287,10 @@ export function search<LU extends LearningUnit>(
         teachingGoals: [],
         suggestedSkills: []
     };
-    noPath.path.push(tempLU);
+    const pathUnit: PathUnit = {
+        unit: tempLU
+    };
+    noPath.path.push(pathUnit);
     pathList.push(noPath);
 
     return pathList;

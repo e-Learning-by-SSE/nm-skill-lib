@@ -1,4 +1,4 @@
-import { LearningUnit, Skill, Graph, Path } from "./types";
+import { LearningUnit, Skill, Graph, Path, Selector, Unit, applyFilters } from "./types";
 import {
     computeSuggestedSkills,
     findCycles,
@@ -982,7 +982,10 @@ describe("Path Planer", () => {
             path.path = [path.path[1], path.path[0], path.path[2]];
 
             structuredPathOfLus.sort((a, b) => {
-                return path.path.indexOf(a) - path.path.indexOf(b);
+                return (
+                    path.path.map(path => path.unit).indexOf(a) -
+                    path.path.map(path => path.unit).indexOf(b)
+                );
             });
 
             // Test: Simulate
@@ -990,21 +993,21 @@ describe("Path Planer", () => {
                 structuredPathOfLus,
                 async (lu: LearningUnit, missingSkills: string[]) => {
                     switch (lu.id) {
-                        case path.path[0].id:
+                        case path.path[0].unit.id:
                             if (missingSkills.length > 0) {
                                 throw new Error(
                                     "Must not compute any constraints for the first LU"
                                 );
                             }
                             break;
-                        case path.path[1].id:
+                        case path.path[1].unit.id:
                             expect(missingSkills).toEqual(
-                                path.path[0].teachingGoals.map(skill => skill.id)
+                                path.path[0].unit.teachingGoals.map(skill => skill.id)
                             );
                             break;
-                        case path.path[2].id:
+                        case path.path[2].unit.id:
                             expect(missingSkills).toEqual(
-                                path.path[1].teachingGoals.map(skill => skill.id)
+                                path.path[1].unit.teachingGoals.map(skill => skill.id)
                             );
                             break;
                     }
@@ -1439,8 +1442,8 @@ describe("Path Planer", () => {
             // Assert: Find missing skill:
             expect(path!.path.length).toBe(1);
             expect(path!.cost).toBe(-1);
-            expect(path!.path[0].requiredSkills.length).toBe(1);
-            expect(path!.path[0].requiredSkills.at(0)!.id).toBe("sk:8");
+            expect(path!.path[0].unit.requiredSkills.length).toBe(1);
+            expect(path!.path[0].unit.requiredSkills.at(0)!.id).toBe("sk:8");
         });
 
         it("No missing skill", () => {
@@ -1631,6 +1634,91 @@ describe("Path Planer", () => {
             expect(pathDuration).toBeLessThan(5000);
         });
     });
+
+    describe("test search Selector", () => {
+        it("search Selector find path", () => {
+            const authorSelector: Selector<LearningUnitExtra> = lu =>
+                lu.author == "Author1" ? true : false;
+            const departmentSelector: Selector<LearningUnitExtra> = lu =>
+                lu.department == "Dept1" ? true : false;
+            const selectors = [authorSelector];
+
+            const thirdMap: Skill[] = [
+                { id: "sk:1", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:2", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:3", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:4", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:5", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:6", repositoryId: "3", nestedSkills: [] }
+            ].sort((a, b) => a.id.localeCompare(b.id));
+
+            const lus: Unit[] = [
+                newLearningUnitExtra(thirdMap, "lu:1", [], ["sk:1"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:2", ["sk:1"], ["sk:2"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:3", ["sk:2"], ["sk:3"], [], "", ""),
+                newCompositeUnitExtra(thirdMap, "lu:6", ["sk:3"], ["sk:6"], [], "", "", selectors),
+                newLearningUnitExtra(thirdMap, "lu:04", ["sk:3"], ["sk:4"], [], "Author1", ""),
+                newLearningUnitExtra(thirdMap, "lu:05", ["sk:4"], ["sk:5"], [], "Author1", ""),
+                newLearningUnitExtra(thirdMap, "lu:06", ["sk:5"], ["sk:6"], [], "Author1", ""),
+                newLearningUnitExtra(thirdMap, "lu:14", ["sk:3"], ["sk:4"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:15", ["sk:4"], ["sk:5"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:16", ["sk:5"], ["sk:6"], [], "", "")
+            ];
+
+            const path = getPath({
+                skills: thirdMap,
+                learningUnits: lus,
+                goal: [thirdMap[5]],
+                optimalSolution: true,
+                contextSwitchPenalty: 1
+            });
+
+            expect(path?.path.length).toBeGreaterThan(1);
+        });
+
+        it("second search Selector find path", () => {
+            const authorSelector: Selector<LearningUnitExtra> = lu =>
+                lu.author == "Author1" ? true : false;
+            const departmentSelector: Selector<LearningUnitExtra> = lu =>
+                lu.department == "Dept1" ? true : false;
+            const selectors = [authorSelector];
+
+            const thirdMap: Skill[] = [
+                { id: "sk:1", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:2", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:3", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:4", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:5", repositoryId: "3", nestedSkills: [] },
+                { id: "sk:6", repositoryId: "3", nestedSkills: [] }
+            ].sort((a, b) => a.id.localeCompare(b.id));
+
+            const lus: Unit[] = [
+                newLearningUnitExtra(thirdMap, "lu:1", [], ["sk:1"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:2", ["sk:1"], ["sk:2"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:3", ["sk:2"], ["sk:3"], [], "", ""),
+                newCompositeUnitExtra(thirdMap, "lu:6", ["sk:3"], ["sk:6"], [], "", "", selectors),
+                newLearningUnitExtra(thirdMap, "lu:04", ["sk:3"], ["sk:4"], [], "Author1", ""),
+                newLearningUnitExtra(thirdMap, "lu:05", ["sk:4"], ["sk:5"], [], "Author1", ""),
+                newLearningUnitExtra(thirdMap, "lu:06", ["sk:5"], ["sk:6"], [], "Author1", ""),
+                newLearningUnitExtra(thirdMap, "lu:14", ["sk:3"], ["sk:4"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:15", ["sk:4"], ["sk:5"], [], "", ""),
+                newLearningUnitExtra(thirdMap, "lu:16", ["sk:5"], ["sk:6"], [], "", "")
+            ];
+            const alternatives = 2;
+            const alternativesTimeout = 500000000;
+            const path = getPaths({
+                skills: thirdMap,
+                learningUnits: lus,
+                goal: [thirdMap[5]],
+                optimalSolution: true,
+                contextSwitchPenalty: 1,
+                alternatives: alternatives,
+                alternativesTimeout: alternativesTimeout
+            });
+
+            console.log("END");
+        });
+    });
 });
 
 function extractElements(graph: Graph): [string[], (Skill | LearningUnit)[]] {
@@ -1659,7 +1747,7 @@ function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: 
         );
     }
 
-    const pathIds = path.path.map(lu => lu.id);
+    const pathIds = path.path.map(lu => lu.unit.id);
     const pathIsValid = expectedPaths.some(expectedPath =>
         pathIds.every((id, index) => id === expectedPath[index])
     );
@@ -1698,5 +1786,74 @@ function newLearningUnit(
         requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
+    };
+}
+
+type LearningUnitExtra = {
+    author: string;
+    department: string;
+} & LearningUnit;
+
+type CompositeUnitExtra = {
+    selectors?: Selector<LearningUnit>[];
+} & LearningUnitExtra;
+
+function newLearningUnitExtra(
+    map: Skill[],
+    id: string,
+    requiredSkills: string[],
+    teachingGoals: string[],
+    suggestedSkills: { weight: number; skill: string }[] = [],
+    author: string,
+    department: string
+): LearningUnitExtra {
+    const suggestions: { weight: number; skill: Skill }[] = [];
+    if (suggestedSkills.length > 0) {
+        for (const suggestion of suggestedSkills) {
+            const skill = map.find(skill => suggestion.skill.includes(skill.id));
+            if (skill) {
+                suggestions.push({ weight: suggestion.weight, skill: skill });
+            }
+        }
+    }
+
+    return {
+        id: id,
+        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        suggestedSkills: suggestions,
+        author: author,
+        department: department
+    };
+}
+
+function newCompositeUnitExtra(
+    map: Skill[],
+    id: string,
+    requiredSkills: string[],
+    teachingGoals: string[],
+    suggestedSkills: { weight: number; skill: string }[] = [],
+    author: string,
+    department: string,
+    selectors: Selector<LearningUnit>[]
+): CompositeUnitExtra {
+    const suggestions: { weight: number; skill: Skill }[] = [];
+    if (suggestedSkills.length > 0) {
+        for (const suggestion of suggestedSkills) {
+            const skill = map.find(skill => suggestion.skill.includes(skill.id));
+            if (skill) {
+                suggestions.push({ weight: suggestion.weight, skill: skill });
+            }
+        }
+    }
+
+    return {
+        id: id,
+        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        suggestedSkills: suggestions,
+        author: author,
+        department: department,
+        selectors: selectors
     };
 }

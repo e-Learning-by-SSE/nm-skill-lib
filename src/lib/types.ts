@@ -1,49 +1,66 @@
 export type Graph = {
-	nodes: Node[];
-	edges: Edge[];
+    nodes: Node[];
+    edges: Edge[];
 };
 
 export type Skill = {
-	id: string;
-	repositoryId: string;
-	nestedSkills: string[];
+    id: string;
+    repositoryId: string;
+    nestedSkills: string[];
 };
 
 export const isSkill = (element: Skill | LearningUnit): element is Skill => {
-	return (element as Skill).repositoryId !== undefined;
+    return (element as Skill).repositoryId !== undefined;
 };
 
 export type Edge = {
-	from: string;
-	to: string;
+    from: string;
+    to: string;
 };
 
 export type LearningUnit = {
-	id: string;
-	mediaTime?: number;
-	words?: number;
-	requiredSkills: Skill[];
-	teachingGoals: Skill[];
-	suggestedSkills: { weight: number; skill: Skill }[];
+    id: string;
+    mediaTime?: number;
+    words?: number;
+    requiredSkills: Skill[];
+    teachingGoals: Skill[];
+    suggestedSkills: { weight: number; skill: Skill }[];
 };
 
+export type Unit = CompositeUnit | LearningUnit;
+
+export type Selector<LU extends Unit> = (unit: LU) => boolean;
+
+export const applyFilters = <LU extends Unit>(array: LU[], predicates: Selector<LU>[]): LU[] => {
+    return array.filter(item => predicates.every(predicate => predicate(item)));
+};
+
+export type CompositeUnit = {
+    selectors?: Selector<Unit>[];
+} & LearningUnit;
+
 export const isLearningUnit = (element: Skill | LearningUnit): element is LearningUnit => {
-	return (element as LearningUnit).teachingGoals !== undefined;
+    return (element as LearningUnit).teachingGoals !== undefined;
 };
 
 export type Node = {
-	id: string;
-	element: Skill | LearningUnit;
+    id: string;
+    element: Skill | LearningUnit;
+};
+
+export type PathUnit = {
+    unit: Unit;
+    path?: Path;
 };
 
 export class Path {
-	cost: number = 0;
-	path: LearningUnit[] = [];
+    cost: number = 0;
+    path: PathUnit[] = [];
 }
 
 export class SkillAnalyzedPath {
-	missingSkill: string;
-	subPath: Path;
+    missingSkill: string;
+    subPath: Path;
 }
 
 /**
@@ -103,11 +120,11 @@ export class SkillAnalyzedPath {
  * ```
  */
 export type UpdateSoftConstraintFunction = (
-	learningUnit: LearningUnit,
-	missingSkills: string[]
+    learningUnit: LearningUnit,
+    missingSkills: string[]
 ) => Promise<void>;
 
 export type CycledSkills<S extends Skill> = {
-	cycles: S[][];
-	nestingSkills: S[];
+    cycles: S[][];
+    nestingSkills: S[];
 };

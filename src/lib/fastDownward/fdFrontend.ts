@@ -5,6 +5,7 @@ import { CostFunction, HeuristicFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNode } from "./searchNode";
 import { skillAnalysis } from "./missingSkillDetection";
+import { searchV2 } from "./fastDownward-v2";
 
 /**
  * Searches for an optimal path to learn the desired Skills (goal) based on the given knowledge.
@@ -47,7 +48,8 @@ function findOptimalLearningPath<LU extends LearningUnit>({
         globalKnowledge
     );
 
-    return search(
+    // Updated for testing the new search algorithm (Composite Unit)
+    return searchV2(
         initialState,
         goal,
         globalKnowledge,
@@ -167,9 +169,9 @@ function findGreedyLearningPath<LU extends LearningUnit>({
     let state = initialState;
     let node = new SearchNode<LU>(state, null, null, 0, 0);
     for (let i = 0; i < pathResult.path.length; i++) {
-        const lu = pathResult.path[i];
+        const lu = pathResult.path[i].unit;
         cost = computeCost(contextSwitchPenalty, lu, node, true, fnCost);
-        state = state.deriveState(lu, globalKnowledge);
+        state = state.deriveState(lu, undefined, globalKnowledge);
         node = new SearchNode<LU>(state, lu as LU, node, cost, cost);
     }
     pathResult.cost = cost;
