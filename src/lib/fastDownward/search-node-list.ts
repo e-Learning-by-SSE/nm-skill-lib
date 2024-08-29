@@ -25,13 +25,26 @@ export class SearchNodeList<LU extends LearningUnit> {
         return this.openList.length === 0;
     }
 
+    // sort() {
+    //     this.openList.sort((a, b) => a.node.heuristic - b.node.heuristic);
+    // }
+
     pop() {
-        const item = this.openList.shift();
-        if (item) {
-            this.openListMap.delete(item.node.state.toString());
-            return item.node;
+        if (this.isEmpty()) {
+            return undefined;
         }
-        return undefined;
+
+        // Find the index of the node with the lowest heuristic value in O(n)
+        let lowestIndex = 0;
+        for (let i = 1; i < this.openList.length; i++) {
+            if (this.openList[i].node.heuristic < this.openList[lowestIndex].node.heuristic) {
+                lowestIndex = i;
+            }
+        }
+
+        // Return and remove the identified search node
+        const [lowestElement] = this.openList.splice(lowestIndex, 1);
+        return lowestElement.node;
     }
 
     add(newNode: SearchNode<LU>) {
@@ -43,49 +56,53 @@ export class SearchNodeList<LU extends LearningUnit> {
                 existingNode.node = newNode;
             }
         } else {
-            // Inserting newNode to openList in sorted manner
-            this.insertSorted(newNode);
+            const newItem: ListItem<LU> = {
+                node: newNode
+            };
+            this.openList.push(newItem);
+            this.openListMap.set(newNode.state.getHashCode(), newItem);
         }
     }
 
-    private insertSorted(node: SearchNode<LU>) {
-        const newItem: ListItem<LU> = {
-            node
-        };
+    // Should not work since we also update the cost of the node without updating their position
+    // private insertSorted(node: SearchNode<LU>) {
+    //     const newItem: ListItem<LU> = {
+    //         node
+    //     };
 
-        if (this.openList.length == 0) {
-            this.openList.push(newItem);
-        } else if (this.openList[this.openList.length - 1].node.heuristic <= node.heuristic) {
-            this.openList.push(newItem);
-        } else if (this.openList[0].node.heuristic >= node.heuristic) {
-            this.openList.unshift(newItem);
-        } else {
-            // Using bisection procedure to insert newNode to openList in sorted manner
-            let low = 0;
-            let high = this.openList.length - 1;
-            let mid = 0;
+    //     if (this.openList.length == 0) {
+    //         this.openList.push(newItem);
+    //     } else if (this.openList[this.openList.length - 1].node.heuristic <= node.heuristic) {
+    //         this.openList.push(newItem);
+    //     } else if (this.openList[0].node.heuristic >= node.heuristic) {
+    //         this.openList.unshift(newItem);
+    //     } else {
+    //         // Using bisection procedure to insert newNode to openList in sorted manner
+    //         let low = 0;
+    //         let high = this.openList.length - 1;
+    //         let mid = 0;
 
-            while (low <= high) {
-                mid = Math.floor((low + high) / 2);
-                if (this.openList[mid].node.heuristic > node.heuristic && mid - low > 1) {
-                    high = mid;
-                } else if (this.openList[mid].node.heuristic < node.heuristic && high - mid > 1) {
-                    low = mid;
-                } else {
-                    if (this.openList[mid].node.heuristic < node.heuristic) {
-                        mid++;
-                    }
-                    this.openList.splice(mid, 0, newItem);
-                    mid = -1;
-                    break;
-                }
-            }
+    //         while (low <= high) {
+    //             mid = Math.floor((low + high) / 2);
+    //             if (this.openList[mid].node.heuristic > node.heuristic && mid - low > 1) {
+    //                 high = mid;
+    //             } else if (this.openList[mid].node.heuristic < node.heuristic && high - mid > 1) {
+    //                 low = mid;
+    //             } else {
+    //                 if (this.openList[mid].node.heuristic < node.heuristic) {
+    //                     mid++;
+    //                 }
+    //                 this.openList.splice(mid, 0, newItem);
+    //                 mid = -1;
+    //                 break;
+    //             }
+    //         }
 
-            if (mid !== -1) {
-                this.openList.splice(mid, 0, newItem);
-            }
+    //         if (mid !== -1) {
+    //             this.openList.splice(mid, 0, newItem);
+    //         }
 
-            this.openListMap.set(node.state.getHashCode(), newItem);
-        }
-    }
+    //         this.openListMap.set(node.state.getHashCode(), newItem);
+    //     }
+    // }
 }
