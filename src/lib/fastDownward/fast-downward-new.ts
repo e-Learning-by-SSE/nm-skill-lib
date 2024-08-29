@@ -34,6 +34,8 @@ export function search<LU extends LearningUnit>({
     // Non recursive part of the search
     const globalKnowledge = new GlobalKnowledge(allSkills);
 
+    // Invariants of recursion: allUnits, allSkills, isComposite, fnCost, costOptions, globalKnowledge
+
     return recursiveSearch(goal, knowledge, selectors);
 
     function recursiveSearch(goal: Skill[], knowledge: Skill[], selectors?: Selector<LU>[]) {
