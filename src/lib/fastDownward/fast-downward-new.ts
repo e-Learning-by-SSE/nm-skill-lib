@@ -1,12 +1,7 @@
 import { filterForUnitsAndSkills } from "../backward-search/backward-search";
 import { isCompositeGuard, LearningUnit, PartialPath, Selector, Skill, Unit } from "../types";
 import { DistanceMap } from "./distanceMap";
-import {
-    CostFunction,
-    HeuristicFunction,
-    PenaltyOptions as CostOptions,
-    DefaultCostParameter
-} from "./fdTypes";
+import { CostFunction, HeuristicFunction, CostOptions, DefaultCostParameter } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNodeList } from "./search-node-list";
 import { SearchNode } from "./searchNode";
@@ -154,44 +149,6 @@ function generateHeuristic<LU extends LearningUnit>(
         return min;
     };
     return fnHeuristic;
-}
-
-function insertSorted<LU extends LearningUnit>(
-    openList: SearchNode<Unit<LU>>[],
-    newNode: SearchNode<LU>
-) {
-    if (openList.length == 0) {
-        openList.push(newNode);
-    } else if (openList[openList.length - 1].heuristic <= newNode.heuristic) {
-        openList.push(newNode);
-    } else if (openList[0].heuristic >= newNode.heuristic) {
-        openList.unshift(newNode);
-    } else {
-        // Using bisection procedure to insert newNode to openList in sorted manner
-        let low = 0;
-        let high = openList.length - 1;
-        let mid = 0;
-
-        while (low <= high) {
-            mid = Math.floor((low + high) / 2);
-            if (openList[mid].heuristic > newNode.heuristic && mid - low > 1) {
-                high = mid;
-            } else if (openList[mid].heuristic < newNode.heuristic && high - mid > 1) {
-                low = mid;
-            } else {
-                if (openList[mid].heuristic < newNode.heuristic) {
-                    mid++;
-                }
-                openList.splice(mid, 0, newNode);
-                mid = -1;
-                break;
-            }
-        }
-
-        if (mid !== -1) {
-            openList.splice(mid, 0, newNode);
-        }
-    }
 }
 
 function generateResult<LU extends LearningUnit>(node: SearchNode<Unit<LU>>) {

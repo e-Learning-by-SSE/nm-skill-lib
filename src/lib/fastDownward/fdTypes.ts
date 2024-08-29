@@ -18,7 +18,7 @@ export type CostFunction<LU extends LearningUnit> = (operation: LU) => number;
  */
 export type HeuristicFunction<LU extends LearningUnit> = (goal: Skill[], operation: LU) => number;
 
-export type PenaltyOptions = {
+export type CostOptions = {
     // Penalty for switching between different topics (no overlap in taught skills)
     // Must be greater than 1, 1 will disable the penalty
     contextSwitchPenalty: number;
@@ -33,7 +33,7 @@ export type PenaltyOptions = {
     compositeReimbursement: number;
 };
 
-export const DefaultCostParameter: PenaltyOptions = {
+export const DefaultCostParameter: CostOptions = {
     contextSwitchPenalty: 1.2,
     suggestionViolationPenalty: 0.2,
     compositeReimbursement: 0.9
