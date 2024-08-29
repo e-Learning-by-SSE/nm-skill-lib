@@ -1,4 +1,4 @@
-import { LearningUnit, Skill } from "../..";
+import { LearningUnit, Skill, Unit } from "../..";
 
 /**
  * Filter the learning units to reduce the size of the potential candidate for the algorithm.
@@ -13,7 +13,7 @@ import { LearningUnit, Skill } from "../..";
  */
 export function filterForUnitsAndSkills<LU extends LearningUnit>(
     goal: Skill[],
-    learningUnits: ReadonlyArray<LU>,
+    learningUnits: ReadonlyArray<Unit<LU>>,
     skills: ReadonlyArray<Skill>,
     knowledge: Skill[]
 ): [LU[], Skill[]] {
