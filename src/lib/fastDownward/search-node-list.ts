@@ -7,6 +7,12 @@ type ListItem<LU extends LearningUnit> = {
     node: SearchNode<LU>;
 };
 
+/**
+ * Stores the SearchNodes and provides:
+ * - Access to the cheapest SearchNode by means of the heuristic (public access)
+ * - Access by equal states to facilitate replacement of SearchNodes (internal access)
+ * @author Sascha El-Sharkawy
+ */
 export class SearchNodeList<LU extends LearningUnit> {
     // Sorted list of states to be analyzed
     private openList: ListItem<LU>[] = [];
@@ -21,14 +27,18 @@ export class SearchNodeList<LU extends LearningUnit> {
         this.openListMap.set(item.node.state.toString(), item);
     }
 
+    /**
+     * Checks if the list ist empty.
+     * @returns `true` if the list is empty, `false` otherwise.
+     */
     isEmpty() {
         return this.openList.length === 0;
     }
 
-    // sort() {
-    //     this.openList.sort((a, b) => a.node.heuristic - b.node.heuristic);
-    // }
-
+    /**
+     * Returns the SearchNode with the minimal heuristic cost.
+     * @returns The SearchNode with the minimal heuristic cost or `undefined` if the list is empty.
+     */
     pop() {
         if (this.isEmpty()) {
             return undefined;
@@ -44,9 +54,16 @@ export class SearchNodeList<LU extends LearningUnit> {
 
         // Return and remove the identified search node
         const [lowestElement] = this.openList.splice(lowestIndex, 1);
+        this.openListMap.delete(lowestElement.node.state.getHashCode());
         return lowestElement.node;
     }
 
+    /**
+     * Adds a SearchNode to the list and avoids storing multiple SearchNodes for
+     * obtaining the same state. In case the that such a SearchNode is already stored,
+     * only the one with the minimal total cost is stored.
+     * @param newNode The SearchNode to store.
+     */
     add(newNode: SearchNode<LU>) {
         /* Check if node with same state is in openList */
         const existingNode = this.openListMap.get(newNode.state.getHashCode());
@@ -63,46 +80,4 @@ export class SearchNodeList<LU extends LearningUnit> {
             this.openListMap.set(newNode.state.getHashCode(), newItem);
         }
     }
-
-    // Should not work since we also update the cost of the node without updating their position
-    // private insertSorted(node: SearchNode<LU>) {
-    //     const newItem: ListItem<LU> = {
-    //         node
-    //     };
-
-    //     if (this.openList.length == 0) {
-    //         this.openList.push(newItem);
-    //     } else if (this.openList[this.openList.length - 1].node.heuristic <= node.heuristic) {
-    //         this.openList.push(newItem);
-    //     } else if (this.openList[0].node.heuristic >= node.heuristic) {
-    //         this.openList.unshift(newItem);
-    //     } else {
-    //         // Using bisection procedure to insert newNode to openList in sorted manner
-    //         let low = 0;
-    //         let high = this.openList.length - 1;
-    //         let mid = 0;
-
-    //         while (low <= high) {
-    //             mid = Math.floor((low + high) / 2);
-    //             if (this.openList[mid].node.heuristic > node.heuristic && mid - low > 1) {
-    //                 high = mid;
-    //             } else if (this.openList[mid].node.heuristic < node.heuristic && high - mid > 1) {
-    //                 low = mid;
-    //             } else {
-    //                 if (this.openList[mid].node.heuristic < node.heuristic) {
-    //                     mid++;
-    //                 }
-    //                 this.openList.splice(mid, 0, newItem);
-    //                 mid = -1;
-    //                 break;
-    //             }
-    //         }
-
-    //         if (mid !== -1) {
-    //             this.openList.splice(mid, 0, newItem);
-    //         }
-
-    //         this.openListMap.set(node.state.getHashCode(), newItem);
-    //     }
-    // }
 }
