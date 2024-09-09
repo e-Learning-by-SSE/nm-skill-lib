@@ -1,5 +1,5 @@
 import { LearningUnit, Unit } from "../types";
-import { SearchNode } from "./searchNode";
+import { SearchNode } from "./searchNode-new";
 import { State } from "./state";
 
 // Bucket type to store the search nodes and facilitate their replacement

@@ -4,7 +4,7 @@ import { DistanceMap } from "./distanceMap";
 import { CostFunction, HeuristicFunction, CostOptions, DefaultCostParameter } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNodeList } from "./search-node-list";
-import { SearchNode } from "./searchNode";
+import { SearchNode } from "./searchNode-new";
 import { State } from "./state";
 
 export function search<LU extends LearningUnit>({

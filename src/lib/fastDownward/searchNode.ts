@@ -9,7 +9,7 @@ export class SearchNode<LU extends LearningUnit> {
         public state: State,
         // The applied LearningUnit to reach this node from its predecessor
         // The root node has no action, all others must have one
-        public action: PartialPath<LU> | null,
+        public action: LU | null,
         public parent: SearchNode<LU> | null,
         public cost: number, // Cost from the start node
         public heuristic: number // Heuristic total cost (real cost to current state + estimated cost to goal)
@@ -24,7 +24,7 @@ export class SearchNode<LU extends LearningUnit> {
         let node: SearchNode<LU> | null = this;
         while (node !== null) {
             if (node.action !== null) {
-                str = node.action.origin!.id + ", " + str;
+                str = node.action.id + ", " + str;
             }
             node = node.parent;
         }
