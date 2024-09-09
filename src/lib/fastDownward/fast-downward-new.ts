@@ -89,26 +89,35 @@ export function search<LU extends LearningUnit>({
             for (const unit of eligibleUnits(currentNode.state, scopedUnits)) {
                 // Fictive cost of learning this unit via the used path
                 let cost: number;
+                let subPath: PartialPath<LU> | null = null;
                 if (isComposite(unit)) {
+                    // Avoid returning the composite unit itself as a result
+                    const avoidCompositeSelector = (u: Unit<LU>) => u !== unit;
+
                     // Resolve composite
-                    const subPath = recursiveSearch(
+                    subPath = recursiveSearch(
                         unit.teachingGoals,
                         currentNode.state.learnedSkills.map(
                             id => allSkills.find(skill => skill.id === id)!
                         ), // TODO SE: Either change type to string[] or use a map
-                        unit.selectors
+                        [avoidCompositeSelector].concat(unit.selectors || [])
                     );
 
                     if (subPath) {
                         // Bonus: Composites should be preferred over single units
-                        cost = costOptions.compositeReimbursement * subPath.cost;
+                        cost = currentNode.cost + costOptions.compositeReimbursement * subPath.cost;
                     } else {
                         // Composite couldn't be resolved -> Skip
                         continue;
                     }
                 } else {
                     cost = computeCost(unit, currentNode, fnCost, costOptions);
+                    subPath = new PartialPath<LU>();
                 }
+
+                // Record the origin unit for the partial path and the it's cost
+                subPath.origin = unit;
+                subPath.cost = cost;
 
                 const heuristic = fnHeuristic(openGoals, unit);
 
@@ -120,7 +129,7 @@ export function search<LU extends LearningUnit>({
                 const newState = currentNode.state.deriveState(unit, globalKnowledge);
                 const newNode = new SearchNode<LU>(
                     newState,
-                    unit, // TODO SE: Change this to subpath
+                    subPath, // TODO SE: Change this to subpath
                     currentNode,
                     cost,
                     cost + heuristic
@@ -245,7 +254,7 @@ export function computeCost<LU extends LearningUnit>(
     if (
         penaltyOptions.contextSwitchPenalty !== 1 &&
         prevLu &&
-        none(lu.requiredSkills, skill => prevLu.teachingGoals.includes(skill))
+        none(lu.requiredSkills, skill => prevLu.origin!.teachingGoals.includes(skill))
     ) {
         contextSwitchPenalty = penaltyOptions.contextSwitchPenalty;
     }

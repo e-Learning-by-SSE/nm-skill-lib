@@ -55,7 +55,7 @@ export class Path {
 
 export class PartialPath<LU extends LearningUnit> {
     cost: number = 0;
-    path: Unit<LU>[] = [];
+    path: PartialPath<LU>[] = [];
     origin: Unit<LU> | null = null;
 }
 
