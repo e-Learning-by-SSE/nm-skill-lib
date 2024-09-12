@@ -15,7 +15,8 @@ export function search<LU extends LearningUnit>({
     isComposite,
     fnCost,
     costOptions = DefaultCostParameter,
-    selectors
+    selectors,
+    alternatives = 1 // alternatives method
 }: {
     goal: Skill[];
     allUnits: ReadonlyArray<Unit<LU>>;
@@ -25,18 +26,31 @@ export function search<LU extends LearningUnit>({
     fnCost: CostFunction<LU>;
     costOptions: CostOptions;
     selectors?: Selector<LU>[];
+    alternatives?: number; // alternatives method
 }) {
     // Non recursive part of the search
     const globalKnowledge = new GlobalKnowledge(allSkills);
 
     // Invariants of recursion: allUnits, allSkills, isComposite, fnCost, costOptions, globalKnowledge
 
-    return recursiveSearch(goal, knowledge, selectors);
+    return recursiveSearch(goal, knowledge, alternatives, selectors);
 
-    function recursiveSearch(goal: Skill[], knowledge: Skill[], selectors?: Selector<LU>[]) {
-        // 1. Filter for scoped LearningUnits
+    function recursiveSearch(
+        goal: Skill[],
+        knowledge: Skill[],
+        alternatives: number, // alternatives method
+        selectors?: Selector<LU>[],
+        parentUnits?: ReadonlyArray<Unit<LU>>
+    ) {
+        // 1. Avoid returning the composite unit or the parent units as a result
+        if (parentUnits) {
+            const avoidCompositeSelector = (u: Unit<LU>) => !parentUnits?.includes(u);
+            selectors = [avoidCompositeSelector].concat(selectors || []);
+        }
+
+        // 2. Filter for scoped LearningUnits
         const scopedUnits = selectors
-            ? allUnits.filter(unit => selectors.every(selector => selector(unit)))
+            ? allUnits.filter(unit => selectors?.every(selector => selector(unit)))
             : allUnits;
 
         const [inScopeLearningUnits, inScopeSkills] = filterForUnitsAndSkills(
@@ -46,7 +60,7 @@ export function search<LU extends LearningUnit>({
             knowledge
         );
 
-        // 2. Initialize recursion-dependent variables (state, heuristic, etc.)
+        // 3. Initialize recursion-dependent variables (state, heuristic, etc.)
         const initialState = new State(
             knowledge.map(skill => skill.id),
             globalKnowledge
@@ -54,26 +68,40 @@ export function search<LU extends LearningUnit>({
 
         const fnHeuristic = generateHeuristic(inScopeSkills, inScopeLearningUnits, fnCost);
 
-        // 3. Actual search
-        return fastDownwardSearch(goal, inScopeLearningUnits, initialState, fnHeuristic);
+        // 4. Actual search
+        return fastDownwardSearch(
+            goal,
+            inScopeLearningUnits,
+            initialState,
+            fnHeuristic,
+            alternatives, // alternatives method
+            parentUnits
+        );
     }
 
     function fastDownwardSearch(
         goal: Skill[],
         scopedUnits: ReadonlyArray<Unit<LU>>,
         initialState: State,
-        fnHeuristic: HeuristicFunction<LU>
+        fnHeuristic: HeuristicFunction<LU>,
+        alternatives: number, // alternatives method
+        parentUnits?: ReadonlyArray<Unit<LU>>
     ) {
         // Sorted list of states to be analyzed
         const openList: SearchNodeList<LU> = new SearchNodeList<LU>(initialState);
         const closedSet = new Set<string>();
+        const Paths: PartialPath<LU>[] = [];
 
         while (!openList.isEmpty()) {
             const currentNode = openList.pop()!;
 
             // Check if goal is fulfilled -> Result found
             if (currentNode.state.goalFulfilled(goal)) {
-                return generateResult(currentNode);
+                // alternatives method
+                Paths.unshift(generateResult(currentNode));
+                if (alternatives == Paths.length) {
+                    return Paths;
+                }
             }
 
             // Next iteration step
@@ -84,19 +112,18 @@ export function search<LU extends LearningUnit>({
             for (const unit of eligibleUnits(currentNode.state, scopedUnits)) {
                 // Fictive cost of learning this unit via the used path
                 let cost: number;
-                let subPath: PartialPath<LU> | null = null;
+                let subPath: PartialPath<LU> = new PartialPath<LU>();
                 if (isComposite(unit)) {
-                    // Avoid returning the composite unit itself as a result
-                    const avoidCompositeSelector = (u: Unit<LU>) => u !== unit;
-
                     // Resolve composite
                     subPath = recursiveSearch(
                         unit.teachingGoals,
                         currentNode.state.learnedSkills.map(
                             id => allSkills.find(skill => skill.id === id)!
                         ), // TODO SE: Either change type to string[] or use a map
-                        [avoidCompositeSelector].concat(unit.selectors || [])
-                    );
+                        1, // One alternative path for the subPath
+                        unit.selectors,
+                        [unit].concat(parentUnits!)
+                    )?.pop()!;
 
                     if (subPath) {
                         // Bonus: Composites should be preferred over single units
@@ -107,7 +134,6 @@ export function search<LU extends LearningUnit>({
                     }
                 } else {
                     cost = computeCost(unit, currentNode, fnCost, costOptions);
-                    subPath = new PartialPath<LU>();
                 }
 
                 // Record the origin unit for the partial path and the it's cost
@@ -137,10 +163,16 @@ export function search<LU extends LearningUnit>({
 
                 openList.add(newNode);
             }
+
+            // alternatives method
+            // Add the duplicated SearchNodes states to be analyzed for alternatives
+            if (alternatives > Paths.length && openList.isEmpty()) {
+                openList.addExtraNodes();
+            }
         }
 
-        // No path found
-        return null;
+        // return Paths list, empty means no path found
+        return Paths;
     }
 }
 

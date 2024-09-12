@@ -18,6 +18,8 @@ export class SearchNodeList<LU extends LearningUnit> {
     private openList: ListItem<LU>[] = [];
     // Open states identified by their hash code
     private openListMap = new Map<string, ListItem<LU>>();
+    // List of duplicated SearchNodes states to be analyzed for alternatives
+    private openListExtra: ListItem<LU>[] = [];
 
     constructor(initialState: State) {
         const item: ListItem<LU> = {
@@ -69,6 +71,7 @@ export class SearchNodeList<LU extends LearningUnit> {
         const existingNode = this.openListMap.get(newNode.state.getHashCode());
 
         if (existingNode) {
+            this.openListExtra.push(existingNode);
             if (newNode.cost < existingNode.node.cost) {
                 existingNode.node = newNode;
             }
@@ -78,6 +81,15 @@ export class SearchNodeList<LU extends LearningUnit> {
             };
             this.openList.push(newItem);
             this.openListMap.set(newNode.state.getHashCode(), newItem);
+        }
+    }
+
+    /**
+     * Adds a duplicated SearchNode to the openList from openListExtra.
+     */
+    addExtraNodes() {
+        if (this.openListExtra.length > 0) {
+            this.openList.push(this.openListExtra.pop()!);
         }
     }
 }

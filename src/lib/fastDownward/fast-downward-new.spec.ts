@@ -99,7 +99,7 @@ describe("FastDownward v2", () => {
             const expectedIDs = straightPathOfLus
                 .map(lu => lu.id)
                 .sort((a, b) => a.localeCompare(b));
-            expectPath(path, [expectedIDs], 3);
+            expectPath(path?.pop()!, [expectedIDs], 3);
         });
 
         it("Intermediate knowledge; 1 map; no nested skills; 1 goal", async () => {
@@ -116,7 +116,7 @@ describe("FastDownward v2", () => {
 
             // Assert: Path should be: 3 (as 2 is already known)
             const expectedIDs = [straightPathOfLus[2].id];
-            expectPath(path, [expectedIDs], 1);
+            expectPath(path?.pop()!, [expectedIDs], 1);
         });
 
         it("No knowledge; 1 map; with nested skills; 1 goal", async () => {
@@ -133,7 +133,7 @@ describe("FastDownward v2", () => {
 
             // Assert: Path should be: (7 & 8) -> 9
             expectPath(
-                path,
+                path?.pop()!,
                 [
                     ["lu:7", "lu:8", "lu:9"],
                     ["lu:8", "lu:7", "lu:9"]
@@ -156,7 +156,7 @@ describe("FastDownward v2", () => {
 
             // Assert: Path should be: (10 & 11) -> 12
             expectPath(
-                path,
+                path?.pop()!,
                 [
                     ["lu:10", "lu:11", "lu:12"],
                     ["lu:11", "lu:10", "lu:12"]
@@ -184,7 +184,7 @@ describe("FastDownward v2", () => {
             // Path 1: (10 & 11) -> 12
             // Path 2: (7 & 8) -> 9
             expectPath(
-                path,
+                path?.pop()!,
                 [
                     // Path 1, Path 2
                     ["lu:10", "lu:11", "lu:12", "lu:7", "lu:8", "lu:9"],
@@ -232,7 +232,7 @@ describe("FastDownward v2", () => {
                 .filter(lu => lu.lang === "en")
                 .map(lu => lu.id)
                 .sort((a, b) => a.localeCompare(b));
-            expectPath(path, [expectedIDs], 4);
+            expectPath(path?.pop()!, [expectedIDs], 4);
         });
 
         it("No knowledge; 1 map; no nested skills; multiple paths; 1 goal; CostFunction; Cheap path becomes expensive at the end", async () => {
@@ -254,7 +254,7 @@ describe("FastDownward v2", () => {
             });
 
             // Assert: Path should be: lu:20 -> lu:21 -> lu:22
-            expectPath(path, [["lu:20", "lu:21", "lu:22"]], 5);
+            expectPath(path?.pop()!, [["lu:20", "lu:21", "lu:22"]], 5);
         });
 
         describe("Suggested Ordering", () => {
@@ -284,7 +284,7 @@ describe("FastDownward v2", () => {
                 });
 
                 // Assert: Path should be: lu:1 -> lu:3
-                expectPath(path, [["lu:1", "lu:3"]], 2.2);
+                expectPath(path?.pop()!, [["lu:1", "lu:3"]], 2.2);
             });
 
             it("Include suggested skill -> Ensure Ordering", async () => {
@@ -300,7 +300,7 @@ describe("FastDownward v2", () => {
                 });
 
                 // Assert: Path should be: lu:1 -> lu:2 -> lu:3
-                expectPath(path, [["lu:1", "lu:2", "lu:3"]], 3.2);
+                expectPath(path?.pop()!, [["lu:1", "lu:2", "lu:3"]], 3.2);
             });
         });
 
@@ -997,7 +997,7 @@ describe("FastDownward v2", () => {
                 isComposite: true
             });
 
-            const path = search({
+            const paths = search({
                 allSkills: skillMap,
                 allUnits: Units,
                 goal: [skillMap[6]],
@@ -1007,6 +1007,7 @@ describe("FastDownward v2", () => {
                 costOptions: DefaultCostParameter
             });
 
+            const path = paths?.pop()!;
             const subPath = path?.path.find(lu => lu.origin?.id == "cu:1")!;
 
             expectPath(path, [["lu:1", "lu:2", "lu:3", "cu:1", "lu:7"]], 6.7);
@@ -1016,8 +1017,6 @@ describe("FastDownward v2", () => {
         it("find a path including composite unit with selector", () => {
             const authorSelector: Selector<LearningUnitExtra> = lu =>
                 lu.author == "Author1" ? true : false;
-            const departmentSelector: Selector<LearningUnitExtra> = lu =>
-                lu.department == "Dept1" ? true : false;
             const selectors = [authorSelector];
 
             const Units = lus.slice();
@@ -1026,11 +1025,11 @@ describe("FastDownward v2", () => {
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
-                selectors,
+                selectors: selectors,
                 isComposite: true
             });
 
-            const path = search({
+            const paths = search({
                 allSkills: skillMap,
                 allUnits: Units,
                 goal: [skillMap[6]],
@@ -1040,10 +1039,169 @@ describe("FastDownward v2", () => {
                 costOptions: DefaultCostParameter
             });
 
+            const path = paths?.pop()!;
             const subPath = path?.path.find(lu => lu.origin?.id == "cu:1")!;
 
             expectPath(path, [["lu:1", "lu:2", "lu:3", "cu:1", "lu:7"]], 6.7);
             expectPath(subPath, [["lu:04", "lu:05", "lu:06"]], 5.7);
+        });
+
+        it("find a path for nested composite unit without selector", () => {
+            const Units = lus.slice();
+
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:2", ["sk:4"], ["sk:6"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+
+            const paths = search({
+                allSkills: skillMap,
+                allUnits: Units,
+                goal: [skillMap[6]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            const path = paths?.pop()!;
+            const cu1SubPath = path?.path.find(lu => lu.origin?.id == "cu:1")!;
+            const cu2SubPath = cu1SubPath?.path.find(lu => lu.origin?.id == "cu:2")!;
+
+            expectPath(path, [["lu:1", "lu:2", "lu:3", "cu:1", "lu:7"]], 6.52);
+            expectPath(cu1SubPath, [["lu:14", "cu:2"]], 5.52);
+            expectPath(cu2SubPath, [["lu:15", "lu:16"]], 2.8);
+        });
+
+        it("find a path for nested composite unit with selector", () => {
+            const authorSelector: Selector<LearningUnitExtra> = lu =>
+                lu.author == "Author1" ? true : false;
+            const selectors = [authorSelector];
+
+            const Units = lus.slice();
+
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
+                author: "",
+                department: "",
+                selectors: selectors,
+                isComposite: true
+            });
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:2", ["sk:4"], ["sk:6"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+
+            const paths = search({
+                allSkills: skillMap,
+                allUnits: Units,
+                goal: [skillMap[6]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            const path = paths?.pop()!;
+            const cu1SubPath = path?.path.find(lu => lu.origin?.id == "cu:2")!;
+            const cu2SubPath = cu1SubPath?.path.find(lu => lu.origin?.id == "cu:1")!;
+
+            expectPath(path, [["lu:1", "lu:2", "lu:3", "lu:14", "cu:2", "lu:7"]], 6.62);
+            expectPath(cu1SubPath, [["cu:1"]], 5.62);
+            expectPath(cu2SubPath, [["lu:05", "lu:06"]], 1.8);
+        });
+
+        it("find a path for composite unit with only one nested composite unit", () => {
+            const Units = lus.slice(0, 4);
+
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:1", ["sk:2"], ["sk:4"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:2", ["sk:2"], ["sk:4"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+
+            const paths = search({
+                allSkills: skillMap,
+                allUnits: Units,
+                goal: [skillMap[3]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            const path = paths?.pop()!;
+            const cu1SubPath = path?.path.find(lu => lu.origin?.id == "cu:1")!;
+            const cu2SubPath = cu1SubPath?.path.find(lu => lu.origin?.id == "cu:2")!;
+
+            expectPath(path, [["lu:1", "lu:2", "cu:1"]], 3.62);
+            expectPath(cu1SubPath, [["cu:2"]], 3.62);
+            expectPath(cu2SubPath, [["lu:3", "lu:14"]], 1.8);
+        });
+
+        it("find alternative paths including composite unit without selector", () => {
+            const Units = lus.slice();
+
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+
+            const paths = search({
+                allSkills: skillMap,
+                allUnits: Units,
+                goal: [skillMap[6]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter,
+                alternatives: 3
+            });
+
+            expect(paths?.length).toBe(3);
+        });
+
+        it("find all the alternatives path including composite unit without selector", () => {
+            const Units = lus.slice();
+
+            Units.push({
+                ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+
+            const paths = search({
+                allSkills: skillMap,
+                allUnits: Units,
+                goal: [skillMap[6]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter,
+                alternatives: Number.MAX_VALUE
+            });
+
+            expect(paths?.length).toBe(39);
         });
     });
     // describe("computeSuggestedSkills", () => {
