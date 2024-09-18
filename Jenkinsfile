@@ -10,6 +10,14 @@ pipeline {
         }
     }
 
+     parameters {
+        booleanParam(
+            name: 'RELEASE_PUBLISH',
+            defaultValue: false,
+            description: 'This should be build as a released version which is published via NPM with the current package version.'
+        )
+     }
+
     options {
         ansiColor('xterm')
     }
@@ -48,6 +56,11 @@ pipeline {
         }
 
         stage('Publish NPM Package') {
+            when {
+                expression {
+                    return params.RELEASE_PUBLISH
+                }
+            }
             steps {
                 npmPublish('e-learning-by-sse')
             }
