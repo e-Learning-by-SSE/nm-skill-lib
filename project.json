@@ -5,35 +5,19 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nx/esbuild:esbuild",
-      "outputs": ["{options.outputPath}"],
-      "defaultConfiguration": "production",
+      "executor": "@nx/js:tsc",
       "options": {
-        "platform": "node",
-        "outputPath": "dist/skills-pathfinder",
-        "format": ["cjs"],
-        "bundle": false,
+        "outputPath": "dist/",
         "main": "src/index.ts",
         "tsConfig": "tsconfig.app.json",
-        "assets": ["src/assets"],
-        "generatePackageJson": true,
-        "esbuildOptions": {
-          "sourcemap": true,
-          "outExtension": {
-            ".js": ".js"
+        "assets": ["*.md"],
+        "transformers": [
+          "@nestjs/swagger/plugin",
+          {
+            "name": "@automapper/classes/transformer-plugin",
+            "options": {}
           }
-        }
-      },
-      "configurations": {
-        "development": {},
-        "production": {
-          "esbuildOptions": {
-            "sourcemap": false,
-            "outExtension": {
-              ".js": ".js"
-            }
-          }
-        }
+        ]
       }
     },
     "serve": {
