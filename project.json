@@ -10,14 +10,7 @@
         "outputPath": "dist/",
         "main": "src/index.ts",
         "tsConfig": "tsconfig.app.json",
-        "assets": ["*.md"],
-        "transformers": [
-          "@nestjs/swagger/plugin",
-          {
-            "name": "@automapper/classes/transformer-plugin",
-            "options": {}
-          }
-        ]
+        "assets": ["*.md"]
       }
     },
     "serve": {
