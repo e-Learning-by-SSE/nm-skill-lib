@@ -4,7 +4,7 @@ import { Graph as GraphLib } from "@dagrejs/graphlib";
 
 /**
  * Analysis skills of a goal to find the missing skills.
- * Create a potential graph using createPotentialGraph function.
+ * Create a potential graph using createGoalsGraph function.
  * The algorithm traces back each path in the a potential graph from the goal backward, recursively.
  * Get all successors (children) of a node, then get all successors (children) of each them and so on, recursively.
  *
@@ -39,7 +39,7 @@ export function skillAnalysis<LU extends LearningUnit>(
     knowledge: Skill[]
 ): PotentialNode<LU>[] {
     // Create a potential graph that holds the potential learning units and skills
-    const graph = createPotentialGraph(goals, allUnits, allSkills, knowledge);
+    const graph = createGoalsGraph(goals, allUnits, allSkills, knowledge);
 
     // A potential paths list
     const paths: PotentialNode<LU>[] = [];
@@ -111,7 +111,7 @@ export function skillAnalysis<LU extends LearningUnit>(
 
 /**
  * Filter the learning units and skills to reduce the size of the potential candidate for the algorithm.
- * Create a Potential graph using createPotentialGraph function.
+ * Create a Potential graph using createGoalsGraph function.
  * Extract the potential learning units and skills the potential graph.
  *
  * @param goals The skills that should be learned.
@@ -127,7 +127,7 @@ export function filterForUnitsAndSkills<LU extends LearningUnit>(
     knowledge: Skill[]
 ): [LU[], Skill[]] {
     // Create a potential graph that holds the potential learning units and skills
-    const graph = createPotentialGraph(goals, allUnits, allSkills, knowledge);
+    const graph = createGoalsGraph(goals, allUnits, allSkills, knowledge);
 
     // Extract the potential learning unit nodes from the potential graph
     const lus = graph
@@ -168,13 +168,15 @@ export function filterForUnitsAndSkills<LU extends LearningUnit>(
  * @param allUnits The set of all LearningUnits.
  * @param allSkills The set of all skills (independent of what was already learned and what should be learned).
  * @param knowledge The knowledge of the user (skills already learned).
+ * @param suggestions Add the suggested skill as requirement for the learning units default value is [suggestions=true]
  * @returns A graph for the potential learning units and skills are useful to find a path.
  */
-export function createPotentialGraph<LU extends LearningUnit>(
+export function createGoalsGraph<LU extends LearningUnit>(
     goals: Skill[],
     allUnits: ReadonlyArray<Unit<LU>>,
     allSkills: ReadonlyArray<Skill>,
-    knowledge: Skill[]
+    knowledge: Skill[],
+    suggestions: boolean = true
 ): GraphLib {
     // Extract the parent/children relation from all the skills
     const globalKnowledge = new GlobalKnowledge(allSkills);
@@ -203,7 +205,7 @@ export function createPotentialGraph<LU extends LearningUnit>(
         if (isSkill(node!)) {
             backSearchSkill(node);
         } else {
-            backSearchLu(node!);
+            backSearchLu(node!, suggestions);
         }
 
         // Add the node (learning units and skills) to the processed list
@@ -217,7 +219,7 @@ export function createPotentialGraph<LU extends LearningUnit>(
         graph.setNode(skillName, skill);
 
         // find potential learning units using the goals for the them
-        const potentialGoalsUnits = allUnits.filter(lu =>
+        const potentialGoalsUnits = allUnits!.filter(lu =>
             lu.teachingGoals.some(sk => sk.id == skill.id)
         );
 
@@ -261,7 +263,7 @@ export function createPotentialGraph<LU extends LearningUnit>(
     }
 
     // Backward tracing for a learning unit to find potential skills
-    function backSearchLu(lu: LU) {
+    function backSearchLu(lu: LU, suggestions: boolean) {
         // Create a node in the graph for the learning unit
         const luName = "lu" + lu.id;
         graph.setNode(luName, lu);
@@ -275,6 +277,16 @@ export function createPotentialGraph<LU extends LearningUnit>(
             graph.setEdge(luName, SkillName);
             nodes.unshift(req);
         });
+
+        if (suggestions) {
+            lu.suggestedSkills.forEach(suggestion => {
+                // Analogous to requirements: Skill -> LearningUnit
+                const SkillName = "sk" + suggestion.skill.id;
+                graph.setNode(SkillName, suggestion.skill);
+                graph.setEdge(luName, SkillName);
+                nodes.unshift(suggestion.skill);
+            });
+        }
     }
 
     // Return the potential graph for learning units and skills

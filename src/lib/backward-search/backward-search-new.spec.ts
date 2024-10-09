@@ -1,10 +1,6 @@
 import { Graph } from "@dagrejs/graphlib";
 import { LearningUnit, PotentialNode, Skill } from "../types";
-import {
-    createPotentialGraph,
-    filterForUnitsAndSkills,
-    skillAnalysis
-} from "./backward-search-new";
+import { createGoalsGraph, filterForUnitsAndSkills, skillAnalysis } from "./backward-search-new";
 
 describe("Backward Search Tests", () => {
     describe("a graph for a goal(s)", () => {
@@ -36,7 +32,7 @@ describe("Backward Search Tests", () => {
 
         it("build a graph for a goal", () => {
             // Test: Compute paths
-            const graph = createPotentialGraph(
+            const graph = createGoalsGraph(
                 [...firstMap.filter(skill => skill.id === "sk:3")],
                 [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
@@ -51,9 +47,26 @@ describe("Backward Search Tests", () => {
             expect(skills.length).toBe(3);
         });
 
+        it("build a graph for a goal with user knowledge", () => {
+            // Test: Compute paths
+            const graph = createGoalsGraph(
+                [...thirdMapHierarchy.filter(skill => skill.id === "sk:7")],
+                [...multipleRequirementsOfLu, ...structuredPathOfLus],
+                [...firstMap, ...thirdMapHierarchy],
+                [...thirdMapHierarchy.filter(skill => skill.id === "sk:9")]
+            );
+
+            const units = graph.nodes().filter(node => node.startsWith("lu"));
+            const skills = graph.nodes().filter(node => node.startsWith("sk"));
+            // Assert: graph:
+            expect(graph.nodeCount()).toBe(4);
+            expect(units.length).toBe(1);
+            expect(skills.length).toBe(3);
+        });
+
         it("check starting and ending nodes in a graph for a goal", () => {
             // Test: Compute paths
-            const graph = createPotentialGraph(
+            const graph = createGoalsGraph(
                 [...firstMap.filter(skill => skill.id === "sk:3")],
                 [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
@@ -68,7 +81,7 @@ describe("Backward Search Tests", () => {
 
         it("trace a graph for a goal, from start to end", () => {
             // Test: Compute paths
-            const graph = createPotentialGraph(
+            const graph = createGoalsGraph(
                 [...firstMap.filter(skill => skill.id === "sk:3")],
                 [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
