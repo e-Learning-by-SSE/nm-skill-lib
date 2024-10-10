@@ -1,5 +1,5 @@
 import { findCycles, findParentsOfCycledSkills } from "./analysis";
-import { LearningUnit, Skill } from "../types";
+import { LearningUnit, Skill } from "./types";
 
 describe("find cycles analysis", () => {
     // Re-usable test data (must be passed to dataHandler.init() before each test)

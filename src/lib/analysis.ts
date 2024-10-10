@@ -1,6 +1,6 @@
 import { alg } from "@dagrejs/graphlib";
-import { createGoalsGraph } from "../backward-search/backward-search-new";
-import { CycledSkills, LearningUnit, Skill } from "../types";
+import { createGoalsGraph } from "./backward-search/backward-search-new";
+import { CycledSkills, LearningUnit, Skill } from "./types";
 
 /**
  * Detects cycles in the given set of Skills and LearningUnits.
