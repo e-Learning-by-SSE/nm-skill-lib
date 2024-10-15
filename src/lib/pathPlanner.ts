@@ -8,10 +8,18 @@ import {
     Path,
     UpdateSoftConstraintFunction,
     CycledSkills,
-    SkillAnalyzedPath
+    SkillAnalyzedPath,
+    Selector,
+    isCompositeGuard,
+    PartialPath
 } from "./types";
 import { findLearningPath } from "./fastDownward/fdFrontend";
-import { CostFunction, HeuristicFunction } from "./fastDownward/fdTypes";
+import {
+    CostFunction,
+    CostOptions,
+    DefaultCostParameter,
+    HeuristicFunction
+} from "./fastDownward/fdTypes";
 import { DistanceMap } from "./fastDownward/distanceMap";
 import { GlobalKnowledge } from "./fastDownward/global-knowledge";
 import { skillAnalysis } from "./fastDownward/missingSkillDetection";
@@ -72,7 +80,9 @@ export function getPath<LU extends LearningUnit>({
     knowledge = [],
     optimalSolution = false,
     fnCost,
-    contextSwitchPenalty = 1.2
+    isComposite,
+    costOptions = DefaultCostParameter,
+    selectors
 }: {
     skills: ReadonlyArray<Skill>;
     learningUnits: ReadonlyArray<LU>;
@@ -80,8 +90,10 @@ export function getPath<LU extends LearningUnit>({
     knowledge?: Skill[];
     optimalSolution?: boolean;
     fnCost?: CostFunction<LU>;
-    contextSwitchPenalty?: number;
-}): Path | null {
+    isComposite: isCompositeGuard<LU>;
+    costOptions: CostOptions;
+    selectors?: Selector<LU>[];
+}): PartialPath<LU> | null {
     const paths = getPaths({
         skills,
         goal,
@@ -89,9 +101,10 @@ export function getPath<LU extends LearningUnit>({
         knowledge,
         optimalSolution,
         fnCost,
-        contextSwitchPenalty,
-        alternatives: 1,
-        alternativesTimeout: null
+        isComposite,
+        costOptions,
+        selectors,
+        alternatives: 1
     });
 
     if (paths && paths.length > 0) {
@@ -123,9 +136,10 @@ export function getPaths<LU extends LearningUnit>({
     knowledge = [],
     optimalSolution = false,
     fnCost,
-    contextSwitchPenalty = 1.2,
-    alternatives = 5,
-    alternativesTimeout = 5000
+    isComposite,
+    costOptions = DefaultCostParameter,
+    selectors,
+    alternatives = 5
 }: {
     skills: ReadonlyArray<Skill>;
     learningUnits: ReadonlyArray<LU>;
@@ -133,10 +147,11 @@ export function getPaths<LU extends LearningUnit>({
     knowledge?: Skill[];
     optimalSolution?: boolean;
     fnCost?: CostFunction<LU>;
-    contextSwitchPenalty?: number;
+    isComposite: isCompositeGuard<LU>;
+    costOptions: CostOptions;
+    selectors?: Selector<LU>[];
     alternatives: number;
-    alternativesTimeout: number | null;
-}): Path[] | null {
+}): PartialPath<LU>[] | null {
     const startTime = new Date().getTime();
 
     const [inScopeLearningUnits, inScopeSkills] = filterForUnitsAndSkills(
@@ -146,20 +161,6 @@ export function getPaths<LU extends LearningUnit>({
         knowledge
     );
 
-    const distances = new DistanceMap(inScopeSkills, inScopeLearningUnits, fnCost);
-    const fnHeuristic: HeuristicFunction<LearningUnit> = (goal: Skill[], lu) => {
-        const min = distances.getDistances(
-            lu.id,
-            goal.map(skill => skill.id)
-        );
-        return min;
-    };
-
-    // Ensure timeout if more than one path should be computed
-    if (alternatives > 1 && alternativesTimeout === null) {
-        alternativesTimeout = 5000;
-    }
-
     const path = findLearningPath({
         knowledge: knowledge,
         goal: goal,
@@ -167,10 +168,10 @@ export function getPaths<LU extends LearningUnit>({
         learningUnits: inScopeLearningUnits,
         optimalSolution: optimalSolution,
         fnCost: fnCost,
-        fnHeuristic: fnHeuristic,
-        contextSwitchPenalty: contextSwitchPenalty,
-        alternatives,
-        alternativesTimeout
+        isComposite,
+        costOptions,
+        selectors,
+        alternatives
     });
 
     const duration = new Date().getTime() - startTime;

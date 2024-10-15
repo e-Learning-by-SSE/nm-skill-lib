@@ -1,5 +1,5 @@
 import { alg } from "@dagrejs/graphlib";
-import { createGoalsGraph } from "./backward-search/backward-search-new";
+import { createGoalsGraph } from "./backward-search/backward-search";
 import { CycledSkills, LearningUnit, Skill } from "./types";
 
 /**

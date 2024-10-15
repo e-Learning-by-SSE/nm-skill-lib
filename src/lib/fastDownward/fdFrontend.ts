@@ -1,7 +1,15 @@
-import { LearningUnit, Path, Skill, SkillAnalyzedPath } from "../types";
+import {
+    isCompositeGuard,
+    LearningUnit,
+    PartialPath,
+    Path,
+    Selector,
+    Skill,
+    SkillAnalyzedPath
+} from "../types";
 import { computeCost, search } from "./fastDownward";
 import { State } from "./state";
-import { CostFunction, HeuristicFunction } from "./fdTypes";
+import { CostFunction, CostOptions, DefaultCostParameter, HeuristicFunction } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNode } from "./searchNode";
 import { skillAnalysis } from "./missingSkillDetection";
@@ -15,52 +23,45 @@ import { skillAnalysis } from "./missingSkillDetection";
  * @param knowledge The skills that are already known by the learner.
  * @param goal The skills that should be learned.
  * @param globalKnowledge The set of all skills (independent of what was already learned and what should be learned).
- * @param lus The set of all LearningUnits.
+ * @param learningUnits The set of all LearningUnits.
  * @param fnCost Function to calculate the costs of reaching a Node based on an operation performed on its predecessor.
- * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
 function findOptimalLearningPath<LU extends LearningUnit>({
     knowledge,
     goal,
-    globalKnowledge,
+    skills,
     learningUnits,
     fnCost,
-    fnHeuristic,
-    contextSwitchPenalty = 1.2,
-    alternatives,
-    alternativesTimeout
+    isComposite,
+    costOptions = DefaultCostParameter,
+    selectors = [],
+    alternatives
 }: {
     knowledge: Skill[];
     goal: Skill[];
-    globalKnowledge: GlobalKnowledge;
+    skills: ReadonlyArray<Skill>;
     learningUnits: ReadonlyArray<LU>;
     fnCost: CostFunction<LU>;
-    fnHeuristic: HeuristicFunction<LU>;
-    contextSwitchPenalty?: number;
+    isComposite: isCompositeGuard<LU>;
+    costOptions: CostOptions;
+    selectors?: Selector<LU>[];
     alternatives: number;
-    alternativesTimeout: number | null;
-}): Path[] | null {
-    // Initial state: All skills of "knowledge" are known, no LearningUnits are learned
-    const initialState = new State(
-        knowledge.map(skill => skill.id),
-        globalKnowledge
-    );
-
-    return search(
-        initialState,
-        goal,
-        globalKnowledge,
-        learningUnits,
+}): PartialPath<LU>[] | null {
+    return search({
+        allSkills: skills,
+        allUnits: learningUnits,
+        goal: goal,
+        knowledge: knowledge,
         fnCost,
-        fnHeuristic,
-        contextSwitchPenalty,
-        true,
-        alternatives,
-        alternativesTimeout
-    );
+        isComposite: isComposite,
+        costOptions: costOptions,
+        selectors: selectors,
+        alternatives: alternatives
+    });
 }
 
+// Stop using the Greedy LearningPath.
 /**
  * Searches for an (optimal) path to learn the desired Skills (goal) based on the given knowledge, but uses an more greedy approach to discover child skills of the goal.
  *
@@ -79,7 +80,7 @@ function findOptimalLearningPath<LU extends LearningUnit>({
  * @param fnHeuristic Heuristic function to estimate the cost of reaching the goal from a given state.
  * @returns An array of LearningUnits that represent the optimal path to learn the desired skills, or null if there is no solution.
  */
-function findGreedyLearningPath<LU extends LearningUnit>({
+/*function findGreedyLearningPath<LU extends LearningUnit>({
     knowledge,
     goal,
     globalKnowledge,
@@ -100,12 +101,11 @@ function findGreedyLearningPath<LU extends LearningUnit>({
     alternatives: number;
     alternativesTimeout: number | null;
 }) {
-    /**
-     * Iterate through the goal child by child.
-     * For each child, find the optimal path and add the learned skills to the knowledge before learning the next child.
-     * Compose the paths to a single path.
-     * It's not guaranteed that this path is optimal, but it's guaranteed that it's a valid path.
-     */
+    // Iterate through the goal child by child.
+    // For each child, find the optimal path and add the learned skills to the knowledge before learning the next child.
+    // Compose the paths to a single path.
+    // It's not guaranteed that this path is optimal, but it's guaranteed that it's a valid path.
+    //
     // TODO: Only children of the first layer are discovered, we could split the goal further
     const flattenGoal: Skill[] = [];
     goal.forEach(skill => {
@@ -177,7 +177,7 @@ function findGreedyLearningPath<LU extends LearningUnit>({
     const pathList: Path[] = [];
     pathList.push(pathResult);
     return pathList;
-}
+}*/
 
 /**
  * Searches for an (optimal) path to learn the desired Skills (goal) based on the given knowledge.
@@ -206,9 +206,10 @@ export function findLearningPath<LU extends LearningUnit>({
     optimalSolution = false,
     fnCost,
     fnHeuristic,
-    contextSwitchPenalty = 1.2,
-    alternatives,
-    alternativesTimeout
+    isComposite,
+    costOptions = DefaultCostParameter,
+    selectors,
+    alternatives
 }: {
     knowledge: Skill[];
     goal: Skill[];
@@ -217,12 +218,11 @@ export function findLearningPath<LU extends LearningUnit>({
     optimalSolution?: boolean;
     fnCost?: CostFunction<LU>;
     fnHeuristic?: HeuristicFunction<LU>;
-    contextSwitchPenalty?: number;
+    isComposite: isCompositeGuard<LU>;
+    costOptions: CostOptions;
+    selectors?: Selector<LU>[];
     alternatives: number;
-    alternativesTimeout: number | null;
 }) {
-    const globalKnowledge = new GlobalKnowledge(skills);
-
     // Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
     // Maybe replaced by a more sophisticated cost function
     if (!fnCost) {
@@ -235,32 +235,34 @@ export function findLearningPath<LU extends LearningUnit>({
         fnHeuristic = state => 0;
     }
 
+    // Stop using the Greedy LearningPath.
     const paths = optimalSolution
         ? // Guarantees an optimal solution, but may take very long
           findOptimalLearningPath({
               knowledge,
               goal,
-              globalKnowledge,
+              skills,
               learningUnits,
               fnCost,
-              fnHeuristic,
-              contextSwitchPenalty,
-              alternatives,
-              alternativesTimeout
+              isComposite,
+              costOptions,
+              selectors,
+              alternatives
           })
-        : // Splits goal into sub goals, finds optimal solutions for each sub goal and glues them together
-          // This is much faster, but won't guarantee a global optimum
-          findGreedyLearningPath({
-              knowledge,
-              goal,
-              globalKnowledge,
-              learningUnits,
-              fnCost,
-              fnHeuristic,
-              contextSwitchPenalty,
-              alternatives,
-              alternativesTimeout
-          });
+        : null;
+    // Splits goal into sub goals, finds optimal solutions for each sub goal and glues them together
+    // This is much faster, but won't guarantee a global optimum
+    /*findGreedyLearningPath({
+        knowledge,
+        goal,
+        globalKnowledge,
+        learningUnits,
+        fnCost,
+        fnHeuristic,
+        contextSwitchPenalty,
+        alternatives,
+        alternativesTimeout
+    })*/
 
     if (paths) {
         for (const path of paths) {
