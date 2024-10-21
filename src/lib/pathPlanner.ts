@@ -61,7 +61,6 @@ export function isAcyclic(
  * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
  * @param learningUnits All learning units of the system to learn new skills.
  * @param knowledge The knowledge of the user (skills already learned).
- * @param optimalSolution Whether to enforce an optimal solution (true) or to use a greedy approach which may produce a suboptimal solution (false).
  * @param fnCost The cost function to use for computing the cost of a path, e.g. the duration of a learning unit o user specific customization requests like preferred language, density, gravity, etc.
  * @param contextSwitchPenalty The penalty for switching among topics which are not build on each other (default: 1.2).
  * @returns An optimal path of LearningUnits that leads to the specified skills (goal) or null if no path was found.
@@ -71,7 +70,6 @@ export function getPath<LU extends LearningUnit>({
     goal,
     learningUnits,
     knowledge = [],
-    optimalSolution = false,
     fnCost,
     isComposite,
     costOptions = DefaultCostParameter,
@@ -81,7 +79,6 @@ export function getPath<LU extends LearningUnit>({
     learningUnits: ReadonlyArray<LU>;
     goal: Skill[];
     knowledge?: Skill[];
-    optimalSolution?: boolean;
     fnCost?: CostFunction<LU>;
     isComposite: isCompositeGuard<LU>;
     costOptions: CostOptions;
@@ -92,7 +89,6 @@ export function getPath<LU extends LearningUnit>({
         goal,
         learningUnits,
         knowledge,
-        optimalSolution,
         fnCost,
         isComposite,
         costOptions,
@@ -113,7 +109,6 @@ export function getPath<LU extends LearningUnit>({
  * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
  * @param learningUnits All learning units of the system to learn new skills.
  * @param knowledge The knowledge of the user (skills already learned).
- * @param optimalSolution Whether to enforce an optimal solution (true) or to use a greedy approach which may produce a suboptimal solution (false).
  * @param fnCost The cost function to use for computing the cost of a path, e.g. the duration of a learning unit o user specific customization requests like preferred language, density, gravity, etc.
  * @param contextSwitchPenalty The penalty for switching among topics which are not build on each other (default: 1.2).
  * @param alternatives The number of alternative paths to compute.
@@ -127,7 +122,6 @@ export function getPaths<LU extends LearningUnit>({
     goal,
     learningUnits,
     knowledge = [],
-    optimalSolution = false,
     fnCost,
     isComposite,
     costOptions = DefaultCostParameter,
@@ -138,7 +132,6 @@ export function getPaths<LU extends LearningUnit>({
     learningUnits: ReadonlyArray<LU>;
     goal: Skill[];
     knowledge?: Skill[];
-    optimalSolution?: boolean;
     fnCost?: CostFunction<LU>;
     isComposite: isCompositeGuard<LU>;
     costOptions: CostOptions;
