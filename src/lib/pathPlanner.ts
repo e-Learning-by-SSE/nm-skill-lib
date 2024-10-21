@@ -5,7 +5,6 @@ import {
     Skill,
     Node,
     LearningUnit,
-    Path,
     UpdateSoftConstraintFunction,
     CycledSkills,
     SkillAnalyzedPath,
@@ -13,17 +12,11 @@ import {
     isCompositeGuard,
     PartialPath
 } from "./types";
-import { findLearningPath } from "./fastDownward/fdFrontend";
-import {
-    CostFunction,
-    CostOptions,
-    DefaultCostParameter,
-    HeuristicFunction
-} from "./fastDownward/fdTypes";
-import { DistanceMap } from "./fastDownward/distanceMap";
+import { CostFunction, CostOptions, DefaultCostParameter } from "./fastDownward/fdTypes";
 import { GlobalKnowledge } from "./fastDownward/global-knowledge";
 import { skillAnalysis } from "./fastDownward/missingSkillDetection";
 import { filterForUnitsAndSkills } from "./backward-search/backward-search";
+import { search } from "./fastDownward/fastDownward";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -161,23 +154,34 @@ export function getPaths<LU extends LearningUnit>({
         knowledge
     );
 
-    const path = findLearningPath({
-        knowledge: knowledge,
-        goal: goal,
-        skills: inScopeSkills,
-        learningUnits: inScopeLearningUnits,
-        optimalSolution: optimalSolution,
-        fnCost: fnCost,
+    // Default cost function: Increase the cost of the path by 1 for each learned LearningUnit
+    // Maybe replaced by a more sophisticated cost function
+    if (!fnCost) {
+        fnCost = op => 1;
+    }
+
+    const paths = search({
+        allSkills: inScopeSkills,
+        allUnits: inScopeLearningUnits,
+        goal,
+        knowledge,
+        fnCost,
         isComposite,
         costOptions,
         selectors,
         alternatives
     });
 
+    if (paths) {
+        for (const path of paths) {
+            path.cost = Math.round((path.cost + Number.EPSILON) * 100) / 100;
+        }
+    }
+
     const duration = new Date().getTime() - startTime;
     console.log(`Path planning took ${duration}ms`);
 
-    return path;
+    return paths;
 }
 
 /**

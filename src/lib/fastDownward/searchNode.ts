@@ -1,4 +1,4 @@
-import { LearningUnit, PartialPath } from "../types";
+import { LearningUnit } from "../types";
 import { State } from "./state";
 
 /**
