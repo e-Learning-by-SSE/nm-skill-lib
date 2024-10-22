@@ -138,7 +138,7 @@ export function getPaths<LU extends LearningUnit>({
     selectors?: Selector<LU>[];
     alternatives: number;
 }): PartialPath<LU>[] | null {
-    const startTime = new Date().getTime();
+    // const startTime = new Date().getTime();
 
     const [inScopeLearningUnits, inScopeSkills] = filterForUnitsAndSkills(
         goal,
@@ -171,8 +171,8 @@ export function getPaths<LU extends LearningUnit>({
         }
     }
 
-    const duration = new Date().getTime() - startTime;
-    console.log(`Path planning took ${duration}ms`);
+    // const duration = new Date().getTime() - startTime;
+    // console.log(`Path planning took ${duration}ms`);
 
     return paths;
 }
