@@ -10,6 +10,7 @@ import {
 
 import { CostFunction, DefaultCostParameter } from "./fdTypes";
 import { search } from "./fastDownward";
+import { GlobalKnowledge } from "./global-knowledge";
 
 describe("FastDownward v2", () => {
     // Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -1028,9 +1029,9 @@ describe("FastDownward v2", () => {
         ];
 
         it("find a path including composite unit without selector", () => {
-            const Units = lus.slice();
+            const units = lus.slice();
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
@@ -1039,7 +1040,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[6]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1059,9 +1060,9 @@ describe("FastDownward v2", () => {
                 lu.author == "Author1" ? true : false;
             const selectors = [authorSelector];
 
-            const Units = lus.slice();
+            const units = lus.slice();
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
@@ -1071,7 +1072,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[6]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1087,15 +1088,15 @@ describe("FastDownward v2", () => {
         });
 
         it("find a path for nested composite unit without selector", () => {
-            const Units = lus.slice();
+            const units = lus.slice();
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
                 isComposite: true
             });
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:2", ["sk:4"], ["sk:6"]),
                 author: "",
                 department: "",
@@ -1104,7 +1105,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[6]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1126,16 +1127,16 @@ describe("FastDownward v2", () => {
                 lu.author == "Author1" ? true : false;
             const selectors = [authorSelector];
 
-            const Units = lus.slice();
+            const units = lus.slice();
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
                 selectors: selectors,
                 isComposite: true
             });
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:2", ["sk:4"], ["sk:6"]),
                 author: "",
                 department: "",
@@ -1144,7 +1145,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[6]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1162,15 +1163,15 @@ describe("FastDownward v2", () => {
         });
 
         it("find a path for composite unit with only one nested composite unit", () => {
-            const Units = lus.slice(0, 4);
+            const units = lus.slice(0, 4);
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:2"], ["sk:4"]),
                 author: "",
                 department: "",
                 isComposite: true
             });
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:2", ["sk:2"], ["sk:4"]),
                 author: "",
                 department: "",
@@ -1179,7 +1180,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[3]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1197,9 +1198,9 @@ describe("FastDownward v2", () => {
         });
 
         it("find alternative paths including composite unit without selector", () => {
-            const Units = lus.slice();
+            const units = lus.slice();
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
@@ -1208,7 +1209,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[6]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1221,9 +1222,9 @@ describe("FastDownward v2", () => {
         });
 
         it("find all the alternatives path including composite unit without selector", () => {
-            const Units = lus.slice();
+            const units = lus.slice();
 
-            Units.push({
+            units.push({
                 ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
                 author: "",
                 department: "",
@@ -1232,7 +1233,7 @@ describe("FastDownward v2", () => {
 
             const paths = search({
                 allSkills: skillMap,
-                allUnits: Units,
+                allUnits: units,
                 goal: [skillMap[6]],
                 knowledge: [],
                 fnCost: () => 1,
@@ -1331,6 +1332,22 @@ describe("FastDownward v2", () => {
 
             expect(path!.path.length).toBe(8);
             expect(pathDuration).toBeLessThan(5000);
+        });
+    });
+
+    describe("global knowledge test", () => {
+        const globalKnowledge = new GlobalKnowledge(thirdMapHierarchy);
+
+        it("check parents in the global knowledge", () => {
+            const parents = globalKnowledge.getAllParents();
+
+            expect(parents.length).toBe(3);
+        });
+
+        it("check children for a parent in the global knowledge", () => {
+            const children = globalKnowledge.getChildren("sk:9");
+
+            expect(children.length).toBe(2);
         });
     });
 });

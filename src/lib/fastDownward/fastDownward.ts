@@ -89,7 +89,6 @@ export function search<LU extends LearningUnit>({
     ) {
         // Sorted list of states to be analyzed
         const openList: SearchNodeList<LU> = new SearchNodeList<LU>(initialState);
-        const closedSet = new Set<string>();
         const Paths: PartialPath<LU>[] = [];
 
         while (!openList.isEmpty()) {
@@ -155,11 +154,6 @@ export function search<LU extends LearningUnit>({
                     cost,
                     cost + heuristic
                 );
-
-                // Skip states that are already analyzed
-                if (closedSet.has(newState.getHashCode())) {
-                    continue;
-                }
 
                 openList.add(newNode);
             }

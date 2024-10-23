@@ -1,4 +1,12 @@
-import { LearningUnit, Skill, Graph, Path, isCompositeGuard, Unit, CompositeUnit } from "./types";
+import {
+    LearningUnit,
+    Skill,
+    Graph,
+    isCompositeGuard,
+    Unit,
+    CompositeUnit,
+    isSkill
+} from "./types";
 import {
     computeSuggestedSkills,
     getConnectedGraphForLearningUnit,
@@ -45,32 +53,18 @@ describe("Path Planer", () => {
         newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
         newLearningUnit(thirdMapHierarchy, "lu:9", ["sk:9"], ["sk:8"])
     ];
-    const multipleRequirementsOfLu: LearningUnit[] = [
-        newLearningUnit(firstMap, "lu:10", [], ["sk:1"]),
-        newLearningUnit(firstMap, "lu:11", [], ["sk:2"]),
-        newLearningUnit(firstMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"])
-    ];
-    // Alternative languages (de is shorter than en)
-    const alternativeLanguagesOfLus: (LearningUnit & { lang: string })[] = [
-        { ...newLearningUnit(thirdMap, "lu:13:de", [], ["sk:1"]), lang: "de" },
-        { ...newLearningUnit(thirdMap, "lu:14:de", ["sk:1"], ["sk:2"]), lang: "de" },
-        { ...newLearningUnit(thirdMap, "lu:15:de", ["sk:2"], ["sk:3", "sk:4"]), lang: "de" },
-        { ...newLearningUnit(thirdMap, "lu:13:en", [], ["sk:1"]), lang: "en" },
-        { ...newLearningUnit(thirdMap, "lu:14:en", ["sk:1"], ["sk:2"]), lang: "en" },
-        { ...newLearningUnit(thirdMap, "lu:15:en", ["sk:2"], ["sk:3"]), lang: "en" },
-        { ...newLearningUnit(thirdMap, "lu:16:en", ["sk:3"], ["sk:4"]), lang: "en" }
-    ];
-    // Two alternative paths with different costs
-    const alternativeCostsOfLus: (LearningUnit & { cost: number })[] = [
-        // 1st alternative path, cost: 7
-        { ...newLearningUnit(thirdMap, "lu:17", [], ["sk:1"]), cost: 1 },
-        { ...newLearningUnit(thirdMap, "lu:18", ["sk:1"], ["sk:2"]), cost: 1 },
-        { ...newLearningUnit(thirdMap, "lu:19", ["sk:2"], ["sk:3"]), cost: 5 },
-        // 2nd alternative path, cost: 5
-        { ...newLearningUnit(thirdMap, "lu:20", [], ["sk:4"]), cost: 3 },
-        { ...newLearningUnit(thirdMap, "lu:21", ["sk:4"], ["sk:5"]), cost: 1 },
-        { ...newLearningUnit(thirdMap, "lu:22", ["sk:5"], ["sk:3"]), cost: 1 }
-    ];
+
+    describe("Check skill type", () => {
+        it("check skill", () => {
+            const elements = [...firstMap, ...straightPathOfLus];
+
+            // Check Skill to be true
+            expect(isSkill(elements.at(0)!)).toBeTruthy;
+
+            // Check Skill to be false
+            expect(isSkill(elements.at(3)!)).toBeTruthy;
+        });
+    });
 
     describe("getConnectedGraphForSkill - Skills Only", () => {
         it("Only skills available; no nested skills -> return all skills of the same map", () => {
@@ -297,35 +291,6 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
     expectedElements = expectedElements.sort((a, b) => a.id.localeCompare(b.id));
     const expectedIDs = expectedElements.map(element => element.id);
     return [expectedIDs, expectedElements];
-}
-
-function expectPath(path: Path | null, expectedPaths: string[][] | null, cost?: number) {
-    if (!expectedPaths) {
-        expect(path).toBeNull();
-        return;
-    }
-
-    if (!path) {
-        throw new Error(
-            `Path is null, but there was at least one path expected: ${expectedPaths[0]}`
-        );
-    }
-
-    const pathIds = path.path.map(lu => lu.id);
-    const pathIsValid = expectedPaths.some(expectedPath =>
-        pathIds.every((id, index) => id === expectedPath[index])
-    );
-
-    if (!pathIsValid) {
-        // Return one wrong result
-        expect(pathIds).toEqual(expectedPaths[0]);
-    } else {
-        if (cost) {
-            expect(path.cost).toBe(cost);
-        } else {
-            expect(pathIsValid).toBe(true);
-        }
-    }
 }
 
 function newLearningUnit(

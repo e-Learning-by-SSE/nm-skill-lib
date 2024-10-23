@@ -12,8 +12,13 @@ import {
     PotentialNode
 } from "./types";
 import { CostFunction, CostOptions, DefaultCostParameter } from "./fastDownward/fdTypes";
-import { filterForUnitsAndSkills, skillAnalysis } from "./backward-search/backward-search";
+import {
+    createGoalsGraph,
+    filterForUnitsAndSkills,
+    skillAnalysis
+} from "./backward-search/backward-search";
 import { search } from "./fastDownward/fastDownward";
+import { findCycles } from "./analysis";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -21,7 +26,8 @@ import { search } from "./fastDownward/fastDownward";
  * @returns A Promise that resolves to the connected graph.
  */
 export function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Graph {
-    const graph = populateGraph({ skills, parentChild: true, childParent: false });
+    // Goals is equal to skills to get full graph
+    const graph = createGoalsGraph(skills.slice(), [], skills.slice(), []);
     return buildReturnGraph(graph);
 }
 
@@ -35,7 +41,8 @@ export function getConnectedGraphForLearningUnit(
     learningUnits: ReadonlyArray<LearningUnit>,
     skills: ReadonlyArray<Skill>
 ): Graph {
-    const graph = populateGraph({ skills, learningUnits });
+    // Goals is equal to skills to get full graph
+    const graph = createGoalsGraph(skills.slice(), learningUnits, skills.slice(), []);
     return buildReturnGraph(graph);
 }
 
@@ -48,8 +55,8 @@ export function isAcyclic(
     skills: ReadonlyArray<Skill>,
     learningUnits: ReadonlyArray<LearningUnit>
 ): boolean {
-    const graph = populateGraph({ skills, learningUnits });
-    return alg.isAcyclic(graph);
+    const graph = findCycles(skills, learningUnits);
+    return graph.length > 0;
 }
 
 /**
@@ -172,74 +179,6 @@ export function getPaths<LU extends LearningUnit>({
     // console.log(`Path planning took ${duration}ms`);
 
     return paths;
-}
-
-/**
- * Builds a directed multi-graph from the given set of Skills and LearningUnits.
- * @param skills: The Skills to include in the graph.
- * @param learningUnits: Optionally, the LearningUnits to include in the graph.
- * @param parentChild: Whether to include parent-child relationships between Skills (Parent -> Child; default: true).
- * @param childParent: Whether to include child-parent relationships between Skills (Child -> Parent; default: false).
- * @param suggestions: Whether to include suggested relationships between Skills and LearningUnits, considered like requirements
- * (Suggested Skill -> LearningUnit; default: true).
- * @returns The graph which may be used for graph-based algorithms.
- */
-function populateGraph({
-    skills,
-    learningUnits,
-    parentChild = true,
-    childParent = false,
-    suggestions = true
-}: {
-    skills: ReadonlyArray<Skill>;
-    learningUnits?: ReadonlyArray<LearningUnit>;
-    parentChild?: boolean;
-    childParent?: boolean;
-    suggestions?: boolean;
-}): GraphLib {
-    const graph = new GraphLib({ directed: true, multigraph: true });
-
-    // Add Skills
-    skills.forEach(skill => {
-        const nodeName = "sk" + skill.id;
-        graph.setNode(nodeName, skill);
-        if (parentChild || childParent) {
-            skill.nestedSkills.forEach(child => {
-                const childName = "sk" + child;
-                if (parentChild) {
-                    // Parent -> Child
-                    graph.setEdge(nodeName, childName);
-                }
-                if (childParent) {
-                    // Child -> Parent
-                    graph.setEdge(childName, nodeName);
-                }
-            });
-        }
-    });
-
-    // Add LearningUnits, if defined
-    if (learningUnits) {
-        learningUnits.forEach(lu => {
-            const luName = "lu" + lu.id;
-            graph.setNode("lu" + lu.id, lu);
-            lu.requiredSkills.forEach(req => {
-                graph.setEdge("sk" + req.id, luName);
-            });
-
-            lu.teachingGoals.forEach(goal => {
-                graph.setEdge(luName, "sk" + goal.id);
-            });
-
-            if (suggestions) {
-                lu.suggestedSkills.forEach(suggestion => {
-                    // Analogous to requirements: Skill -> LearningUnit
-                    graph.setEdge("sk" + suggestion.skill.id, luName);
-                });
-            }
-        });
-    }
-    return graph;
 }
 
 function buildReturnGraph(graph: GraphLib): Graph {

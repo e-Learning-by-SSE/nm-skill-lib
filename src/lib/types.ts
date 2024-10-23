@@ -48,20 +48,10 @@ export type Node = {
     element: Skill | LearningUnit;
 };
 
-export class Path {
-    cost: number = 0;
-    path: LearningUnit[] = [];
-}
-
 export class PartialPath<LU extends LearningUnit> {
     cost: number = 0;
     path: PartialPath<LU>[] = [];
     origin: Unit<LU> | null = null;
-}
-
-export class SkillAnalyzedPath {
-    missingSkill: string;
-    subPath: Path;
 }
 
 export class PotentialNode<LU extends LearningUnit> {
