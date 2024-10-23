@@ -1,5 +1,11 @@
-import { LearningUnit, Skill, Graph, Path } from "./types";
-import { getConnectedGraphForLearningUnit, getConnectedGraphForSkill } from "./pathPlanner";
+import { LearningUnit, Skill, Graph, Path, isCompositeGuard, Unit, CompositeUnit } from "./types";
+import {
+    computeSuggestedSkills,
+    getConnectedGraphForLearningUnit,
+    getConnectedGraphForSkill
+} from "./pathPlanner";
+import { search } from "./fastDownward/fastDownward";
+import { DefaultCostParameter } from "./fastDownward/fdTypes";
 
 describe("Path Planer", () => {
     // Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -148,6 +154,133 @@ describe("Path Planer", () => {
             expect(nodeIDs).toEqual(expectedIDs);
             // Compare elements
             expect(nodeElements).toEqual(expectedElements);
+        });
+    });
+
+    describe("computeSuggestedSkills", () => {
+        const guard: isCompositeGuard<LearningUnit> = (
+            element: Unit<LearningUnit>
+        ): element is CompositeUnit<LearningUnit> => {
+            return false;
+        };
+
+        it("Apply first constraints", async () => {
+            // Compute default order and exchange first to positions
+            const paths = search({
+                allSkills: thirdMapHierarchy,
+                allUnits: structuredPathOfLus,
+                goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            if (paths === null) {
+                throw new Error("Path is null, but was not expected to be null");
+            }
+
+            const path = paths?.pop()!;
+            path.path = [path.path[1], path.path[0], path.path[2]];
+
+            structuredPathOfLus.sort((a, b) => {
+                return (
+                    path.path.map(partialPath => partialPath.origin).indexOf(a) -
+                    path.path.map(partialPath => partialPath.origin).indexOf(b)
+                );
+            });
+
+            // Test: Simulate
+            await computeSuggestedSkills(
+                structuredPathOfLus,
+                async (lu: LearningUnit, missingSkills: string[]) => {
+                    switch (lu.id) {
+                        case path.path[0].origin!.id:
+                            if (missingSkills.length > 0) {
+                                throw new Error(
+                                    "Must not compute any constraints for the first LU"
+                                );
+                            }
+                            break;
+                        case path.path[1].origin!.id:
+                            expect(missingSkills).toEqual(
+                                path.path[0].origin!.teachingGoals.map(skill => skill.id)
+                            );
+                            break;
+                        case path.path[2].origin!.id:
+                            expect(missingSkills).toEqual(
+                                path.path[1].origin!.teachingGoals.map(skill => skill.id)
+                            );
+                            break;
+                    }
+                }
+            );
+
+            // Apply constraints
+            await computeSuggestedSkills(
+                structuredPathOfLus,
+                async (lu: LearningUnit, missingSkills: string[]) => {
+                    const suggestedSkills = missingSkills
+                        .filter(skill => skill != undefined)
+                        .map(skill => thirdMapHierarchy.find(s => s.id === skill))
+                        .filter(skill => skill != undefined) as Skill[];
+
+                    lu.suggestedSkills = suggestedSkills.map(skill => ({
+                        weight: 1,
+                        skill: skill
+                    }));
+                }
+            );
+
+            // Compute path with new constraints
+            const changedPath = search({
+                allSkills: thirdMapHierarchy,
+                allUnits: structuredPathOfLus,
+                goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            if (changedPath === null) {
+                throw new Error("Path is null, but was not expected to be null");
+            }
+            // Test: Verify that path has changed
+            const pathLus = path.path.map(partialPath => partialPath.origin);
+            const changedPathLus = changedPath?.pop()!.path.map(partialPath => partialPath.origin);
+
+            expect(changedPathLus).toEqual(pathLus);
+        });
+
+        it("Repeating taught skills", async () => {
+            const repeatingSkillsLus: LearningUnit[] = [
+                newLearningUnit(thirdMap, "lu:1", [], ["sk:1", "sk:2"]),
+                newLearningUnit(thirdMap, "lu:2", [], ["sk:2", "sk:3", "sk:4"]),
+                newLearningUnit(thirdMap, "lu:3", [], ["sk:1", "sk:3", "sk:5"])
+            ];
+
+            // Test: Simulate
+            await computeSuggestedSkills(
+                repeatingSkillsLus,
+                async (lu: LearningUnit, missingSkills: string[]) => {
+                    switch (lu.id) {
+                        case "lu:1":
+                            if (missingSkills.length > 0) {
+                                throw new Error(
+                                    "Must not compute any constraints for the first LU"
+                                );
+                            }
+                            break;
+                        case "lu:2":
+                            expect(missingSkills).toEqual(["sk:1"]);
+                            break;
+                        case "lu:3":
+                            expect(missingSkills.sort()).toEqual(["sk:2", "sk:4"]);
+                            break;
+                    }
+                }
+            );
         });
     });
 });

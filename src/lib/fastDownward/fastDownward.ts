@@ -1,18 +1,10 @@
 import { filterForUnitsAndSkills } from "../backward-search/backward-search";
-import {
-    isCompositeGuard,
-    LearningUnit,
-    PartialPath,
-    Selector,
-    Skill,
-    Unit,
-    UpdateSoftConstraintFunction
-} from "../types";
+import { isCompositeGuard, LearningUnit, PartialPath, Selector, Skill, Unit } from "../types";
 import { DistanceMap } from "./distanceMap";
 import { CostFunction, HeuristicFunction, CostOptions, DefaultCostParameter } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNodeList } from "./search-node-list";
-import { SearchNode } from "./searchNode-new";
+import { SearchNode } from "./searchNode";
 import { State } from "./state";
 
 export function search<LU extends LearningUnit>({
@@ -268,36 +260,4 @@ export function computeCost<LU extends LearningUnit>(
             missedSuggestions.reduce((a, b) => a + penaltyOptions.suggestionViolationPenalty, 0);
     }
     return currentNode.cost + contextSwitchPenalty * suggestionPenalty * fnCost(lu);
-}
-
-/**
- * Computes and sets suggested constraints to enforce a preferred order based on the given learning units.
- * @param learningUnits The ordering of the learning units, for which soft constraints shall be computed to enforce the given order.
- * @param fnUpdate The CREATE/UPDATE/DELETE function to apply the computed constraints.
- */
-export async function computeSuggestedSkills(
-    learningUnits: LearningUnit[],
-    fnUpdate: UpdateSoftConstraintFunction
-) {
-    // Do nothing and avoid any exception if an empty array was passed
-    if (learningUnits.length === 0) {
-        return;
-    }
-
-    // Delete constraints for the very first unit
-    await fnUpdate(learningUnits[0], []);
-
-    // Iterate over all learningUnits starting at index 2 and set ordering condition to previous learningUnit
-    for (let i = 1; i < learningUnits.length; i++) {
-        const previousUnit = learningUnits[i - 1];
-        const currentUnit = learningUnits[i];
-        const missingSkills = previousUnit.teachingGoals
-            .map(goal => goal.id)
-            // Do not copy hard constraints also to soft constraints
-            .filter(goalId => !currentUnit.requiredSkills.map(skill => skill.id).includes(goalId))
-            // Do not copy currently taught skills to avoid cycles
-            .filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
-
-        await fnUpdate(currentUnit, missingSkills);
-    }
 }
