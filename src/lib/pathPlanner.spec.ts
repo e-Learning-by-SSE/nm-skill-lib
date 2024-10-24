@@ -121,6 +121,21 @@ describe("Path Planer", () => {
             expect(path).toBeDefined();
         });
 
+        it("find exactly one path without cost function", async () => {
+            // Test: Compute path
+            const path = getPath({
+                skills: firstMap,
+                learningUnits: straightPathOfLus,
+                goal: [firstMap[2]],
+                knowledge: [],
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            // Assert: find one path
+            expect(path).toBeDefined();
+        });
+
         it("No path found", async () => {
             // Test: Compute path
             const path = getPath({
