@@ -240,13 +240,15 @@ export async function computeSuggestedSkills(
 export function getSkillAnalysis<LU extends LearningUnit>({
     skills,
     goal,
-    learningUnits
+    learningUnits,
+    knowledge
 }: {
     skills: ReadonlyArray<Skill>;
     goal: Skill[];
     learningUnits: ReadonlyArray<LU>;
+    knowledge: Skill[];
 }): PotentialNode<LearningUnit>[] | null {
-    const skillAnalyzedPath = skillAnalysis(goal, learningUnits, skills, []);
+    const skillAnalyzedPath = skillAnalysis(goal, learningUnits, skills, knowledge);
 
     return skillAnalyzedPath;
 }

@@ -5,14 +5,19 @@ import {
     isCompositeGuard,
     Unit,
     CompositeUnit,
-    isSkill
+    isSkill,
+    isLearningUnit,
+    PotentialNode
 } from "./types";
 import {
     computeSuggestedSkills,
     getConnectedGraphForLearningUnit,
-    getConnectedGraphForSkill
+    getConnectedGraphForSkill,
+    getPath,
+    getPaths,
+    getSkillAnalysis,
+    isAcyclic
 } from "./pathPlanner";
-import { search } from "./fastDownward/fastDownward";
 import { DefaultCostParameter } from "./fastDownward/fdTypes";
 
 describe("Path Planer", () => {
@@ -53,16 +58,130 @@ describe("Path Planer", () => {
         newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
         newLearningUnit(thirdMapHierarchy, "lu:9", ["sk:9"], ["sk:8"])
     ];
+    // More learningUnits for multiple paths
+    const multipleRequirementsOfLu: LearningUnit[] = [
+        newLearningUnit(firstMap, "lu:10", [], ["sk:1"]),
+        newLearningUnit(firstMap, "lu:11", [], ["sk:2"]),
+        newLearningUnit(firstMap, "lu:12", ["sk:1", "sk:2"], ["sk:3"])
+    ];
 
-    describe("Check skill type", () => {
+    describe("check learning unit type", () => {
+        it("check learning unit", () => {
+            const elements = [...firstMap, ...straightPathOfLus];
+
+            // Check learning unit to be false
+            expect(isLearningUnit(elements[0])).toBeFalsy();
+
+            // Check learning unit to be true
+            expect(isLearningUnit(elements[3])).toBeTruthy();
+        });
+    });
+
+    describe("check skill type", () => {
         it("check skill", () => {
             const elements = [...firstMap, ...straightPathOfLus];
 
             // Check Skill to be true
-            expect(isSkill(elements.at(0)!)).toBeTruthy;
+            expect(isSkill(elements[0])).toBeTruthy();
 
             // Check Skill to be false
-            expect(isSkill(elements.at(3)!)).toBeTruthy;
+            expect(isSkill(elements[3])).toBeFalsy();
+        });
+    });
+
+    describe("check cycles in learning units and skills ", () => {
+        it("check cycles", () => {
+            const elements = [...firstMap, ...straightPathOfLus];
+
+            // Should be no cycles (false)
+            expect(isAcyclic(thirdMapHierarchy, structuredPathOfLus)).toBeFalsy();
+        });
+    });
+
+    describe("get paths", () => {
+        const guard: isCompositeGuard<LearningUnit> = (
+            element: Unit<LearningUnit>
+        ): element is CompositeUnit<LearningUnit> => {
+            return false;
+        };
+
+        it("find exactly one path", async () => {
+            // Test: Compute path
+            const path = getPath({
+                skills: firstMap,
+                learningUnits: straightPathOfLus,
+                goal: [firstMap[2]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            // Assert: find one path
+            expect(path).toBeDefined();
+        });
+
+        it("No path found", async () => {
+            // Test: Compute path
+            const path = getPath({
+                skills: thirdMap,
+                learningUnits: straightPathOfLus,
+                goal: [thirdMap[3]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter
+            });
+
+            // Assert: find one path
+            expect(path).toBeNull();
+        });
+
+        it("find multiple paths", async () => {
+            // Test: Compute path
+            const paths = getPaths({
+                skills: firstMap,
+                learningUnits: [...straightPathOfLus, ...multipleRequirementsOfLu],
+                goal: [firstMap[2]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter,
+                alternatives: 2
+            });
+
+            // Assert: find one path
+            expect(paths).toBeDefined();
+            expect(paths?.length).toBeGreaterThan(1);
+        });
+    });
+
+    describe("get skill analysis", () => {
+        it("find one missing skill in a path", () => {
+            const structuredPathOfLusMissingSk8: LearningUnit[] = [
+                newLearningUnit(thirdMapHierarchy, "lu:7", [], ["sk:10"]),
+                newLearningUnit(thirdMapHierarchy, "lu:8", [], ["sk:11"]),
+                newLearningUnit(thirdMapHierarchy, "lu:9", ["sk:9"], [])
+            ];
+
+            // Test: Compute paths
+            const analysis = getSkillAnalysis({
+                goal: [
+                    ...firstMap.filter(skill => skill.id === "sk:3"),
+                    ...thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+                    ...thirdMapHierarchy.filter(skill => skill.id === "sk:10"),
+                    ...thirdMapHierarchy.filter(skill => skill.id === "sk:12")
+                ],
+                learningUnits: [...multipleRequirementsOfLu, ...structuredPathOfLusMissingSk8],
+                skills: [...firstMap, ...thirdMapHierarchy],
+                knowledge: []
+            })!;
+
+            const path = extractPath(analysis[0]);
+
+            // Assert: Find missing skill:
+            expect(analysis[0].missingSkill).toBe("sk:8");
+            expect(path).toEqual(["sk:8", "sk:7"]);
         });
     });
 
@@ -160,9 +279,9 @@ describe("Path Planer", () => {
 
         it("Apply first constraints", async () => {
             // Compute default order and exchange first to positions
-            const paths = search({
-                allSkills: thirdMapHierarchy,
-                allUnits: structuredPathOfLus,
+            const path = getPath({
+                skills: thirdMapHierarchy,
+                learningUnits: structuredPathOfLus,
                 goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
                 knowledge: [],
                 fnCost: () => 1,
@@ -170,11 +289,10 @@ describe("Path Planer", () => {
                 costOptions: DefaultCostParameter
             });
 
-            if (paths === null) {
+            if (path === null) {
                 throw new Error("Path is null, but was not expected to be null");
             }
 
-            const path = paths?.pop()!;
             path.path = [path.path[1], path.path[0], path.path[2]];
 
             structuredPathOfLus.sort((a, b) => {
@@ -227,9 +345,9 @@ describe("Path Planer", () => {
             );
 
             // Compute path with new constraints
-            const changedPath = search({
-                allSkills: thirdMapHierarchy,
-                allUnits: structuredPathOfLus,
+            const changedPath = getPath({
+                skills: thirdMapHierarchy,
+                learningUnits: structuredPathOfLus,
                 goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
                 knowledge: [],
                 fnCost: () => 1,
@@ -242,7 +360,7 @@ describe("Path Planer", () => {
             }
             // Test: Verify that path has changed
             const pathLus = path.path.map(partialPath => partialPath.origin);
-            const changedPathLus = changedPath?.pop()!.path.map(partialPath => partialPath.origin);
+            const changedPathLus = changedPath.path.map(partialPath => partialPath.origin);
 
             expect(changedPathLus).toEqual(pathLus);
         });
@@ -275,6 +393,15 @@ describe("Path Planer", () => {
                     }
                 }
             );
+        });
+
+        it("Apply constraints on empty learning unit list", async () => {
+            const repeatingSkillsLus: LearningUnit[] = [];
+
+            // Test: Simulate
+            await computeSuggestedSkills(repeatingSkillsLus, async () => {});
+
+            expect(repeatingSkillsLus).toEqual([]);
         });
     });
 });
@@ -316,4 +443,8 @@ function newLearningUnit(
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
     };
+}
+
+function extractPath(potentialPath: PotentialNode<LearningUnit>): string[] {
+    return potentialPath.id ? [potentialPath.id].concat(extractPath(potentialPath.parent)) : [];
 }

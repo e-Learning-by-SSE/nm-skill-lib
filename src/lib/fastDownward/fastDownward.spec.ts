@@ -1028,6 +1028,35 @@ describe("FastDownward v2", () => {
             }
         ];
 
+        it("find a path including composite unit without selector and composite couldn't be resolved", () => {
+            const units = lus.slice();
+            // Remove learning unit "lu:16"
+            units.splice(5, 1);
+            // Remove learning unit "lu:06"
+            units.splice(7, 1);
+
+            units.push({
+                ...newLearningUnit(skillMap, "cu:1", ["sk:3"], ["sk:6"]),
+                author: "",
+                department: "",
+                isComposite: true
+            });
+
+            const paths = search({
+                allSkills: skillMap,
+                allUnits: units,
+                goal: [skillMap[6]],
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: compositeGuard,
+                costOptions: DefaultCostParameter
+            });
+
+            const path = paths?.pop()!;
+
+            expect(path).toBeUndefined();
+        });
+
         it("find a path including composite unit without selector", () => {
             const units = lus.slice();
 
