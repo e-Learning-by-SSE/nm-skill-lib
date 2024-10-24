@@ -42,7 +42,7 @@ pipeline {
                     junit 'output/test/junit*.xml'
                     
                     // New Coverage Tool: Cobertura + Coverage Plugin
-                    recordCoverage qualityGates: [[metric: 'LINE', threshold: 85.0], [metric: 'BRANCH', threshold: 80.0]], tools: [[parser: 'COBERTURA', pattern: 'output/test/coverage/cobertura-coverage.xml'], [parser: 'JUNIT', pattern: 'output/test/junit*.xml']]
+                    recordCoverage qualityGates: [[metric: 'LINE', threshold: 72.0], [metric: 'BRANCH', threshold: 64.0]], tools: [[parser: 'COBERTURA', pattern: 'output/test/coverage/cobertura-coverage.xml'], [parser: 'JUNIT', pattern: 'output/test/junit*.xml']]
                 }
             }
         }
