@@ -8,8 +8,9 @@ import {
     UpdateSoftConstraintFunction,
     Selector,
     isCompositeGuard,
-    PartialPath,
-    PotentialNode
+    Path,
+    PotentialNode,
+    AnalyzedPath
 } from "./types";
 import { CostFunction, CostOptions, DefaultCostParameter } from "./fastDownward/fdTypes";
 import {
@@ -18,7 +19,7 @@ import {
     skillAnalysis
 } from "./backward-search/backward-search";
 import { search } from "./fastDownward/fastDownward";
-import { findCycles } from "./analysis";
+import { detectCycles } from "./analysis";
 
 /**
  * Returns a connected graph for the given set of skills.
@@ -60,6 +61,20 @@ export function isAcyclic(
 }
 
 /**
+ * Detects cycles in the given set of Skills and LearningUnits.
+ * However, there exist corner cases that are not covered by this function.
+ * @param skills The Skills to check. Will also check for cycles in the nestedSkills.
+ * @param learningUnits The LearningUnits to check. Will check for cycles among the requiredSkills/suggestions and teachingGoals.
+ * @returns An empty array if no cycles were detected or an array of detected cycles.
+ */
+export function findCycles<S extends Skill, LU extends LearningUnit>(
+    skills: ReadonlyArray<S>,
+    learningUnits?: ReadonlyArray<LU>
+) {
+    return detectCycles(skills, learningUnits!);
+}
+
+/**
  * Returns the path from the root node to the given skill in the graph.
  * @param skills The set of skills to include in the graph.
  * @param goal The goal definition to use for finding the path (the skills to be learned via the path).
@@ -87,7 +102,7 @@ export function getPath<LU extends LearningUnit>({
     isComposite: isCompositeGuard<LU>;
     costOptions: CostOptions;
     selectors?: Selector<LU>[];
-}): PartialPath<LU> | null {
+}): Path<LU> | null {
     const paths = getPaths({
         skills,
         goal,
@@ -141,7 +156,7 @@ export function getPaths<LU extends LearningUnit>({
     costOptions: CostOptions;
     selectors?: Selector<LU>[];
     alternatives: number;
-}): PartialPath<LU>[] | null {
+}): Path<LU>[] | null {
     // const startTime = new Date().getTime();
 
     const [inScopeLearningUnits, inScopeSkills] = filterForUnitsAndSkills(
@@ -247,7 +262,7 @@ export function getSkillAnalysis<LU extends LearningUnit>({
     goal: Skill[];
     learningUnits: ReadonlyArray<LU>;
     knowledge: Skill[];
-}): PotentialNode<LearningUnit>[] | null {
+}): AnalyzedPath<LU>[] | null {
     const skillAnalyzedPath = skillAnalysis(goal, learningUnits, skills, knowledge);
 
     return skillAnalyzedPath;

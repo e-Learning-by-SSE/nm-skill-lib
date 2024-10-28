@@ -105,6 +105,7 @@ describe("Backward Search Tests", () => {
             expect(checkGraph(graph, expectedGraph)).toBeTruthy();
         });
     });
+
     describe("missing skills test", () => {
         const firstMap: Skill[] = [
             { id: "sk:1", repositoryId: "1", nestedSkills: [] },
@@ -160,11 +161,12 @@ describe("Backward Search Tests", () => {
                 []
             );
 
-            const path = extractPath(analysis[0]);
+            const analysisPath = analysis[0].path.map(unit => unit.id);
 
             // Assert: Find missing skill:
-            expect(analysis![0].missingSkill).toBe("sk:8");
-            expect(path).toEqual(["sk:8", "sk:7"]);
+            expect(analysis[0].missingSkill).toBe("sk:8");
+            expect(analysis[0].fullPath).toStrictEqual(["sk:8", "sk:7"]);
+            expect(analysisPath).toStrictEqual([]);
         });
 
         it("No missing skill", () => {
@@ -205,12 +207,13 @@ describe("Backward Search Tests", () => {
                 []
             );
 
-            const path = extractPath(analysis[0]);
+            const analysisPath = analysis[0].path.map(unit => unit.id);
 
             // Assert: Finds missing skill and nested skills:
             expect(analysis.length).toBeGreaterThan(0);
             expect(analysis[0].missingSkill).toBe("sk:2");
-            expect(path).toEqual(["sk:2", "lu:12", "sk:3"]);
+            expect(analysis[0].fullPath).toStrictEqual(["sk:2", "lu:12", "sk:3"]);
+            expect(analysisPath).toStrictEqual(["lu:12"]);
         });
 
         it("Analysis missing skills and nested skills", () => {
@@ -233,12 +236,20 @@ describe("Backward Search Tests", () => {
                 []
             );
 
-            const path = extractPath(analysis[0]);
+            const analysisPath = analysis[0].path.map(unit => unit.id);
 
             // Assert: Finds missing skill and nested skills:
             expect(analysis.length).toBeGreaterThan(0);
             expect(analysis[0].missingSkill).toBe("sk:12");
-            expect(path).toEqual(["sk:12", "sk:10", "sk:9", "lu:9", "sk:8", "sk:7"]);
+            expect(analysis[0].fullPath).toStrictEqual([
+                "sk:12",
+                "sk:10",
+                "sk:9",
+                "lu:9",
+                "sk:8",
+                "sk:7"
+            ]);
+            expect(analysisPath).toStrictEqual(["lu:9"]);
         });
 
         it("Analysis missing skills with a sub paths", () => {
@@ -258,12 +269,21 @@ describe("Backward Search Tests", () => {
                 []
             );
 
-            const path = extractPath(analysis[0]);
+            const analysisPath = analysis[0].path.map(unit => unit.id);
 
             // Assert: Finds missing skill with sub path:
             expect(analysis.length).toBeGreaterThan(0);
             expect(analysis[0].missingSkill).toBe("sk:1");
-            expect(path).toEqual(["sk:1", "lu:12", "sk:3", "lu:13", "sk:4", "lu:14", "sk:5"]);
+            expect(analysis[0].fullPath).toStrictEqual([
+                "sk:1",
+                "lu:12",
+                "sk:3",
+                "lu:13",
+                "sk:4",
+                "lu:14",
+                "sk:5"
+            ]);
+            expect(analysisPath).toStrictEqual(["lu:12", "lu:13", "lu:14"]);
         });
 
         it("Analysis missing skills with nested skills", () => {
@@ -290,12 +310,13 @@ describe("Backward Search Tests", () => {
                 []
             );
 
-            const path = extractPath(analysis[0]);
+            const analysisPath = analysis[0].path.map(unit => unit.id);
 
             // Assert: Finds missing skill with nested skills:
             expect(analysis.length).toBeGreaterThan(0);
             expect(analysis[0].missingSkill).toBe("sk:6");
-            expect(path).toEqual(["sk:6", "sk:4", "sk:5"]);
+            expect(analysis[0].fullPath).toStrictEqual(["sk:6", "sk:4", "sk:5"]);
+            expect(analysisPath).toStrictEqual([]);
         });
 
         it("Analysis missing skills with multiple nested skills", () => {
@@ -331,14 +352,16 @@ describe("Backward Search Tests", () => {
                 []
             );
 
-            const path = extractPath(analysis[0]);
+            const analysisPath = analysis[0].path.map(unit => unit.id);
 
             // Assert: Finds missing skill with nested skills:
-            expect(analysis!.length).toBeGreaterThan(0);
-            expect(analysis![0].missingSkill).toBe("sk:13");
-            expect(path).toEqual(["sk:13", "sk:7", "sk:6", "sk:8"]);
+            expect(analysis.length).toBeGreaterThan(0);
+            expect(analysis[0].missingSkill).toBe("sk:13");
+            expect(analysis[0].fullPath).toStrictEqual(["sk:13", "sk:7", "sk:6", "sk:8"]);
+            expect(analysisPath).toStrictEqual([]);
         });
     });
+
     describe("Backward Search Tests", () => {
         const largeSkillMap: Skill[] = [];
         const largeLearningUnits: LearningUnit[] = [];
@@ -384,7 +407,7 @@ describe("Backward Search Tests", () => {
 
         it("filter learning units 'without knowledge'", () => {
             const goal = largeSkillMap.find(skill => skill.id === "sk:8")!;
-            const knowledge = [];
+            const knowledge: Skill[] = [];
 
             const [inScopeLearningUnits] = filterForUnitsAndSkills(
                 [goal],
@@ -412,7 +435,7 @@ describe("Backward Search Tests", () => {
 
         it("filter learning units with parent skills 'without knowledge'", () => {
             const goal = parentSkillMap.filter(skill => skill.id === "sk:8");
-            const knowledge = [];
+            const knowledge: Skill[] = [];
             const [inScopeLearningUnits] = filterForUnitsAndSkills(
                 goal,
                 parentLearningUnit,
@@ -438,7 +461,7 @@ describe("Backward Search Tests", () => {
 
         it("filter learning units with nested parent skills 'without knowledge'", () => {
             const goal = parentSkillMap.filter(skill => skill.id === "sk:10");
-            const knowledge = [];
+            const knowledge: Skill[] = [];
             const [inScopeLearningUnits] = filterForUnitsAndSkills(
                 goal,
                 parentLearningUnit,
@@ -451,7 +474,7 @@ describe("Backward Search Tests", () => {
 
         it("filter learning units with same required skills 'without knowledge'", () => {
             const goal = parentSkillMap.filter(skill => skill.id === "sk:12");
-            const knowledge = [];
+            const knowledge: Skill[] = [];
             const [inScopeLearningUnits] = filterForUnitsAndSkills(
                 goal,
                 parentLearningUnit,
@@ -520,6 +543,6 @@ function buildGraph(nodeName: string, graph: Graph): GraphNode {
     return graphNode;
 }
 
-function extractPath(potentialPath: PotentialNode<LearningUnit>): string[] {
-    return potentialPath.id ? [potentialPath.id].concat(extractPath(potentialPath.parent)) : [];
+function extractPath(potentialNode: PotentialNode<LearningUnit>): string[] {
+    return potentialNode.id ? [potentialNode.id].concat(extractPath(potentialNode.parent)) : [];
 }

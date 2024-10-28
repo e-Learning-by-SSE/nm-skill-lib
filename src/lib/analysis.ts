@@ -9,9 +9,9 @@ import { CycledSkills, LearningUnit, Skill } from "./types";
  * @param learningUnits The LearningUnits to check. Will check for cycles among the requiredSkills/suggestions and teachingGoals.
  * @returns An empty array if no cycles were detected or an array of detected cycles.
  */
-export function findCycles<S extends Skill, LU extends LearningUnit>(
+export function detectCycles<S extends Skill, LU extends LearningUnit>(
     skills: ReadonlyArray<S>,
-    learningUnits: ReadonlyArray<LU>
+    learningUnits?: ReadonlyArray<LU>
 ) {
     // Mapping of internal IDs to objects
     const mapping = new Map<string, S | LU>();
@@ -25,7 +25,7 @@ export function findCycles<S extends Skill, LU extends LearningUnit>(
     }
 
     // Build graph
-    const graph = createGoalsGraph(skills.slice(), learningUnits, skills.slice(), []);
+    const graph = createGoalsGraph(skills.slice(), learningUnits!, skills.slice(), []);
 
     const result: (S | LU)[][] = [];
 
@@ -54,7 +54,7 @@ export function findCycles<S extends Skill, LU extends LearningUnit>(
 export function findParentsOfCycledSkills<S extends Skill>(
     skills: ReadonlyArray<S>
 ): CycledSkills<S> | null {
-    const cycles = findCycles(skills, []);
+    const cycles = detectCycles(skills, []);
 
     if (cycles.length === 0) {
         return null;

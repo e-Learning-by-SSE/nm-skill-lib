@@ -1,4 +1,4 @@
-import { findCycles, findParentsOfCycledSkills } from "./analysis";
+import { detectCycles, findParentsOfCycledSkills } from "./analysis";
 import { LearningUnit, Skill } from "./types";
 
 describe("find cycles analysis", () => {
@@ -11,7 +11,18 @@ describe("find cycles analysis", () => {
         { id: "sk:3", repositoryId: "1", nestedSkills: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
 
-    describe("findCycles", () => {
+    describe("detectCycles", () => {
+        /**
+         * Tests:
+         * Empty skills list
+         */
+        it("Empty skills list -> No Cycles", () => {
+            const structuredMap: Skill[] = [];
+
+            const cycles = detectCycles(structuredMap);
+            expect(cycles).toEqual([]);
+        });
+
         /**
          * Tests:
          * SK1 -> SK2 -> SK4 has no cycles
@@ -25,7 +36,7 @@ describe("find cycles analysis", () => {
                 { id: "sk:5", repositoryId: "1", nestedSkills: [] }
             ];
 
-            const cycles = findCycles(structuredMap, []);
+            const cycles = detectCycles(structuredMap);
             expect(cycles).toEqual([]);
         });
 
@@ -42,7 +53,7 @@ describe("find cycles analysis", () => {
                 { id: "sk:5", repositoryId: "1", nestedSkills: [] }
             ];
 
-            const cycles = findCycles(structuredMap, []);
+            const cycles = detectCycles(structuredMap);
             expect(cycles.length).toEqual(1);
 
             const expectedIDs = ["sk:1", "sk:2", "sk:4"];
@@ -70,7 +81,7 @@ describe("find cycles analysis", () => {
                 newLearningUnit(firstMap, "lu:3", ["sk:2"], ["sk:3"])
             ];
 
-            const cycles = findCycles(skillMap, learningUnits);
+            const cycles = detectCycles(skillMap, learningUnits);
             expect(cycles).toEqual([]);
         });
 
@@ -91,7 +102,7 @@ describe("find cycles analysis", () => {
                 newLearningUnit(firstMap, "lu:3", ["sk:2"], ["sk:3"])
             ];
 
-            const cycles = findCycles(skillMap, learningUnits);
+            const cycles = detectCycles(skillMap, learningUnits);
             expect(cycles.length).toEqual(1);
 
             // All elements are affected (Skills & LUs)
@@ -117,7 +128,7 @@ describe("find cycles analysis", () => {
                 newLearningUnit(firstMap, "lu:1", ["sk:2"], ["sk:1"])
             ];
 
-            const cycles = findCycles(structuredMap, learningUnits);
+            const cycles = detectCycles(structuredMap, learningUnits);
             expect(cycles).toEqual([]);
         });
 
@@ -136,7 +147,7 @@ describe("find cycles analysis", () => {
                 newLearningUnit(firstMap, "lu:1", ["sk:1"], ["sk:2"])
             ];
 
-            const cycles = findCycles(structuredMap, learningUnits);
+            const cycles = detectCycles(structuredMap, learningUnits);
             expect(cycles.length).toEqual(1);
 
             // All elements are affected, except for SK3
@@ -168,7 +179,7 @@ describe("find cycles analysis", () => {
                 )
             ];
 
-            const cycles = findCycles(skillMap, learningUnits);
+            const cycles = detectCycles(skillMap, learningUnits);
             expect(cycles).toEqual([]);
         });
 
@@ -190,7 +201,7 @@ describe("find cycles analysis", () => {
                 newLearningUnit(skillMap, "lu:2", ["sk:2"], ["sk:3"])
             ];
 
-            const cycles = findCycles(skillMap, learningUnits);
+            const cycles = detectCycles(skillMap, learningUnits);
             expect(cycles.length).toEqual(1);
 
             // All elements are affected, except for SK1

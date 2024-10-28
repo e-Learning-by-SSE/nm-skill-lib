@@ -3,7 +3,7 @@
  * which are explicity written to support debugging.
  * Tests meaningful output and avoidance of null pointers.
  */
-import { LearningUnit, PartialPath, Skill } from "../types";
+import { LearningUnit, Path, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
 import { GlobalKnowledge } from "./global-knowledge";
 import { SearchNode } from "./searchNode";
@@ -68,7 +68,7 @@ describe("toString() methods", () => {
             // Initial node
             let cost = 0;
             let node = new SearchNode<LearningUnit>(emptyState, null, null, cost, 0);
-            let unit: PartialPath<LearningUnit> = new PartialPath<LearningUnit>();
+            let unit: Path<LearningUnit> = new Path<LearningUnit>();
             expect(node.toString()).toBe(` (${cost})`);
 
             // Unit 1
@@ -80,7 +80,7 @@ describe("toString() methods", () => {
 
             // Unit 2
             cost = 21;
-            unit = new PartialPath<LearningUnit>();
+            unit = new Path<LearningUnit>();
             unit.cost = cost;
             unit.origin = units[1];
             node = new SearchNode<LearningUnit>(emptyState, unit, node, cost, 0);
@@ -88,7 +88,7 @@ describe("toString() methods", () => {
 
             // Unit 3
             cost = 42;
-            unit = new PartialPath<LearningUnit>();
+            unit = new Path<LearningUnit>();
             unit.cost = cost;
             unit.origin = units[2];
             node = new SearchNode<LearningUnit>(emptyState, unit, node, cost, 0);

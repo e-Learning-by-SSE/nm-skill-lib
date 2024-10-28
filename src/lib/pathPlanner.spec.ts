@@ -11,6 +11,7 @@ import {
 } from "./types";
 import {
     computeSuggestedSkills,
+    findCycles,
     getConnectedGraphForLearningUnit,
     getConnectedGraphForSkill,
     getPath,
@@ -192,11 +193,10 @@ describe("Path Planer", () => {
                 knowledge: []
             })!;
 
-            const path = extractPath(analysis[0]);
-
             // Assert: Find missing skill:
-            expect(analysis[0].missingSkill).toBe("sk:8");
-            expect(path).toEqual(["sk:8", "sk:7"]);
+            expect(analysis![0].missingSkill).toBe("sk:8");
+            expect(analysis![0].fullPath).toEqual(["sk:8", "sk:7"]);
+            expect(analysis![0].path).toEqual([]);
         });
     });
 
@@ -417,6 +417,34 @@ describe("Path Planer", () => {
             await computeSuggestedSkills(repeatingSkillsLus, async () => {});
 
             expect(repeatingSkillsLus).toEqual([]);
+        });
+    });
+
+    describe("find Cycles", () => {
+        it("find cycles in skills -> There are no cycles", () => {
+            const structuredMap: Skill[] = [
+                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
+                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
+                { id: "sk:4", repositoryId: "1", nestedSkills: [] },
+                { id: "sk:5", repositoryId: "1", nestedSkills: [] }
+            ];
+
+            const cycles = findCycles(structuredMap);
+            expect(cycles).toEqual([]);
+        });
+
+        it("find cycles in skills -> There are cycles", () => {
+            const structuredMap: Skill[] = [
+                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
+                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
+                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
+                { id: "sk:4", repositoryId: "1", nestedSkills: ["sk:1"] },
+                { id: "sk:5", repositoryId: "1", nestedSkills: [] }
+            ];
+
+            const cycles = findCycles(structuredMap);
+            expect(cycles.length).toBeGreaterThan(0);
         });
     });
 });

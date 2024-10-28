@@ -1,5 +1,5 @@
 import { filterForUnitsAndSkills } from "../backward-search/backward-search";
-import { isCompositeGuard, LearningUnit, PartialPath, Selector, Skill, Unit } from "../types";
+import { isCompositeGuard, LearningUnit, Path, Selector, Skill, Unit } from "../types";
 import { DistanceMap } from "./distanceMap";
 import { CostFunction, HeuristicFunction, CostOptions, DefaultCostParameter } from "./fdTypes";
 import { GlobalKnowledge } from "./global-knowledge";
@@ -89,7 +89,7 @@ export function search<LU extends LearningUnit>({
     ) {
         // Sorted list of states to be analyzed
         const openList: SearchNodeList<LU> = new SearchNodeList<LU>(initialState);
-        const Paths: PartialPath<LU>[] = [];
+        const Paths: Path<LU>[] = [];
 
         while (!openList.isEmpty()) {
             const currentNode = openList.pop()!;
@@ -111,7 +111,7 @@ export function search<LU extends LearningUnit>({
             for (const unit of eligibleUnits(currentNode.state, scopedUnits)) {
                 // Fictive cost of learning this unit via the used path
                 let cost: number;
-                let subPath: PartialPath<LU> = new PartialPath<LU>();
+                let subPath: Path<LU> = new Path<LU>();
                 if (isComposite(unit)) {
                     // Resolve composite
                     subPath = recursiveSearch(
@@ -187,7 +187,7 @@ function generateHeuristic<LU extends LearningUnit>(
 }
 
 function generateResult<LU extends LearningUnit>(node: SearchNode<Unit<LU>>) {
-    const result = new PartialPath<LU>();
+    const result = new Path<LU>();
     result.cost = node.cost;
     while (node.parent !== null) {
         const lu = node.action;

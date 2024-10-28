@@ -5,7 +5,7 @@ import {
     Unit,
     CompositeUnit,
     Selector,
-    PartialPath
+    Path
 } from "../types";
 
 import { CostFunction, DefaultCostParameter } from "./fdTypes";
@@ -1382,7 +1382,7 @@ describe("FastDownward v2", () => {
 });
 
 function expectPath(
-    path: PartialPath<LearningUnit> | null,
+    path: Path<LearningUnit> | null,
     expectedPaths: string[][] | null,
     cost?: number
 ) {

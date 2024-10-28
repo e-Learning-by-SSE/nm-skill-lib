@@ -1,4 +1,4 @@
-import { LearningUnit, PartialPath } from "../types";
+import { LearningUnit, Path } from "../types";
 import { State } from "./state";
 
 /**
@@ -9,7 +9,7 @@ export class SearchNode<LU extends LearningUnit> {
         public state: State,
         // The applied LearningUnit to reach this node from its predecessor
         // The root node has no action, all others must have one
-        public action: PartialPath<LU> | null,
+        public action: Path<LU> | null,
         public parent: SearchNode<LU> | null,
         public cost: number, // Cost from the start node
         public heuristic: number // Heuristic total cost (real cost to current state + estimated cost to goal)

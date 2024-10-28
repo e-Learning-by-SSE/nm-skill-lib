@@ -1,4 +1,4 @@
-import { isSkill, LearningUnit, PotentialNode, Skill, Unit } from "../..";
+import { isSkill, LearningUnit, PotentialNode, Skill, AnalyzedPath, Unit } from "../..";
 import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 import { Graph as GraphLib } from "@dagrejs/graphlib";
 
@@ -37,7 +37,7 @@ export function skillAnalysis<LU extends LearningUnit>(
     allUnits: ReadonlyArray<Unit<LU>>,
     allSkills: ReadonlyArray<Skill>,
     knowledge: Skill[]
-): PotentialNode<LU>[] {
+): AnalyzedPath<LU>[] {
     // Create a potential graph that holds the potential learning units and skills
     const graph = createGoalsGraph(goals, allUnits, allSkills, knowledge);
 
@@ -105,8 +105,22 @@ export function skillAnalysis<LU extends LearningUnit>(
         return luChildrenCount == 0;
     }
 
+    const analyzedPaths: AnalyzedPath<LU>[] = [];
+
+    // Filter paths where the node in the end of the path have a Missing Skill
+    const pathsMissingSkills = paths.filter(path => path.missingSkill);
+
+    // Convert PotentialNode to analyzedPath where analyzedPath has a missing skill and learning unit path (LU[])
+    pathsMissingSkills.forEach(potentialNode => {
+        const analyzedPath = new AnalyzedPath<LU>();
+        analyzedPath.missingSkill = potentialNode.missingSkill;
+        analyzedPath.path = getAnalyzedPath(potentialNode, allUnits);
+        analyzedPath.fullPath = getFullAnalyzedPath(potentialNode);
+        analyzedPaths.push(analyzedPath);
+    });
+
     // Return only paths where the node in the end of the path have a Missing Skill
-    return paths.filter(path => path.missingSkill);
+    return analyzedPaths;
 }
 
 /**
@@ -219,19 +233,21 @@ export function createGoalsGraph<LU extends LearningUnit>(
         graph.setNode(skillName, skill);
 
         // find potential learning units using the goals for the them
-        const potentialGoalsUnits = allUnits!.filter(lu =>
-            lu.teachingGoals.some(sk => sk.id == skill.id)
-        );
+        if (allUnits) {
+            const potentialGoalsUnits = allUnits.filter(lu =>
+                lu.teachingGoals.some(sk => sk.id == skill.id)
+            );
 
-        // Create a node in the graph for each potential learning units
-        // Create a edge from the skill (source) to each learning unit (sink)
-        // Add the new nodes (potential learning units) to the nodes list for analyzing
-        potentialGoalsUnits.forEach(lu => {
-            const luName = "lu" + lu.id;
-            graph.setNode(luName, lu);
-            graph.setEdge(skillName, luName);
-            nodes.unshift(lu);
-        });
+            // Create a node in the graph for each potential learning units
+            // Create a edge from the skill (source) to each learning unit (sink)
+            // Add the new nodes (potential learning units) to the nodes list for analyzing
+            potentialGoalsUnits.forEach(lu => {
+                const luName = "lu" + lu.id;
+                graph.setNode(luName, lu);
+                graph.setEdge(skillName, luName);
+                nodes.unshift(lu);
+            });
+        }
 
         // Create a node in the graph for each nested skills
         // Create a edge from the skill (source) to each nested skills (sink)
@@ -291,4 +307,32 @@ export function createGoalsGraph<LU extends LearningUnit>(
 
     // Return the potential graph for learning units and skills
     return graph;
+}
+
+/**
+ * extract a list of learning unit from a PotentialNode path
+ */
+export function getAnalyzedPath<LU extends LearningUnit>(
+    potentialNode: PotentialNode<LU>,
+    allUnits: ReadonlyArray<Unit<LU>>
+): LU[] {
+    if (potentialNode.id) {
+        const unit = allUnits.find(unit => unit.id == potentialNode.id);
+        return unit
+            ? [unit].concat(getAnalyzedPath(potentialNode.parent, allUnits))
+            : getAnalyzedPath(potentialNode.parent, allUnits);
+    }
+
+    return [];
+}
+
+/**
+ * extract a full list of the path including skills and learning unit from a PotentialNode path
+ */
+export function getFullAnalyzedPath<LU extends LearningUnit>(
+    potentialNode: PotentialNode<LU>
+): string[] {
+    return potentialNode.id
+        ? [potentialNode.id].concat(getFullAnalyzedPath(potentialNode.parent))
+        : [];
 }
