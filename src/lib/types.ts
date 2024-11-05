@@ -1,49 +1,69 @@
 export type Graph = {
-	nodes: Node[];
-	edges: Edge[];
+    nodes: Node[];
+    edges: Edge[];
 };
 
 export type Skill = {
-	id: string;
-	repositoryId: string;
-	nestedSkills: string[];
+    id: string;
+    repositoryId: string;
+    nestedSkills: string[];
 };
 
 export const isSkill = (element: Skill | LearningUnit): element is Skill => {
-	return (element as Skill).repositoryId !== undefined;
+    return (element as Skill).repositoryId !== undefined;
 };
 
 export type Edge = {
-	from: string;
-	to: string;
+    from: string;
+    to: string;
 };
+
+export type Unit<LU extends LearningUnit> = CompositeUnit<LU> | LU;
 
 export type LearningUnit = {
-	id: string;
-	mediaTime?: number;
-	words?: number;
-	requiredSkills: Skill[];
-	teachingGoals: Skill[];
-	suggestedSkills: { weight: number; skill: Skill }[];
+    id: string;
+    mediaTime?: number;
+    words?: number;
+    requiredSkills: Skill[];
+    teachingGoals: Skill[];
+    suggestedSkills: { weight: number; skill: Skill }[];
 };
 
+export type CompositeUnit<LU extends LearningUnit> = {
+    selectors?: Selector<LU>[];
+} & LU;
+
+export type Selector<LU extends LearningUnit> = (unit: Unit<LU>) => boolean;
+
+export type isCompositeGuard<LU extends LearningUnit> = (
+    element: Unit<LU>
+) => element is CompositeUnit<LU>;
+
 export const isLearningUnit = (element: Skill | LearningUnit): element is LearningUnit => {
-	return (element as LearningUnit).teachingGoals !== undefined;
+    return (element as LearningUnit).teachingGoals !== undefined;
 };
 
 export type Node = {
-	id: string;
-	element: Skill | LearningUnit;
+    id: string;
+    element: Skill | LearningUnit;
 };
 
-export class Path {
-	cost: number = 0;
-	path: LearningUnit[] = [];
+export class Path<LU extends LearningUnit> {
+    cost: number = 0;
+    path: Path<LU>[] = [];
+    origin: Unit<LU> | null = null;
 }
 
-export class SkillAnalyzedPath {
-	missingSkill: string;
-	subPath: Path;
+export class PotentialNode<LU extends LearningUnit> {
+    id: string;
+    parent: PotentialNode<LU>;
+    missingSkill: string;
+}
+
+export class AnalyzedPath<LU extends LearningUnit> {
+    path: LU[] = [];
+    fullPath: string[] = [];
+    missingSkill: string;
 }
 
 /**
@@ -103,11 +123,11 @@ export class SkillAnalyzedPath {
  * ```
  */
 export type UpdateSoftConstraintFunction = (
-	learningUnit: LearningUnit,
-	missingSkills: string[]
+    learningUnit: LearningUnit,
+    missingSkills: string[]
 ) => Promise<void>;
 
 export type CycledSkills<S extends Skill> = {
-	cycles: S[][];
-	nestingSkills: S[];
+    cycles: S[][];
+    nestingSkills: S[];
 };
