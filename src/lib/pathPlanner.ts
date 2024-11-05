@@ -9,7 +9,6 @@ import {
     Selector,
     isCompositeGuard,
     Path,
-    PotentialNode,
     AnalyzedPath
 } from "./types";
 import { CostFunction, CostOptions, DefaultCostParameter } from "./fastDownward/fdTypes";
@@ -28,7 +27,7 @@ import { detectCycles } from "./analysis";
  */
 export function getConnectedGraphForSkill(skills: ReadonlyArray<Skill>): Graph {
     // Goals is equal to skills to get full graph
-    const graph = createGoalsGraph(skills.slice(), [], skills.slice(), []);
+    const graph = createGoalsGraph(skills.slice(), skills.slice());
     return buildReturnGraph(graph);
 }
 
@@ -43,7 +42,7 @@ export function getConnectedGraphForLearningUnit(
     skills: ReadonlyArray<Skill>
 ): Graph {
     // Goals is equal to skills to get full graph
-    const graph = createGoalsGraph(skills.slice(), learningUnits, skills.slice(), []);
+    const graph = createGoalsGraph(skills.slice(), skills.slice(), learningUnits);
     return buildReturnGraph(graph);
 }
 

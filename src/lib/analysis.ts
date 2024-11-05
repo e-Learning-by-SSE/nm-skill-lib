@@ -25,7 +25,7 @@ export function detectCycles<S extends Skill, LU extends LearningUnit>(
     }
 
     // Build graph
-    const graph = createGoalsGraph(skills.slice(), learningUnits!, skills.slice(), []);
+    const graph = createGoalsGraph(skills.slice(), skills.slice(), learningUnits);
 
     const result: (S | LU)[][] = [];
 

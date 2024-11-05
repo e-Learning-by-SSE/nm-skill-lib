@@ -39,7 +39,7 @@ export function skillAnalysis<LU extends LearningUnit>(
     knowledge: Skill[]
 ): AnalyzedPath<LU>[] {
     // Create a potential graph that holds the potential learning units and skills
-    const graph = createGoalsGraph(goals, allUnits, allSkills, knowledge);
+    const graph = createGoalsGraph(goals, allSkills, allUnits, knowledge);
 
     // A potential paths list
     const paths: PotentialNode<LU>[] = [];
@@ -141,7 +141,7 @@ export function filterForUnitsAndSkills<LU extends LearningUnit>(
     knowledge: Skill[]
 ): [LU[], Skill[]] {
     // Create a potential graph that holds the potential learning units and skills
-    const graph = createGoalsGraph(goals, allUnits, allSkills, knowledge);
+    const graph = createGoalsGraph(goals, allSkills, allUnits, knowledge);
 
     // Extract the potential learning unit nodes from the potential graph
     const lus = graph
@@ -187,9 +187,9 @@ export function filterForUnitsAndSkills<LU extends LearningUnit>(
  */
 export function createGoalsGraph<LU extends LearningUnit>(
     goals: Skill[],
-    allUnits: ReadonlyArray<Unit<LU>>,
     allSkills: ReadonlyArray<Skill>,
-    knowledge: Skill[],
+    allUnits?: ReadonlyArray<Unit<LU>>,
+    knowledge?: Skill[],
     suggestions: boolean = true
 ): GraphLib {
     // Extract the parent/children relation from all the skills
@@ -210,7 +210,7 @@ export function createGoalsGraph<LU extends LearningUnit>(
         // Skip processed nodes (learning units and skills) and skills in the knowledge of the user
         if (
             processedNodes.includes(node!.id) ||
-            knowledge.map(skill => skill.id).includes(node!.id)
+            knowledge?.map(skill => skill.id).includes(node!.id)
         ) {
             continue;
         }

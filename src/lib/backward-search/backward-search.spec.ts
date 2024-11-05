@@ -34,9 +34,8 @@ describe("Backward Search Tests", () => {
             // Test: Compute paths
             const graph = createGoalsGraph(
                 [...firstMap.filter(skill => skill.id === "sk:3")],
-                [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
-                []
+                [...multipleRequirementsOfLu, ...structuredPathOfLus]
             );
 
             const units = graph.nodes().filter(node => node.startsWith("lu"));
@@ -51,8 +50,8 @@ describe("Backward Search Tests", () => {
             // Test: Compute paths
             const graph = createGoalsGraph(
                 [...thirdMapHierarchy.filter(skill => skill.id === "sk:7")],
-                [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
+                [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...thirdMapHierarchy.filter(skill => skill.id === "sk:9")]
             );
 
@@ -68,9 +67,8 @@ describe("Backward Search Tests", () => {
             // Test: Compute paths
             const graph = createGoalsGraph(
                 [...firstMap.filter(skill => skill.id === "sk:3")],
-                [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
-                []
+                [...multipleRequirementsOfLu, ...structuredPathOfLus]
             );
 
             // Assert: graph starting node for a goal skill:
@@ -83,9 +81,8 @@ describe("Backward Search Tests", () => {
             // Test: Compute paths
             const graph = createGoalsGraph(
                 [...firstMap.filter(skill => skill.id === "sk:3")],
-                [...multipleRequirementsOfLu, ...structuredPathOfLus],
                 [...firstMap, ...thirdMapHierarchy],
-                []
+                [...multipleRequirementsOfLu, ...structuredPathOfLus]
             );
 
             const expectedGraph: GraphNode = {
