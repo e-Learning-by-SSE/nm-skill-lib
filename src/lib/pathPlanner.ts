@@ -261,8 +261,6 @@ export function getSkillAnalysis<LU extends LearningUnit>({
     goal: Skill[];
     learningUnits: ReadonlyArray<LU>;
     knowledge: Skill[];
-}): AnalyzedPath<LU>[] | null {
-    const skillAnalyzedPath = skillAnalysis(goal, learningUnits, skills, knowledge);
-
-    return skillAnalyzedPath;
+}) {
+    return skillAnalysis(goal, learningUnits, skills, knowledge);
 }
