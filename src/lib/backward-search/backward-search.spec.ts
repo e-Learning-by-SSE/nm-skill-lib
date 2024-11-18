@@ -1,6 +1,9 @@
 import { Graph } from "@dagrejs/graphlib";
 import { LearningUnit, PotentialNode, Skill } from "../types";
 import { createGoalsGraph, filterForUnitsAndSkills, skillAnalysis } from "./backward-search";
+import { And } from "../ast/and";
+import { Variable } from "../ast/variable";
+import { Empty } from "../ast/empty";
 
 describe("Backward Search Tests", () => {
     describe("a graph for a goal(s)", () => {
@@ -371,7 +374,9 @@ describe("Backward Search Tests", () => {
         }
 
         for (let index = 1; index < 100; index++) {
-            largeLearningUnits[index].requiredSkills.push(largeSkillMap[index - 1]);
+            largeLearningUnits[index].requiredSkills = new And([
+                new Variable(largeSkillMap[index - 1])
+            ]);
         }
 
         const parentSkillMap: Skill[] = [
@@ -501,9 +506,15 @@ function newLearningUnit(
         }
     }
 
+    const variables = map
+        .filter(skill => requiredSkills.includes(skill.id))
+        .map(skill => new Variable(skill));
+
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty(variables);
+
     return {
         id: id,
-        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        requiredSkills: skillExpression,
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
     };

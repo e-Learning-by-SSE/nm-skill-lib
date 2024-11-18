@@ -3,6 +3,9 @@
  * which are explicity written to support debugging.
  * Tests meaningful output and avoidance of null pointers.
  */
+import { And } from "../ast/and";
+import { Empty } from "../ast/empty";
+import { Variable } from "../ast/variable";
 import { LearningUnit, Path, Skill } from "../types";
 import { DistanceMap } from "./distanceMap";
 import { GlobalKnowledge } from "./global-knowledge";
@@ -105,9 +108,15 @@ function newLearningUnit(
     requiredSkills: string[],
     teachingGoals: string[]
 ) {
+    const variables = map
+        .filter(skill => requiredSkills.includes(skill.id))
+        .map(skill => new Variable(skill));
+
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty(variables);
+
     return {
         id: id,
-        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        requiredSkills: skillExpression,
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: []
     };

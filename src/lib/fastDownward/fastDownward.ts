@@ -1,3 +1,4 @@
+import { SkillsRelations } from "../ast/skillsRelation";
 import { filterForUnitsAndSkills } from "../backward-search/backward-search";
 import { isCompositeGuard, LearningUnit, Path, Selector, Skill, Unit } from "../types";
 import { DistanceMap } from "./distanceMap";
@@ -30,6 +31,7 @@ export function search<LU extends LearningUnit>({
 }) {
     // Non recursive part of the search
     const globalKnowledge = new GlobalKnowledge(allSkills);
+    const skillsRelations = new SkillsRelations(allSkills);
 
     // Invariants of recursion: allUnits, allSkills, isComposite, fnCost, costOptions, globalKnowledge
 
@@ -108,7 +110,7 @@ export function search<LU extends LearningUnit>({
                 goal.length > 1
                     ? goal.filter(skill => !currentNode.state.learnedSkills.includes(skill.id))
                     : goal;
-            for (const unit of eligibleUnits(currentNode.state, scopedUnits)) {
+            for (const unit of eligibleUnits(currentNode.state, scopedUnits, skillsRelations)) {
                 // Fictive cost of learning this unit via the used path
                 let cost: number;
                 let subPath: Path<LU> = new Path<LU>();
@@ -204,14 +206,17 @@ function generateResult<LU extends LearningUnit>(node: SearchNode<Unit<LU>>) {
  */
 function eligibleUnits<LU extends LearningUnit>(
     currentState: State,
-    availableUnits: ReadonlyArray<Unit<LU>>
+    availableUnits: ReadonlyArray<Unit<LU>>,
+    skillsRelations: SkillsRelations
 ) {
     // Filter for LearningUnits that are reachable and useful:
     // - All required skills are learned
     // - At least one new teaching goal
+
     const usefulLus = availableUnits
-        .filter(unit =>
-            unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
+        .filter(
+            unit => unit.requiredSkills.evaluate(currentState.learnedSkills, skillsRelations)
+            //.every(skill => currentState.learnedSkills.includes(skill.id))
         )
         .filter(unit =>
             // Do not suggest learning units that do not teach any new skills
@@ -237,7 +242,9 @@ export function computeCost<LU extends LearningUnit>(
     if (
         penaltyOptions.contextSwitchPenalty !== 1 &&
         prevLu &&
-        none(lu.requiredSkills, skill => prevLu.origin!.teachingGoals.includes(skill))
+        none(lu.requiredSkills.extractSkills(), skill =>
+            prevLu.origin!.teachingGoals.includes(skill)
+        )
     ) {
         contextSwitchPenalty = penaltyOptions.contextSwitchPenalty;
     }
