@@ -359,7 +359,7 @@ describe("precondition formula", () => {
     });
 
     describe("skill expressions 'Without'", () => {
-        it("skills checking without", () => {
+        it("'and' skills checking without", () => {
             const without = [new Variable(skill1)];
             const andSkillsWithSkill = new And([
                 new Variable(skill1),
@@ -377,6 +377,40 @@ describe("precondition formula", () => {
             ).toBeTruthy();
             expect(
                 andSkillsWithoutSkill.evaluate(["skill:2", "skill:3"], skillsRelations, without)
+            ).toBeTruthy();
+        });
+
+        it("'or' skills checking without", () => {
+            const without = [new Variable(skill1)];
+            const orSkillsWithSkill = new Or([
+                new Variable(skill1),
+                new Variable(skill2),
+                new Variable(skill3)
+            ]);
+            const orSkillsWithoutSkill = new Or([new Variable(skill2), new Variable(skill3)]);
+
+            expect(orSkillsWithSkill.evaluate(["skill:3"], skillsRelations, without)).toBeTruthy();
+            expect(
+                orSkillsWithoutSkill.evaluate(["skill:3"], skillsRelations, without)
+            ).toBeTruthy();
+        });
+
+        it("'n_of' skills checking without", () => {
+            const without = [new Variable(skill1)];
+            const n_ofSkillsWithSkill = new N_of(
+                [new Variable(skill1), new Variable(skill2), new Variable(skill3)],
+                1
+            );
+            const n_ofSkillsWithoutSkill = new N_of(
+                [new Variable(skill2), new Variable(skill3)],
+                1
+            );
+
+            expect(
+                n_ofSkillsWithSkill.evaluate(["skill:3"], skillsRelations, without)
+            ).toBeTruthy();
+            expect(
+                n_ofSkillsWithoutSkill.evaluate(["skill:3"], skillsRelations, without)
             ).toBeTruthy();
         });
 
