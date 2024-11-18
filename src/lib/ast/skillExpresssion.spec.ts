@@ -80,6 +80,7 @@ describe("precondition formula", () => {
             expect(emptySkills.evaluate([], skillsRelations)).toBeTruthy();
             expect(emptySkills.extractSkills().length).toBe(0);
             expect(emptySkills.toJson()).toBe("");
+            expect(emptySkills.filterSkillsByWithout(skillsRelations).length).toBe(0);
         });
     });
 
@@ -414,7 +415,32 @@ describe("precondition formula", () => {
             ).toBeTruthy();
         });
 
-        it("recursive call checking without", () => {
+        it("'and' recursive call checking without", () => {
+            const firstAndSkills = new And([
+                new Variable(skill1),
+                new Variable(skill2),
+                new Variable(skill3)
+            ]);
+            const SecondAndSkills = new And([
+                new Variable(skill4),
+                new Variable(skill5),
+                new Variable(skill6)
+            ]);
+
+            const without = [new Variable(skill1), new Variable(skill5)];
+
+            const skillExpression = new And([firstAndSkills, SecondAndSkills]);
+
+            expect(
+                skillExpression.evaluate(
+                    ["skill:1", "skill:2", "skill:3", "skill:4", "skill:5", "skill:6"],
+                    skillsRelations,
+                    without
+                )
+            ).toBeTruthy();
+        });
+
+        it("'or' recursive call checking without", () => {
             const firstAndSkills = new And([
                 new Variable(skill1),
                 new Variable(skill2),
@@ -429,6 +455,31 @@ describe("precondition formula", () => {
             const without = [new Variable(skill1), new Variable(skill5)];
 
             const skillExpression = new Or([firstAndSkills, SecondAndSkills]);
+
+            expect(
+                skillExpression.evaluate(
+                    ["skill:1", "skill:2", "skill:3"],
+                    skillsRelations,
+                    without
+                )
+            ).toBeTruthy();
+        });
+
+        it("'n_of' recursive call checking without", () => {
+            const firstAndSkills = new And([
+                new Variable(skill1),
+                new Variable(skill2),
+                new Variable(skill3)
+            ]);
+            const SecondAndSkills = new And([
+                new Variable(skill4),
+                new Variable(skill5),
+                new Variable(skill6)
+            ]);
+
+            const without = [new Variable(skill1), new Variable(skill5)];
+
+            const skillExpression = new N_of([firstAndSkills, SecondAndSkills], 1);
 
             expect(
                 skillExpression.evaluate(
