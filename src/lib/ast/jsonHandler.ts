@@ -2,9 +2,9 @@ import { And } from "./and";
 import { SkillExpression } from "./skillExpression";
 import { Or } from "./or";
 import { Variable } from "./variable";
-import { SkillsRelations } from "./skillsRelation";
 import { Empty } from "./empty";
 import { N_of } from "./n_of";
+import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 
 // An internal type used within this file to handle the parse Json to SkillExpression
 type JsonExpression = {
@@ -39,10 +39,10 @@ export function createJson(operator: string, terms: SkillExpression[], min?: num
 // Parse a Json format to a SkillExpression
 export function parseJsonExpression(
     json: string,
-    skillsRelations: SkillsRelations
+    globalKnowledge: GlobalKnowledge
 ): SkillExpression {
     if (!json.includes("operator")) {
-        const skill = skillsRelations.skills.find(sk => json == sk.id);
+        const skill = globalKnowledge.skills.find(sk => json == sk.id);
         if (skill) {
             return new Variable(skill);
         }
@@ -58,10 +58,10 @@ export function parseJsonExpression(
 
     const expressions: SkillExpression[] = [];
     jsonExpression.skills.forEach(skill => {
-        expressions.push(parseJsonExpression(skill, skillsRelations));
+        expressions.push(parseJsonExpression(skill, globalKnowledge));
     });
 
-    let expression: SkillExpression = new Empty(expressions);
+    let expression: SkillExpression = new Empty();
     if (jsonExpression.operator == And.name) {
         expression = new And(expressions);
     } else if (jsonExpression.operator == Or.name) {

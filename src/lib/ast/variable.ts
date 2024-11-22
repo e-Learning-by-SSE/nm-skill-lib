@@ -1,6 +1,7 @@
+import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 import { Skill } from "../types";
+import { And } from "./and";
 import { SkillExpression } from "./skillExpression";
-import { SkillsRelations } from "./skillsRelation";
 
 export class Variable extends SkillExpression {
     constructor(private skill: Skill) {
@@ -10,9 +11,15 @@ export class Variable extends SkillExpression {
 
     evaluate(
         learnedSkills: readonly string[],
-        skillsRelations: SkillsRelations,
+        globalKnowledge: GlobalKnowledge,
         without?: Variable[]
     ): boolean {
+        if (globalKnowledge.getParent(this.skill.id) && without) {
+            const filterTerms = this.filterSkillsByWithout(globalKnowledge, without);
+            return filterTerms.every(value =>
+                value.evaluate(learnedSkills, globalKnowledge, without)
+            );
+        }
         return learnedSkills.includes(this.skill.id);
     }
 
@@ -25,24 +32,20 @@ export class Variable extends SkillExpression {
     }
 
     filterSkillsByWithout(
-        skillsRelations: SkillsRelations,
+        globalKnowledge: GlobalKnowledge,
         without?: Variable[]
     ): SkillExpression[] {
-        let childSkills = skillsRelations.getChildren(this.skill);
+        let childSkills = globalKnowledge.getChildrenSkills(this.skill);
         if (childSkills.length > 0) {
             childSkills = childSkills.filter(childSkill =>
-                without!.every(
-                    variable => !variable.evaluate([childSkill.id], skillsRelations, without)
-                )
+                without!.every(variable => !variable.evaluate([childSkill.id], globalKnowledge))
             );
         } else {
             childSkills = [this.skill];
         }
 
-        const filteredTerms: SkillExpression[] = [];
-        childSkills.forEach(skill => {
-            filteredTerms.push(new Variable(skill));
-        });
-        return filteredTerms;
+        return childSkills.length == 1
+            ? childSkills.map(skill => new Variable(skill))
+            : [new And(childSkills.map(skill => new Variable(skill)))];
     }
 }

@@ -1,5 +1,5 @@
+import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 import { Skill } from "../types";
-import { SkillsRelations } from "./skillsRelation";
 import { Variable } from "./variable";
 
 /*
@@ -16,7 +16,7 @@ export abstract class SkillExpression {
 
     abstract evaluate(
         learnedSkills: ReadonlyArray<string>,
-        skillsRelations: SkillsRelations,
+        globalKnowledge: GlobalKnowledge,
         without?: Variable[]
     ): boolean;
 
@@ -25,7 +25,7 @@ export abstract class SkillExpression {
     abstract toJson(): string;
 
     abstract filterSkillsByWithout(
-        skillsRelations: SkillsRelations,
+        globalKnowledge: GlobalKnowledge,
         without?: Variable[]
     ): SkillExpression[];
 }

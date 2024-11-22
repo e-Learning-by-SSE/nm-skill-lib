@@ -5,8 +5,8 @@ import { N_of } from "./n_of";
 import { SkillExpression } from "./skillExpression";
 import { parseJsonExpression } from "./jsonHandler";
 import { Variable } from "./variable";
-import { SkillsRelations } from "./skillsRelation";
 import { Empty } from "./empty";
+import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 
 describe("precondition formula", () => {
     const skill1 = { id: "skill:1", repositoryId: "Map 1", nestedSkills: [] };
@@ -55,32 +55,32 @@ describe("precondition formula", () => {
         skill13
     ];
 
-    const skillsRelations = new SkillsRelations(skills);
+    const globalKnowledge = new GlobalKnowledge(skills);
 
     describe("skills relations", () => {
         it("find all parents in skills", () => {
-            expect(skillsRelations.getAllParents().length).toBe(5);
+            expect(globalKnowledge.getAllParentSkills().length).toBe(5);
         });
 
         it("find children skills for a parent", () => {
-            expect(skillsRelations.getChildren(skill13).length).toBe(4);
+            expect(globalKnowledge.getChildrenSkills(skill13).length).toBe(4);
         });
     });
 
     describe("Empty", () => {
         it("'empty' skillExpression type", () => {
-            const emptySkills = new Empty([]);
+            const emptySkills = new Empty();
 
             expect(emptySkills.getExpressionType()).toBe("Empty");
         });
 
         it("'empty' expression, no required skill for the expression", () => {
-            const emptySkills = new Empty([]);
+            const emptySkills = new Empty();
 
-            expect(emptySkills.evaluate([], skillsRelations)).toBeTruthy();
+            expect(emptySkills.evaluate([], globalKnowledge)).toBeTruthy();
             expect(emptySkills.extractSkills().length).toBe(0);
             expect(emptySkills.toJson()).toBe("");
-            expect(emptySkills.filterSkillsByWithout(skillsRelations).length).toBe(0);
+            expect(emptySkills.filterSkillsByWithout(globalKnowledge).length).toBe(0);
         });
     });
 
@@ -94,7 +94,7 @@ describe("precondition formula", () => {
         it("'variable' expression evaluate", () => {
             const variable = new Variable(skill2);
 
-            expect(variable.evaluate(["skill:2"], skillsRelations)).toBeTruthy();
+            expect(variable.evaluate(["skill:2"], globalKnowledge)).toBeTruthy();
         });
 
         it("'variable' extraction", () => {
@@ -120,8 +120,8 @@ describe("precondition formula", () => {
         it("'and' skills in precondition formula", () => {
             const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
 
-            expect(andSkills.evaluate(["skill:1"], skillsRelations)).toBeFalsy();
-            expect(andSkills.evaluate(["skill:3", "skill:4"], skillsRelations)).toBeTruthy();
+            expect(andSkills.evaluate(["skill:1"], globalKnowledge)).toBeFalsy();
+            expect(andSkills.evaluate(["skill:3", "skill:4"], globalKnowledge)).toBeTruthy();
         });
 
         it("'and' nested skill expression in precondition formula", () => {
@@ -130,9 +130,9 @@ describe("precondition formula", () => {
 
             const andSkillExpression = new And([orSkills, andSkills]);
 
-            expect(andSkillExpression.evaluate(["skill:1"], skillsRelations)).toBeFalsy();
+            expect(andSkillExpression.evaluate(["skill:1"], globalKnowledge)).toBeFalsy();
             expect(
-                andSkillExpression.evaluate(["skill:1", "skill:3", "skill:4"], skillsRelations)
+                andSkillExpression.evaluate(["skill:1", "skill:3", "skill:4"], globalKnowledge)
             ).toBeTruthy();
         });
 
@@ -146,12 +146,12 @@ describe("precondition formula", () => {
             ]);
 
             expect(
-                andSkillExpression.evaluate(["skill:5", "skill:6"], skillsRelations)
+                andSkillExpression.evaluate(["skill:5", "skill:6"], globalKnowledge)
             ).toBeFalsy();
             expect(
                 andSkillExpression.evaluate(
                     ["skill:1", "skill:2", "skill:3", "skill:5"],
-                    skillsRelations
+                    globalKnowledge
                 )
             ).toBeTruthy();
         });
@@ -167,7 +167,7 @@ describe("precondition formula", () => {
         it("'or' skills in precondition formula", () => {
             const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
 
-            expect(orSkills.evaluate(["skill:1"], skillsRelations)).toBeTruthy();
+            expect(orSkills.evaluate(["skill:1"], globalKnowledge)).toBeTruthy();
         });
 
         it("'or' nested skill expression in precondition formula", () => {
@@ -176,7 +176,7 @@ describe("precondition formula", () => {
 
             const orSkillExpression = new Or([orSkills, andSkills]);
 
-            expect(orSkillExpression.evaluate(["skill:1"], skillsRelations)).toBeTruthy();
+            expect(orSkillExpression.evaluate(["skill:1"], globalKnowledge)).toBeTruthy();
         });
 
         it("'or' complex skills expression with nested skills expressions precondition formula", () => {
@@ -189,10 +189,10 @@ describe("precondition formula", () => {
             ]);
 
             expect(
-                orSkillExpression.evaluate(["skill:5", "skill:6"], skillsRelations)
+                orSkillExpression.evaluate(["skill:5", "skill:6"], globalKnowledge)
             ).toBeTruthy();
             expect(
-                orSkillExpression.evaluate(["skill:1", "skill:2", "skill:3"], skillsRelations)
+                orSkillExpression.evaluate(["skill:1", "skill:2", "skill:3"], globalKnowledge)
             ).toBeTruthy();
         });
     });
@@ -210,11 +210,11 @@ describe("precondition formula", () => {
                 2
             );
 
-            expect(n_ofSkills.evaluate(["skill:1"], skillsRelations)).toBeFalsy();
-            expect(n_ofSkills.evaluate(["skill:2"], skillsRelations)).toBeFalsy();
-            expect(n_ofSkills.evaluate(["skill:3"], skillsRelations)).toBeFalsy();
-            expect(n_ofSkills.evaluate(["skill:1", "skill:2"], skillsRelations)).toBeTruthy();
-            expect(n_ofSkills.evaluate(["skill:2", "skill:3"], skillsRelations)).toBeTruthy();
+            expect(n_ofSkills.evaluate(["skill:1"], globalKnowledge)).toBeFalsy();
+            expect(n_ofSkills.evaluate(["skill:2"], globalKnowledge)).toBeFalsy();
+            expect(n_ofSkills.evaluate(["skill:3"], globalKnowledge)).toBeFalsy();
+            expect(n_ofSkills.evaluate(["skill:1", "skill:2"], globalKnowledge)).toBeTruthy();
+            expect(n_ofSkills.evaluate(["skill:2", "skill:3"], globalKnowledge)).toBeTruthy();
         });
 
         it("'n_of' nested skill expression in precondition formula", () => {
@@ -224,15 +224,15 @@ describe("precondition formula", () => {
 
             const n_ofSkillExpression = new N_of([orSkills, secondOrSkills, andSkills], 2);
 
-            expect(n_ofSkillExpression.evaluate(["skill:1"], skillsRelations)).toBeFalsy();
+            expect(n_ofSkillExpression.evaluate(["skill:1"], globalKnowledge)).toBeFalsy();
             expect(
-                n_ofSkillExpression.evaluate(["skill:1", "skill:4"], skillsRelations)
+                n_ofSkillExpression.evaluate(["skill:1", "skill:4"], globalKnowledge)
             ).toBeTruthy();
             expect(
-                n_ofSkillExpression.evaluate(["skill:1", "skill:5"], skillsRelations)
+                n_ofSkillExpression.evaluate(["skill:1", "skill:5"], globalKnowledge)
             ).toBeFalsy();
             expect(
-                n_ofSkillExpression.evaluate(["skill:1", "skill:5", "skill:6"], skillsRelations)
+                n_ofSkillExpression.evaluate(["skill:1", "skill:5", "skill:6"], globalKnowledge)
             ).toBeTruthy();
         });
 
@@ -253,11 +253,11 @@ describe("precondition formula", () => {
             expect(
                 n_ofSkillExpression.evaluate(
                     ["skill:1", "skill:2", "skill:5", "skill:7"],
-                    skillsRelations
+                    globalKnowledge
                 )
             ).toBeTruthy();
             expect(
-                n_ofSkillExpression.evaluate(["skill:3", "skill:4", "skill:8"], skillsRelations)
+                n_ofSkillExpression.evaluate(["skill:3", "skill:4", "skill:8"], globalKnowledge)
             ).toBeTruthy();
         });
     });
@@ -272,6 +272,17 @@ describe("precondition formula", () => {
 
             expect(orSkillExpression.extractSkills()).toEqual([skill1, skill2, skill3, skill4]);
             expect(andSkillExpression.extractSkills()).toEqual([skill1, skill2, skill3, skill4]);
+        });
+
+        it("extract all skills without duplication from skill expression", () => {
+            const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
+            const andSkills = new And([new Variable(skill2), new Variable(skill3)]);
+
+            const orSkillExpression = new Or([orSkills, andSkills]);
+            const andSkillExpression = new And([orSkills, andSkills]);
+
+            expect(orSkillExpression.extractSkills()).toEqual([skill1, skill2, skill3]);
+            expect(andSkillExpression.extractSkills()).toEqual([skill1, skill2, skill3]);
         });
 
         it("cache the extracted skills from skill expression", () => {
@@ -290,48 +301,61 @@ describe("precondition formula", () => {
 
     describe("Json translation", () => {
         it("convert skill expression to Json format string", () => {
-            const orSkills = new Or([new Variable(skill1)]);
+            const variable = new Variable(skill1);
+            const orSkills = new Or([new Variable(skill1), new Variable(skill2)]);
             const andSkills = new And([new Variable(skill3), new Variable(skill4)]);
             const n_ofSkills = new N_of([new Variable(skill5), new Variable(skill6)], 1);
 
+            const variableJson = variable.toJson();
             const orSkillsJson = orSkills.toJson();
             const andSkillsJson = andSkills.toJson();
             const n_ofSkillsJson = n_ofSkills.toJson();
 
-            expect(orSkillsJson).toBe('{"operator":"Or","skills":["skill:1"]}');
+            expect(variableJson).toBe("skill:1");
+            expect(orSkillsJson).toBe('{"operator":"Or","skills":["skill:1","skill:2"]}');
             expect(andSkillsJson).toBe('{"operator":"And","skills":["skill:3","skill:4"]}');
             expect(n_ofSkillsJson).toBe(
                 '{"operator":"N_of","skills":["skill:5","skill:6"],"min":1}'
             );
         });
 
+        it("convert 'variable' format string to skill expression 'variable'", () => {
+            const jsonSkillExpression = "skill:1";
+
+            const skillExpression = parseJsonExpression(jsonSkillExpression, globalKnowledge);
+
+            expect(skillExpression.extractSkills().length).toBe(1);
+            expect(skillExpression.evaluate(["skill:2"], globalKnowledge)).toBeFalsy();
+            expect(skillExpression.evaluate(["skill:1"], globalKnowledge)).toBeTruthy();
+        });
+
         it("convert 'and Json' format string to skill expression", () => {
             const jsonSkillExpression = '{"operator":"And","skills":["skill:3","skill:4"]}';
 
-            const skillExpression = parseJsonExpression(jsonSkillExpression, skillsRelations);
+            const skillExpression = parseJsonExpression(jsonSkillExpression, globalKnowledge);
 
             expect(skillExpression.extractSkills().length).toBe(2);
-            expect(skillExpression.evaluate(["skill:3"], skillsRelations)).toBeFalsy();
-            expect(skillExpression.evaluate(["skill:3", "skill:4"], skillsRelations)).toBeTruthy();
+            expect(skillExpression.evaluate(["skill:3"], globalKnowledge)).toBeFalsy();
+            expect(skillExpression.evaluate(["skill:3", "skill:4"], globalKnowledge)).toBeTruthy();
         });
 
         it("convert 'or Json' format string to skill expression", () => {
             const jsonSkillExpression = '{"operator":"Or","skills":["skill:1"]}';
 
-            const skillExpression = parseJsonExpression(jsonSkillExpression, skillsRelations);
+            const skillExpression = parseJsonExpression(jsonSkillExpression, globalKnowledge);
 
             expect(skillExpression.extractSkills().length).toBe(1);
-            expect(skillExpression.evaluate(["skill:1"], skillsRelations)).toBeTruthy();
+            expect(skillExpression.evaluate(["skill:1"], globalKnowledge)).toBeTruthy();
         });
 
         it("convert 'n_of Json' format string to skill expression", () => {
             const jsonSkillExpression =
                 '{"operator":"N_of","skills":["skill:5","skill:6"],"min":1}';
 
-            const skillExpression = parseJsonExpression(jsonSkillExpression, skillsRelations);
+            const skillExpression = parseJsonExpression(jsonSkillExpression, globalKnowledge);
 
             expect(skillExpression.extractSkills().length).toBe(2);
-            expect(skillExpression.evaluate(["skill:5"], skillsRelations)).toBeTruthy();
+            expect(skillExpression.evaluate(["skill:5"], globalKnowledge)).toBeTruthy();
         });
 
         it("convert nested skill expression to Json format string", () => {
@@ -351,11 +375,11 @@ describe("precondition formula", () => {
             const jsonSkillExpression =
                 '{"operator":"Or","skills":["{\\"operator\\":\\"Or\\",\\"skills\\":[\\"skill:1\\",\\"skill:2\\"]}","{\\"operator\\":\\"And\\",\\"skills\\":[\\"skill:3\\",\\"skill:4\\"]}"]}';
 
-            const skillExpression = parseJsonExpression(jsonSkillExpression, skillsRelations);
+            const skillExpression = parseJsonExpression(jsonSkillExpression, globalKnowledge);
 
             expect(skillExpression.extractSkills().length).toBe(4);
-            expect(skillExpression.evaluate(["skill:3"], skillsRelations)).toBeFalsy();
-            expect(skillExpression.evaluate(["skill:1"], skillsRelations)).toBeTruthy();
+            expect(skillExpression.evaluate(["skill:3"], globalKnowledge)).toBeFalsy();
+            expect(skillExpression.evaluate(["skill:1"], globalKnowledge)).toBeTruthy();
         });
     });
 
@@ -372,12 +396,12 @@ describe("precondition formula", () => {
             expect(
                 andSkillsWithSkill.evaluate(
                     ["skill:1", "skill:2", "skill:3"],
-                    skillsRelations,
+                    globalKnowledge,
                     without
                 )
             ).toBeTruthy();
             expect(
-                andSkillsWithoutSkill.evaluate(["skill:2", "skill:3"], skillsRelations, without)
+                andSkillsWithoutSkill.evaluate(["skill:2", "skill:3"], globalKnowledge, without)
             ).toBeTruthy();
         });
 
@@ -390,9 +414,9 @@ describe("precondition formula", () => {
             ]);
             const orSkillsWithoutSkill = new Or([new Variable(skill2), new Variable(skill3)]);
 
-            expect(orSkillsWithSkill.evaluate(["skill:3"], skillsRelations, without)).toBeTruthy();
+            expect(orSkillsWithSkill.evaluate(["skill:3"], globalKnowledge, without)).toBeTruthy();
             expect(
-                orSkillsWithoutSkill.evaluate(["skill:3"], skillsRelations, without)
+                orSkillsWithoutSkill.evaluate(["skill:3"], globalKnowledge, without)
             ).toBeTruthy();
         });
 
@@ -408,10 +432,10 @@ describe("precondition formula", () => {
             );
 
             expect(
-                n_ofSkillsWithSkill.evaluate(["skill:3"], skillsRelations, without)
+                n_ofSkillsWithSkill.evaluate(["skill:3"], globalKnowledge, without)
             ).toBeTruthy();
             expect(
-                n_ofSkillsWithoutSkill.evaluate(["skill:3"], skillsRelations, without)
+                n_ofSkillsWithoutSkill.evaluate(["skill:3"], globalKnowledge, without)
             ).toBeTruthy();
         });
 
@@ -434,7 +458,7 @@ describe("precondition formula", () => {
             expect(
                 skillExpression.evaluate(
                     ["skill:1", "skill:2", "skill:3", "skill:4", "skill:5", "skill:6"],
-                    skillsRelations,
+                    globalKnowledge,
                     without
                 )
             ).toBeTruthy();
@@ -459,7 +483,7 @@ describe("precondition formula", () => {
             expect(
                 skillExpression.evaluate(
                     ["skill:1", "skill:2", "skill:3"],
-                    skillsRelations,
+                    globalKnowledge,
                     without
                 )
             ).toBeTruthy();
@@ -484,37 +508,39 @@ describe("precondition formula", () => {
             expect(
                 skillExpression.evaluate(
                     ["skill:1", "skill:2", "skill:3"],
-                    skillsRelations,
+                    globalKnowledge,
                     without
                 )
             ).toBeTruthy();
         });
 
         it("recursive call with parent checking without", () => {
-            const firstAndSkills = new And([new Variable(skill9)]);
-            const SecondAndSkills = new And([new Variable(skill10)]);
+            const firstVariableSkill = new Variable(skill9);
+            const SecondVariableSkill = new Variable(skill10);
 
             const without = [new Variable(skill7), new Variable(skill3)];
 
-            const skillExpression = new Or([firstAndSkills, SecondAndSkills]);
+            const skillExpression = new Or([firstVariableSkill, SecondVariableSkill]);
 
-            expect(skillExpression.evaluate(["skill:8"], skillsRelations, without)).toBeTruthy();
+            expect(skillExpression.evaluate(["skill:8"], globalKnowledge, without)).toBeTruthy();
         });
 
         it("parent skills checking without", () => {
             const without = [new Variable(skill1), new Variable(skill2), new Variable(skill3)];
-            const orSkills = new Or([new Variable(skill10)]);
+            const variableSkills = new Variable(skill10);
             const andSkills = new And([new Variable(skill10), new Variable(skill1)]);
 
-            expect(orSkills.evaluate(["skill:4"], skillsRelations, without)).toBeTruthy();
-            expect(andSkills.evaluate(["skill:4"], skillsRelations, without)).toBeFalsy();
             expect(
-                andSkills.evaluate(["skill:4", "skill:5", "skill:6"], skillsRelations, without)
+                variableSkills.evaluate(["skill:4", "skill:5", "skill:6"], globalKnowledge, without)
+            ).toBeTruthy();
+            expect(andSkills.evaluate(["skill:4"], globalKnowledge, without)).toBeFalsy();
+            expect(
+                andSkills.evaluate(["skill:4", "skill:5", "skill:6"], globalKnowledge, without)
             ).toBeFalsy();
             expect(
                 andSkills.evaluate(
                     ["skill:1", "skill:4", "skill:5", "skill:6"],
-                    skillsRelations,
+                    globalKnowledge,
                     without
                 )
             ).toBeTruthy();
@@ -522,16 +548,16 @@ describe("precondition formula", () => {
 
         it("parent skill checking without parent skill", () => {
             const without = [new Variable(skill10)];
-            const andSkills = new And([new Variable(skill10)]);
+            const variableSkills = new Variable(skill10);
 
-            expect(andSkills.evaluate(["skill:4"], skillsRelations, without)).toBeFalsy();
+            expect(variableSkills.evaluate(["skill:4"], globalKnowledge, without)).toBeFalsy();
             expect(
-                andSkills.evaluate(["skill:4", "skill:5", "skill:6"], skillsRelations, without)
+                variableSkills.evaluate(["skill:4", "skill:5", "skill:6"], globalKnowledge, without)
             ).toBeFalsy();
             expect(
-                andSkills.evaluate(
+                variableSkills.evaluate(
                     ["skill:1", "skill:2", "skill:3", "skill:4", "skill:5", "skill:6"],
-                    skillsRelations,
+                    globalKnowledge,
                     without
                 )
             ).toBeTruthy();
@@ -552,11 +578,11 @@ describe("precondition formula", () => {
                 new And([new Variable(skill7), new Variable(skill8)])
             ]);
 
-            const unit1 = newLearningUnit(skillsRelations, "unit1", skillExpression1, [], []);
+            const unit1 = newLearningUnit(globalKnowledge, "unit1", skillExpression1, [], []);
 
-            const unit2 = newLearningUnit(skillsRelations, "unit2", skillExpression2, [], []);
+            const unit2 = newLearningUnit(globalKnowledge, "unit2", skillExpression2, [], []);
 
-            const unit3 = newLearningUnit(skillsRelations, "unit3", skillExpression3, [], []);
+            const unit3 = newLearningUnit(globalKnowledge, "unit3", skillExpression3, [], []);
 
             const learningUnits = [unit1, unit2, unit3];
 
@@ -566,16 +592,16 @@ describe("precondition formula", () => {
             const evaluateString4 = [skill7.id, skill8.id];
 
             const firstCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString1, skillsRelations)
+                unit.requiredSkills.evaluate(evaluateString1, globalKnowledge)
             );
             const secondCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString2, skillsRelations)
+                unit.requiredSkills.evaluate(evaluateString2, globalKnowledge)
             );
             const thirdCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString3, skillsRelations)
+                unit.requiredSkills.evaluate(evaluateString3, globalKnowledge)
             );
             const fourCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString4, skillsRelations)
+                unit.requiredSkills.evaluate(evaluateString4, globalKnowledge)
             );
 
             expect(firstCheck.length).toBe(1);
@@ -595,7 +621,7 @@ describe("precondition formula", () => {
 });
 
 function newLearningUnit(
-    skillsRelations: SkillsRelations,
+    globalKnowledge: GlobalKnowledge,
     id: string,
     requiredSkills: SkillExpression,
     teachingGoals: string[],
@@ -604,7 +630,7 @@ function newLearningUnit(
     const suggestions: { weight: number; skill: Skill }[] = [];
     if (suggestedSkills.length > 0) {
         for (const suggestion of suggestedSkills) {
-            const skill = skillsRelations.skills.find(skill => suggestion.skill.includes(skill.id));
+            const skill = globalKnowledge.skills.find(skill => suggestion.skill.includes(skill.id));
             if (skill) {
                 suggestions.push({ weight: suggestion.weight, skill: skill });
             }
@@ -614,7 +640,7 @@ function newLearningUnit(
     return {
         id: id,
         requiredSkills: requiredSkills,
-        teachingGoals: skillsRelations.skills.filter(skill => teachingGoals.includes(skill.id)),
+        teachingGoals: globalKnowledge.skills.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
     };
 }

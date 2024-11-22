@@ -112,7 +112,7 @@ function newLearningUnit(
         .filter(skill => requiredSkills.includes(skill.id))
         .map(skill => new Variable(skill));
 
-    const skillExpression = variables.length > 0 ? new And(variables) : new Empty(variables);
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,

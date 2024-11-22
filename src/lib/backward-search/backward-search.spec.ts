@@ -374,9 +374,7 @@ describe("Backward Search Tests", () => {
         }
 
         for (let index = 1; index < 100; index++) {
-            largeLearningUnits[index].requiredSkills = new And([
-                new Variable(largeSkillMap[index - 1])
-            ]);
+            largeLearningUnits[index].requiredSkills = new Variable(largeSkillMap[index - 1]);
         }
 
         const parentSkillMap: Skill[] = [
@@ -510,7 +508,7 @@ function newLearningUnit(
         .filter(skill => requiredSkills.includes(skill.id))
         .map(skill => new Variable(skill));
 
-    const skillExpression = variables.length > 0 ? new And(variables) : new Empty(variables);
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,

@@ -2,7 +2,7 @@ import { Skill } from "../types";
 import { SkillExpression } from "./skillExpression";
 import { createJson } from "./jsonHandler";
 import { Variable } from "./variable";
-import { SkillsRelations } from "./skillsRelation";
+import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 
 /*
  * Conjunctive (AND) expression of which all terms must be fulfilled.
@@ -23,27 +23,26 @@ export class And extends SkillExpression {
     // Exclude the variable in the "without" list from this evaluation (if not explicitly in the terms)
     evaluate(
         learnedSkills: ReadonlyArray<string>,
-        skillsRelations: SkillsRelations,
+        globalKnowledge: GlobalKnowledge,
         without?: Variable[]
     ): boolean {
         let filterTerms: SkillExpression[] = [];
         if (without) {
-            filterTerms = this.filterSkillsByWithout(skillsRelations, without);
+            filterTerms = this.filterSkillsByWithout(globalKnowledge, without);
         } else {
             filterTerms = this.terms;
         }
-        return filterTerms.every(value => value.evaluate(learnedSkills, skillsRelations, without));
+        return filterTerms.every(value => value.evaluate(learnedSkills, globalKnowledge, without));
     }
 
     // Extract all skills nested in the AND expression
     // Cache the extracted skills in extractedSkills property
     extractSkills(): Skill[] {
         if (this.extractedSkills.length == 0) {
-            let skillList: Skill[] = [];
-            this.terms.forEach(expression => {
-                skillList.push(...expression.extractSkills());
-            });
-            this.extractedSkills = [...new Set(skillList.slice())];
+            this.terms
+                .flatMap(expression => [...expression.extractSkills()])
+                .forEach(skill => this.extractedSkills.push(skill));
+            this.extractedSkills = [...new Set(this.extractedSkills)];
         }
 
         return this.extractedSkills;
@@ -56,13 +55,13 @@ export class And extends SkillExpression {
 
     // Excluding the skills in the "without" variables list
     filterSkillsByWithout(
-        skillsRelations: SkillsRelations,
+        globalKnowledge: GlobalKnowledge,
         without?: Variable[]
     ): SkillExpression[] {
         let filteredTerms: SkillExpression[] = [];
         this.terms.forEach(expression => {
             if (expression.getExpressionType() == "Variable") {
-                filteredTerms.push(...expression.filterSkillsByWithout(skillsRelations, without));
+                filteredTerms.push(...expression.filterSkillsByWithout(globalKnowledge, without));
             } else {
                 filteredTerms.push(expression);
             }
