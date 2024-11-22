@@ -23,8 +23,8 @@ export class SearchNode<LU extends LearningUnit> {
         let str = "";
         let node: SearchNode<LU> | null = this;
         while (node !== null) {
-            if (node.action !== null) {
-                str = node.action.origin!.id + ", " + str;
+            if (node.action && node.action.origin && node.action !== null) {
+                str = node.action.origin.id + ", " + str;
             }
             node = node.parent;
         }

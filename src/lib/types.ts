@@ -1,3 +1,5 @@
+import { SkillExpression } from "./ast/skillExpression";
+
 export type Graph = {
     nodes: Node[];
     edges: Edge[];
@@ -24,7 +26,7 @@ export type LearningUnit = {
     id: string;
     mediaTime?: number;
     words?: number;
-    requiredSkills: Skill[];
+    requiredSkills: SkillExpression;
     teachingGoals: Skill[];
     suggestedSkills: { weight: number; skill: Skill }[];
 };
