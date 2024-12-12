@@ -36,14 +36,15 @@ export function search<LU extends LearningUnit>({
 
     // Invariants of recursion: allUnits, allSkills, isComposite, fnCost, costOptions, globalKnowledge
 
-    return recursiveSearch(goal, knowledge, alternatives, selectors);
+    return recursiveSearch(goal, knowledge, alternatives, selectors, undefined, withoutSkills);
 
     function recursiveSearch(
         goal: Skill[],
         knowledge: Skill[],
         alternatives: number, // alternatives method
         selectors?: Selector<LU>[],
-        parentUnits?: ReadonlyArray<Unit<LU>>
+        parentUnits?: ReadonlyArray<Unit<LU>>,
+        withoutSkills?: Variable[]
     ) {
         // 1. Avoid returning the composite unit or the parent units as a result
         if (parentUnits) {
@@ -78,7 +79,8 @@ export function search<LU extends LearningUnit>({
             initialState,
             fnHeuristic,
             alternatives, // alternatives method
-            parentUnits
+            parentUnits,
+            withoutSkills
         );
     }
 
@@ -88,7 +90,8 @@ export function search<LU extends LearningUnit>({
         initialState: State,
         fnHeuristic: HeuristicFunction<LU>,
         alternatives: number, // alternatives method
-        parentUnits?: ReadonlyArray<Unit<LU>>
+        parentUnits?: ReadonlyArray<Unit<LU>>,
+        withoutSkills?: Variable[]
     ) {
         // Sorted list of states to be analyzed
         const openList: SearchNodeList<LU> = new SearchNodeList<LU>(initialState);
