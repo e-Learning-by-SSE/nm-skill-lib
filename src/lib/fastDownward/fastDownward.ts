@@ -1,3 +1,4 @@
+import { Variable } from "../ast/variable";
 import { filterForUnitsAndSkills } from "../backward-search/backward-search";
 import { isCompositeGuard, LearningUnit, Path, Selector, Skill, Unit } from "../types";
 import { DistanceMap } from "./distanceMap";
@@ -16,7 +17,8 @@ export function search<LU extends LearningUnit>({
     fnCost,
     costOptions = DefaultCostParameter,
     selectors,
-    alternatives = 1 // alternatives method
+    alternatives = 1, // alternatives method
+    withoutSkills
 }: {
     goal: Skill[];
     allUnits: ReadonlyArray<Unit<LU>>;
@@ -27,20 +29,22 @@ export function search<LU extends LearningUnit>({
     costOptions: CostOptions;
     selectors?: Selector<LU>[];
     alternatives?: number; // alternatives method
+    withoutSkills?: Variable[];
 }) {
     // Non recursive part of the search
     const globalKnowledge = new GlobalKnowledge(allSkills);
 
     // Invariants of recursion: allUnits, allSkills, isComposite, fnCost, costOptions, globalKnowledge
 
-    return recursiveSearch(goal, knowledge, alternatives, selectors);
+    return recursiveSearch(goal, knowledge, alternatives, selectors, undefined, withoutSkills);
 
     function recursiveSearch(
         goal: Skill[],
         knowledge: Skill[],
         alternatives: number, // alternatives method
         selectors?: Selector<LU>[],
-        parentUnits?: ReadonlyArray<Unit<LU>>
+        parentUnits?: ReadonlyArray<Unit<LU>>,
+        withoutSkills?: Variable[]
     ) {
         // 1. Avoid returning the composite unit or the parent units as a result
         if (parentUnits) {
@@ -75,7 +79,8 @@ export function search<LU extends LearningUnit>({
             initialState,
             fnHeuristic,
             alternatives, // alternatives method
-            parentUnits
+            parentUnits,
+            withoutSkills
         );
     }
 
@@ -85,7 +90,8 @@ export function search<LU extends LearningUnit>({
         initialState: State,
         fnHeuristic: HeuristicFunction<LU>,
         alternatives: number, // alternatives method
-        parentUnits?: ReadonlyArray<Unit<LU>>
+        parentUnits?: ReadonlyArray<Unit<LU>>,
+        withoutSkills?: Variable[]
     ) {
         // Sorted list of states to be analyzed
         const openList: SearchNodeList<LU> = new SearchNodeList<LU>(initialState);
@@ -108,7 +114,12 @@ export function search<LU extends LearningUnit>({
                 goal.length > 1
                     ? goal.filter(skill => !currentNode.state.learnedSkills.includes(skill.id))
                     : goal;
-            for (const unit of eligibleUnits(currentNode.state, scopedUnits)) {
+            for (const unit of eligibleUnits(
+                currentNode.state,
+                scopedUnits,
+                globalKnowledge,
+                withoutSkills
+            )) {
                 // Fictive cost of learning this unit via the used path
                 let cost: number;
                 let subPath: Path<LU> = new Path<LU>();
@@ -204,14 +215,23 @@ function generateResult<LU extends LearningUnit>(node: SearchNode<Unit<LU>>) {
  */
 function eligibleUnits<LU extends LearningUnit>(
     currentState: State,
-    availableUnits: ReadonlyArray<Unit<LU>>
+    availableUnits: ReadonlyArray<Unit<LU>>,
+    globalKnowledge: GlobalKnowledge,
+    withoutSkills?: Variable[]
 ) {
     // Filter for LearningUnits that are reachable and useful:
     // - All required skills are learned
     // - At least one new teaching goal
+
     const usefulLus = availableUnits
-        .filter(unit =>
-            unit.requiredSkills.every(skill => currentState.learnedSkills.includes(skill.id))
+        .filter(
+            unit =>
+                unit.requiredSkills.evaluate(
+                    currentState.learnedSkills,
+                    globalKnowledge,
+                    withoutSkills
+                )
+            //.every(skill => currentState.learnedSkills.includes(skill.id))
         )
         .filter(unit =>
             // Do not suggest learning units that do not teach any new skills
@@ -233,11 +253,11 @@ export function computeCost<LU extends LearningUnit>(
 ) {
     // If penalty is defined: Add penalty if LU does not need any of previously learned skills
     let contextSwitchPenalty = 1;
-    const prevLu = currentNode.action;
+    const prevLu = currentNode.action?.origin;
     if (
         penaltyOptions.contextSwitchPenalty !== 1 &&
         prevLu &&
-        none(lu.requiredSkills, skill => prevLu.origin!.teachingGoals.includes(skill))
+        none(lu.requiredSkills.extractSkills(), skill => prevLu.teachingGoals.includes(skill))
     ) {
         contextSwitchPenalty = penaltyOptions.contextSwitchPenalty;
     }
