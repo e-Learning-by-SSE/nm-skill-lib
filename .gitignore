@@ -34,8 +34,14 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+.npmrc
 
 # System Files
 .DS_Store
 Thumbs.db
 /output
+index.d.ts
+index.d.ts.map
+index.js
+index.js.map
+/lib

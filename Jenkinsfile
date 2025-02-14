@@ -49,6 +49,7 @@ pipeline {
 
         stage('Publish NPM Package') {
             steps {
+                sh 'npm run dist'
                 npmPublish('e-learning-by-sse')
             }
         }
