@@ -20,6 +20,9 @@ import {
     isAcyclic
 } from "./pathPlanner";
 import { DefaultCostParameter } from "./fastDownward/fdTypes";
+import { Variable } from "./ast/variable";
+import { And } from "./ast/and";
+import { Empty } from "./ast/empty";
 
 describe("Path Planer", () => {
     // Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -480,9 +483,15 @@ function newLearningUnit(
         }
     }
 
+    const variables = map
+        .filter(skill => requiredSkills.includes(skill.id))
+        .map(skill => new Variable(skill));
+
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
+
     return {
         id: id,
-        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        requiredSkills: skillExpression,
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
     };

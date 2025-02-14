@@ -1,4 +1,7 @@
 import { detectCycles, findParentsOfCycledSkills } from "./analysis";
+import { And } from "./ast/and";
+import { Empty } from "./ast/empty";
+import { Variable } from "./ast/variable";
 import { LearningUnit, Skill } from "./types";
 
 describe("find cycles analysis", () => {
@@ -303,9 +306,15 @@ function newLearningUnit(
         }
     }
 
+    const variables = map
+        .filter(skill => requiredSkills.includes(skill.id))
+        .map(skill => new Variable(skill));
+
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
+
     return {
         id: id,
-        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        requiredSkills: skillExpression,
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
     };

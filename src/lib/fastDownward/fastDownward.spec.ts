@@ -11,6 +11,9 @@ import {
 import { CostFunction, DefaultCostParameter } from "./fdTypes";
 import { search } from "./fastDownward";
 import { GlobalKnowledge } from "./global-knowledge";
+import { Variable } from "../ast/variable";
+import { And } from "../ast/and";
+import { Empty } from "../ast/empty";
 
 describe("FastDownward v2", () => {
     // Re-usable test data (must be passed to dataHandler.init() before each test)
@@ -141,6 +144,27 @@ describe("FastDownward v2", () => {
                 ],
                 3.2
             );
+        });
+
+        it("No knowledge; 1 map; with nested skills; 1 goal; including without skill list", async () => {
+            const withoutVariable: Variable[] = thirdMapHierarchy
+                .filter(skill => skill.id === "sk:11")
+                .map(skill => new Variable(skill));
+
+            // Test: Compute path
+            const path = search({
+                allSkills: thirdMapHierarchy,
+                allUnits: structuredPathOfLus,
+                goal: thirdMapHierarchy.filter(skill => skill.id === "sk:8"),
+                knowledge: [],
+                fnCost: () => 1,
+                isComposite: guard,
+                costOptions: DefaultCostParameter,
+                withoutSkills: withoutVariable
+            });
+
+            // Assert: Path should be: (7 & 8) -> 9
+            expectPath(path?.pop()!, [["lu:7", "lu:9"]], 2.2);
         });
 
         it("No knowledge; 1 map; no nested skills; multiple requirements for 1 LU; 1 goal", async () => {
@@ -1339,7 +1363,7 @@ describe("FastDownward v2", () => {
         }
 
         for (let index = 1; index < 100; index++) {
-            largeLearningUnits[index].requiredSkills = [largeSkillMap[index - 1]];
+            largeLearningUnits[index].requiredSkills = new Variable(largeSkillMap[index - 1]);
         }
 
         it("find a path in a large learning units without knowledge", () => {
@@ -1431,9 +1455,15 @@ function newLearningUnit(
         }
     }
 
+    const variables = map
+        .filter(skill => requiredSkills.includes(skill.id))
+        .map(skill => new Variable(skill));
+
+    const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
+
     return {
         id: id,
-        requiredSkills: map.filter(skill => requiredSkills.includes(skill.id)),
+        requiredSkills: skillExpression,
         teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
         suggestedSkills: suggestions
     };

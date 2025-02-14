@@ -287,7 +287,7 @@ export function createGoalsGraph<LU extends LearningUnit>(
         // Create a node in the graph for each required skills
         // Create a edge from the learning unit (source) to each required skills (sink)
         // Add the new nodes (required skills) to the nodes list for analyzing
-        lu.requiredSkills.forEach(req => {
+        lu.requiredSkills.extractSkills().forEach(req => {
             const SkillName = "sk" + req.id;
             graph.setNode(SkillName, req);
             graph.setEdge(luName, SkillName);
