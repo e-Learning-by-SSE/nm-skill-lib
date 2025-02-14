@@ -11,11 +11,8 @@ import { Variable } from "./variable";
  * @author Alamoush
  */
 export class Empty extends SkillExpression {
-    type: string;
-
     constructor() {
-        super();
-        this.type = "Empty";
+        super("Empty");
     }
 
     // Evaluate always true, since it empty expression

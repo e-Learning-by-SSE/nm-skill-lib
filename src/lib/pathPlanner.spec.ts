@@ -496,7 +496,3 @@ function newLearningUnit(
         suggestedSkills: suggestions
     };
 }
-
-function extractPath(potentialPath: PotentialNode<LearningUnit>): string[] {
-    return potentialPath.id ? [potentialPath.id].concat(extractPath(potentialPath.parent)) : [];
-}

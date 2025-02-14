@@ -8,7 +8,7 @@ import { Variable } from "./variable";
  * @abstract
  */
 export abstract class SkillExpression {
-    protected type: string;
+    protected constructor(private type: string) {}
 
     getExpressionType() {
         return this.type;

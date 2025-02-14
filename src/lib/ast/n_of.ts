@@ -11,8 +11,7 @@ import { GlobalKnowledge } from "../fastDownward/global-knowledge";
  */
 export class N_of extends SkillExpression {
     constructor(private terms: SkillExpression[], private min: number) {
-        super();
-        this.type = "n_of";
+        super("n_of");
     }
 
     // AND expression property to cache all the extracted skills

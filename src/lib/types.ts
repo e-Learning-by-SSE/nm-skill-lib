@@ -56,17 +56,17 @@ export class Path<LU extends LearningUnit> {
     origin: Unit<LU> | null = null;
 }
 
-export class PotentialNode<LU extends LearningUnit> {
+export type PotentialNode<LU extends LearningUnit> = {
     id: string;
-    parent: PotentialNode<LU>;
+    parent?: PotentialNode<LU>;
     missingSkill: string;
-}
+};
 
-export class AnalyzedPath<LU extends LearningUnit> {
-    path: LU[] = [];
-    fullPath: string[] = [];
+export type AnalyzedPath<LU extends LearningUnit> = {
+    path: LU[];
+    fullPath: string[];
     missingSkill: string;
-}
+};
 
 /**
  * Part of the computeSuggestedSkills function, which will be used to apply the computed skills to the database.

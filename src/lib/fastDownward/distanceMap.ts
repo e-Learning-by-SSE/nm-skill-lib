@@ -10,6 +10,7 @@ export class DistanceMap<LU extends LearningUnit> {
         learningUnits: ReadonlyArray<LU>,
         fnCost?: CostFunction<LU>
     ) {
+        this.distances = new Map();
         this.computeMap(skills, learningUnits, fnCost);
     }
 
@@ -53,7 +54,6 @@ export class DistanceMap<LU extends LearningUnit> {
         }
         const paths = alg.dijkstraAll(graph, dijkstraWeightFn);
 
-        this.distances = new Map();
         for (const [key, value] of Object.entries(paths)) {
             if (key.startsWith("lu") && value) {
                 const startName = key.slice(2);

@@ -5,8 +5,7 @@ import { SkillExpression } from "./skillExpression";
 
 export class Variable extends SkillExpression {
     constructor(private skill: Skill) {
-        super();
-        this.type = "Variable";
+        super("Variable");
     }
 
     evaluate(

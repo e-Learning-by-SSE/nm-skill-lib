@@ -49,18 +49,17 @@ export function skillAnalysis<LU extends LearningUnit>(
 
     // For each node without parent trace back each path, recursively.
     goalNode.forEach(node => {
-        const path = new PotentialNode();
-        tracePath(node, path);
+        tracePath(node, undefined);
     });
 
     // Trace back each path, recursively.
-    function tracePath(node: string, parent: PotentialNode<LU>) {
+    function tracePath(node: string, parent: PotentialNode<LU> | undefined) {
         // Create a PotentialNode for the current node
-        const path: PotentialNode<LU> = new PotentialNode();
-        // Add id for the PotentialNode for the current node
-        // Add the current parent for the PotentialNode for the current node
-        path.id = node.substring(2);
-        path.parent = parent;
+        const path: PotentialNode<LU> = {
+            id: node.substring(2),
+            parent: parent,
+            missingSkill: ""
+        };
 
         // Get all the children of the current node (successors)
         const children = graph.successors(node)!;
@@ -112,11 +111,11 @@ export function skillAnalysis<LU extends LearningUnit>(
 
     // Convert PotentialNode to analyzedPath where analyzedPath has a missing skill and learning unit path (LU[])
     pathsMissingSkills.forEach(potentialNode => {
-        const analyzedPath = new AnalyzedPath<LU>();
-        analyzedPath.missingSkill = potentialNode.missingSkill;
-        analyzedPath.path = getAnalyzedPath(potentialNode, allUnits);
-        analyzedPath.fullPath = getFullAnalyzedPath(potentialNode);
-        analyzedPaths.push(analyzedPath);
+        analyzedPaths.push({
+            path: getAnalyzedPath(potentialNode, allUnits),
+            missingSkill: potentialNode.missingSkill,
+            fullPath: getFullAnalyzedPath(potentialNode)
+        });
     });
 
     // Return only paths where the node in the end of the path have a Missing Skill
@@ -313,16 +312,15 @@ export function createGoalsGraph<LU extends LearningUnit>(
  * extract a list of learning unit from a PotentialNode path
  */
 export function getAnalyzedPath<LU extends LearningUnit>(
-    potentialNode: PotentialNode<LU>,
+    potentialNode: PotentialNode<LU> | undefined,
     allUnits: ReadonlyArray<Unit<LU>>
 ): LU[] {
-    if (potentialNode.id) {
+    if (potentialNode) {
         const unit = allUnits.find(unit => unit.id == potentialNode.id);
         return unit
             ? [unit].concat(getAnalyzedPath(potentialNode.parent, allUnits))
             : getAnalyzedPath(potentialNode.parent, allUnits);
     }
-
     return [];
 }
 
@@ -330,9 +328,10 @@ export function getAnalyzedPath<LU extends LearningUnit>(
  * extract a full list of the path including skills and learning unit from a PotentialNode path
  */
 export function getFullAnalyzedPath<LU extends LearningUnit>(
-    potentialNode: PotentialNode<LU>
+    potentialNode: PotentialNode<LU> | undefined
 ): string[] {
-    return potentialNode.id
-        ? [potentialNode.id].concat(getFullAnalyzedPath(potentialNode.parent))
-        : [];
+    if (potentialNode) {
+        return [potentialNode.id].concat(getFullAnalyzedPath(potentialNode.parent));
+    }
+    return [];
 }

@@ -11,8 +11,7 @@ import { GlobalKnowledge } from "../fastDownward/global-knowledge";
  */
 export class And extends SkillExpression {
     constructor(private terms: SkillExpression[]) {
-        super();
-        this.type = "And";
+        super("And");
     }
 
     // AND expression property to cache all the extracted skills

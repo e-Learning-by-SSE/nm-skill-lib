@@ -11,8 +11,7 @@ import { GlobalKnowledge } from "../fastDownward/global-knowledge";
  */
 export class Or extends SkillExpression {
     constructor(private terms: SkillExpression[]) {
-        super();
-        this.type = "Or";
+        super("Or");
     }
 
     // OR expression property to cache all the extracted skills

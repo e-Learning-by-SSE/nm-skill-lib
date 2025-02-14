@@ -550,5 +550,9 @@ function buildGraph(nodeName: string, graph: Graph): GraphNode {
 }
 
 function extractPath(potentialNode: PotentialNode<LearningUnit>): string[] {
-    return potentialNode.id ? [potentialNode.id].concat(extractPath(potentialNode.parent)) : [];
+    if (potentialNode.parent) {
+        return [potentialNode.id].concat(extractPath(potentialNode.parent));
+    } else {
+        return [potentialNode.id];
+    }
 }
