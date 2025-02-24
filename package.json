@@ -1,6 +1,6 @@
 {
     "name": "@e-learning-by-sse/nm-skill-lib",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "license": "Apache-2.0",
     "scripts": {
         "start": "nx serve",
@@ -45,6 +45,8 @@
     "files": [
         "README.md",
         "LICENSE",
+        "src",
+        "!src/**/*.spec.ts",
         "lib",
         "index.d.ts",
         "index.js",
