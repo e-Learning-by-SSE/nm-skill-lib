@@ -23,7 +23,7 @@ export class DistanceMap<LU extends LearningUnit> {
 
         skills.forEach(skill => {
             graph.setNode("sk" + skill.id, skill);
-            skill.nestedSkills.forEach(child => {
+            skill.children.forEach(child => {
                 const childName = "sk" + child;
                 graph.setEdge("sk" + skill.id, childName);
                 graph.setEdge(childName, "sk" + skill.id);
@@ -31,11 +31,11 @@ export class DistanceMap<LU extends LearningUnit> {
         });
         learningUnits.forEach(lu => {
             graph.setNode("lu" + lu.id, lu);
-            lu.requiredSkills.extractSkills().forEach(req => {
+            lu.requires.extractSkills().forEach(req => {
                 graph.setEdge("sk" + req.id, "lu" + lu.id);
             });
 
-            lu.teachingGoals.forEach(goal => {
+            lu.provides.forEach(goal => {
                 graph.setEdge("lu" + lu.id, "sk" + goal.id);
             });
         });

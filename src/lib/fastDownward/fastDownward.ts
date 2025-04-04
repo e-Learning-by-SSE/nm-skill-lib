@@ -126,7 +126,7 @@ export function search<LU extends LearningUnit>({
                 if (isComposite(unit)) {
                     // Resolve composite
                     subPath = recursiveSearch(
-                        unit.teachingGoals,
+                        unit.provides,
                         currentNode.state.learnedSkills.map(
                             id => allSkills.find(skill => skill.id === id)!
                         ), // TODO SE: Either change type to string[] or use a map
@@ -226,16 +226,12 @@ function eligibleUnits<LU extends LearningUnit>(
     const usefulLus = availableUnits
         .filter(
             unit =>
-                unit.requiredSkills.evaluate(
-                    currentState.learnedSkills,
-                    globalKnowledge,
-                    withoutSkills
-                )
+                unit.requires.evaluate(currentState.learnedSkills, globalKnowledge, withoutSkills)
             //.every(skill => currentState.learnedSkills.includes(skill.id))
         )
         .filter(unit =>
             // Do not suggest learning units that do not teach any new skills
-            unit.teachingGoals.some(skill => !currentState.learnedSkills.includes(skill.id))
+            unit.provides.some(skill => !currentState.learnedSkills.includes(skill.id))
         );
 
     return usefulLus;
@@ -257,7 +253,7 @@ export function computeCost<LU extends LearningUnit>(
     if (
         penaltyOptions.contextSwitchPenalty !== 1 &&
         prevLu &&
-        none(lu.requiredSkills.extractSkills(), skill => prevLu.teachingGoals.includes(skill))
+        none(lu.requires.extractSkills(), skill => prevLu.provides.includes(skill))
     ) {
         contextSwitchPenalty = penaltyOptions.contextSwitchPenalty;
     }

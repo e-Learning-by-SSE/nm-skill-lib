@@ -16,12 +16,12 @@ export class GlobalKnowledge {
     private parentSkills: ParentSkills[] = [];
 
     constructor(public skills: ReadonlyArray<Skill>) {
-        this.parents = skills.filter(skill => skill.nestedSkills.length > 0);
+        this.parents = skills.filter(skill => skill.children.length > 0);
         this.parents.forEach(skill => {
-            this.parentMap.set(skill.id, skill.nestedSkills);
+            this.parentMap.set(skill.id, skill.children);
             this.parentSkills.push({
                 skill: skill,
-                children: this.skills.filter(sk => skill.nestedSkills.includes(sk.id))
+                children: this.skills.filter(sk => skill.children.includes(sk.id))
             });
         });
     }

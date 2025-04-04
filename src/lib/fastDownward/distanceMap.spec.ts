@@ -7,9 +7,9 @@ import { DistanceMap } from "./distanceMap";
 describe("getDistance", () => {
     it("2 connected Units; No nesting", () => {
         const skills: Skill[] = [
-            { id: "skill:1", repositoryId: "Map 1", nestedSkills: [] },
-            { id: "skill:2", repositoryId: "Map 1", nestedSkills: [] },
-            { id: "skill:3", repositoryId: "Map 1", nestedSkills: [] }
+            { id: "skill:1", children: [] },
+            { id: "skill:2", children: [] },
+            { id: "skill:3", children: [] }
         ];
         const units: LearningUnit[] = [
             newLearningUnit(skills, "unit:1", ["skill:1"], ["skill:2"]),
@@ -28,10 +28,10 @@ describe("getDistance", () => {
 
     it("2 connected Units; Nesting (Child used)", () => {
         const skills: Skill[] = [
-            { id: "skill:1", repositoryId: "Map 1", nestedSkills: [] },
-            { id: "skill:parent:2", repositoryId: "Map 1", nestedSkills: ["skill:child:2"] },
-            { id: "skill:child:2", repositoryId: "Map 1", nestedSkills: [] },
-            { id: "skill:3", repositoryId: "Map 1", nestedSkills: [] }
+            { id: "skill:1", children: [] },
+            { id: "skill:parent:2", children: ["skill:child:2"] },
+            { id: "skill:child:2", children: [] },
+            { id: "skill:3", children: [] }
         ];
         const units: LearningUnit[] = [
             newLearningUnit(skills, "unit:1", ["skill:1"], ["skill:child:2"]),
@@ -52,10 +52,10 @@ describe("getDistance", () => {
 
     it("2 connected Units; Nesting (Parent used)", () => {
         const skills: Skill[] = [
-            { id: "skill:1", repositoryId: "Map 1", nestedSkills: [] },
-            { id: "skill:parent:2", repositoryId: "Map 1", nestedSkills: ["skill:child:2"] },
-            { id: "skill:child:2", repositoryId: "Map 1", nestedSkills: [] },
-            { id: "skill:3", repositoryId: "Map 1", nestedSkills: [] }
+            { id: "skill:1", children: [] },
+            { id: "skill:parent:2", children: ["skill:child:2"] },
+            { id: "skill:child:2", children: [] },
+            { id: "skill:3", children: [] }
         ];
         const units: LearningUnit[] = [
             newLearningUnit(skills, "unit:1", ["skill:1"], ["skill:parent:2"]),
@@ -75,22 +75,17 @@ describe("getDistance", () => {
     });
 });
 
-function newLearningUnit(
-    map: Skill[],
-    id: string,
-    requiredSkills: string[],
-    teachingGoals: string[]
-) {
+function newLearningUnit(map: Skill[], id: string, requires: string[], provides: string[]) {
     const variables = map
-        .filter(skill => requiredSkills.includes(skill.id))
+        .filter(skill => requires.includes(skill.id))
         .map(skill => new Variable(skill));
 
     const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,
-        requiredSkills: skillExpression,
-        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        requires: skillExpression,
+        provides: map.filter(skill => provides.includes(skill.id)),
         suggestedSkills: []
     };
 }

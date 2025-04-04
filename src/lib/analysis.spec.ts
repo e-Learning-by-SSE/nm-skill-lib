@@ -9,9 +9,9 @@ describe("find cycles analysis", () => {
     // Skills sorted by IDs to simplify comparisons during tests
     // Flat map
     const firstMap: Skill[] = [
-        { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-        { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-        { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+        { id: "sk:1", children: [] },
+        { id: "sk:2", children: [] },
+        { id: "sk:3", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
 
     describe("detectCycles", () => {
@@ -32,11 +32,11 @@ describe("find cycles analysis", () => {
          */
         it("Tree of Skills -> OK", () => {
             const structuredMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:5", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: ["sk:4", "sk:5"] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: [] },
+                { id: "sk:5", children: [] }
             ];
 
             const cycles = detectCycles(structuredMap);
@@ -49,11 +49,11 @@ describe("find cycles analysis", () => {
          */
         it("Cycle of Skills -> Cycle", () => {
             const structuredMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "1", nestedSkills: ["sk:1"] },
-                { id: "sk:5", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: ["sk:4", "sk:5"] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: ["sk:1"] },
+                { id: "sk:5", children: [] }
             ];
 
             const cycles = detectCycles(structuredMap);
@@ -73,9 +73,9 @@ describe("find cycles analysis", () => {
          */
         it("Cycle-free LearningUnits -> OK", () => {
             const skillMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] }
             ];
 
             const learningUnits: LearningUnit[] = [
@@ -94,9 +94,9 @@ describe("find cycles analysis", () => {
          */
         it("Flat cycle of LearningUnits -> Cycle", () => {
             const skillMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] }
             ];
 
             const learningUnits: LearningUnit[] = [
@@ -122,9 +122,9 @@ describe("find cycles analysis", () => {
          */
         it("Nested Skill required to learn parent Skill -> OK", () => {
             const structuredMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] }
             ];
 
             const learningUnits: LearningUnit[] = [
@@ -141,9 +141,9 @@ describe("find cycles analysis", () => {
          */
         it("Parent Skill required to learn nested Skill -> Cycle", () => {
             const structuredMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] }
             ];
 
             const learningUnits: LearningUnit[] = [
@@ -166,9 +166,9 @@ describe("find cycles analysis", () => {
 
         it("Suggested Skill without Cycle -> OK", () => {
             const skillMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] }
             ];
 
             const learningUnits: LearningUnit[] = [
@@ -188,9 +188,9 @@ describe("find cycles analysis", () => {
 
         it("Suggested Skill with Cycle -> Cycle", () => {
             const skillMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] }
             ];
 
             const learningUnits: LearningUnit[] = [
@@ -219,9 +219,9 @@ describe("find cycles analysis", () => {
     describe("findParentsOfCycledSkills", () => {
         it("No cycle -> null", () => {
             const skillMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:1"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: ["sk:2"] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: ["sk:1"] },
+                { id: "sk:3", children: ["sk:2"] }
             ];
 
             const cycles = findParentsOfCycledSkills(skillMap);
@@ -234,10 +234,10 @@ describe("find cycles analysis", () => {
              * Parent: sk:1
              */
             const skillMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "1", nestedSkills: ["sk:2"] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: ["sk:4"] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: ["sk:2"] }
             ];
 
             const cycles = findParentsOfCycledSkills(skillMap);
@@ -257,19 +257,19 @@ describe("find cycles analysis", () => {
              */
             const skillMap: Skill[] = [
                 // First tree with parent: sk:1
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3", "sk:4"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:5", "sk:6"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "1", nestedSkills: ["sk:7"] },
-                { id: "sk:5", repositoryId: "1", nestedSkills: ["sk:8"] },
-                { id: "sk:6", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:7", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:8", repositoryId: "1", nestedSkills: ["sk:2"] },
+                { id: "sk:1", children: ["sk:2", "sk:3", "sk:4"] },
+                { id: "sk:2", children: ["sk:5", "sk:6"] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: ["sk:7"] },
+                { id: "sk:5", children: ["sk:8"] },
+                { id: "sk:6", children: [] },
+                { id: "sk:7", children: [] },
+                { id: "sk:8", children: ["sk:2"] },
                 // Second tree with parent: sk:9
-                { id: "sk:9", repositoryId: "1", nestedSkills: ["sk:10", "sk:11"] },
-                { id: "sk:10", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:11", repositoryId: "1", nestedSkills: ["sk:12"] },
-                { id: "sk:12", repositoryId: "1", nestedSkills: ["sk:8"] }
+                { id: "sk:9", children: ["sk:10", "sk:11"] },
+                { id: "sk:10", children: [] },
+                { id: "sk:11", children: ["sk:12"] },
+                { id: "sk:12", children: ["sk:8"] }
             ];
 
             const cycles = findParentsOfCycledSkills(skillMap);
@@ -292,8 +292,8 @@ describe("find cycles analysis", () => {
 function newLearningUnit(
     map: Skill[],
     id: string,
-    requiredSkills: string[],
-    teachingGoals: string[],
+    requires: string[],
+    provides: string[],
     suggestedSkills: { weight: number; skill: string }[] = []
 ): LearningUnit {
     const suggestions: { weight: number; skill: Skill }[] = [];
@@ -307,15 +307,15 @@ function newLearningUnit(
     }
 
     const variables = map
-        .filter(skill => requiredSkills.includes(skill.id))
+        .filter(skill => requires.includes(skill.id))
         .map(skill => new Variable(skill));
 
     const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,
-        requiredSkills: skillExpression,
-        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        requires: skillExpression,
+        provides: map.filter(skill => provides.includes(skill.id)),
         suggestedSkills: suggestions
     };
 }

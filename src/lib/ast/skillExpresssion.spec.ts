@@ -9,34 +9,30 @@ import { Empty } from "./empty";
 import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 
 describe("precondition formula", () => {
-    const skill1 = { id: "skill:1", repositoryId: "Map 1", nestedSkills: [] };
-    const skill2 = { id: "skill:2", repositoryId: "Map 1", nestedSkills: [] };
-    const skill3 = { id: "skill:3", repositoryId: "Map 1", nestedSkills: [] };
-    const skill4 = { id: "skill:4", repositoryId: "Map 1", nestedSkills: [] };
-    const skill5 = { id: "skill:5", repositoryId: "Map 1", nestedSkills: [] };
-    const skill6 = { id: "skill:6", repositoryId: "Map 1", nestedSkills: [] };
-    const skill7 = { id: "skill:7", repositoryId: "Map 1", nestedSkills: [] };
-    const skill8 = { id: "skill:8", repositoryId: "Map 1", nestedSkills: [] };
-    const skill9 = { id: "skill:9", repositoryId: "Map 1", nestedSkills: ["skill:7", "skill:8"] };
+    const skill1 = { id: "skill:1", children: [] };
+    const skill2 = { id: "skill:2", children: [] };
+    const skill3 = { id: "skill:3", children: [] };
+    const skill4 = { id: "skill:4", children: [] };
+    const skill5 = { id: "skill:5", children: [] };
+    const skill6 = { id: "skill:6", children: [] };
+    const skill7 = { id: "skill:7", children: [] };
+    const skill8 = { id: "skill:8", children: [] };
+    const skill9 = { id: "skill:9", children: ["skill:7", "skill:8"] };
     const skill10 = {
         id: "skill:10",
-        repositoryId: "Map 1",
-        nestedSkills: ["skill:1", "skill:2", "skill:3", "skill:4", "skill:5", "skill:6"]
+        children: ["skill:1", "skill:2", "skill:3", "skill:4", "skill:5", "skill:6"]
     };
     const skill11 = {
         id: "skill:11",
-        repositoryId: "Map 1",
-        nestedSkills: ["skill:9"]
+        children: ["skill:9"]
     };
     const skill12 = {
         id: "skill:12",
-        repositoryId: "Map 1",
-        nestedSkills: ["skill:4", "skill:5"]
+        children: ["skill:4", "skill:5"]
     };
     const skill13 = {
         id: "skill:13",
-        repositoryId: "Map 1",
-        nestedSkills: ["skill:11", "skill:12"]
+        children: ["skill:11", "skill:12"]
     };
 
     const skills: Skill[] = [
@@ -288,9 +284,7 @@ describe("precondition formula", () => {
         it("cache the extracted skills from skill expression", () => {
             const variables: Variable[] = [];
             for (let index = 1; index < 101; index++) {
-                variables.push(
-                    new Variable({ id: "skill:" + index, repositoryId: "Map 1", nestedSkills: [] })
-                );
+                variables.push(new Variable({ id: "skill:" + index, children: [] }));
             }
 
             const andSkills = new And(variables);
@@ -592,16 +586,16 @@ describe("precondition formula", () => {
             const evaluateString4 = [skill7.id, skill8.id];
 
             const firstCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString1, globalKnowledge)
+                unit.requires.evaluate(evaluateString1, globalKnowledge)
             );
             const secondCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString2, globalKnowledge)
+                unit.requires.evaluate(evaluateString2, globalKnowledge)
             );
             const thirdCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString3, globalKnowledge)
+                unit.requires.evaluate(evaluateString3, globalKnowledge)
             );
             const fourCheck = learningUnits.filter(unit =>
-                unit.requiredSkills.evaluate(evaluateString4, globalKnowledge)
+                unit.requires.evaluate(evaluateString4, globalKnowledge)
             );
 
             expect(firstCheck.length).toBe(1);
@@ -623,8 +617,8 @@ describe("precondition formula", () => {
 function newLearningUnit(
     globalKnowledge: GlobalKnowledge,
     id: string,
-    requiredSkills: SkillExpression,
-    teachingGoals: string[],
+    requires: SkillExpression,
+    provides: string[],
     suggestedSkills: { weight: number; skill: string }[] = []
 ): preCondLearningUnit {
     const suggestions: { weight: number; skill: Skill }[] = [];
@@ -639,8 +633,8 @@ function newLearningUnit(
 
     return {
         id: id,
-        requiredSkills: requiredSkills,
-        teachingGoals: globalKnowledge.skills.filter(skill => teachingGoals.includes(skill.id)),
+        requires: requires,
+        provides: globalKnowledge.skills.filter(skill => provides.includes(skill.id)),
         suggestedSkills: suggestions
     };
 }
@@ -649,7 +643,7 @@ export type preCondLearningUnit = {
     id: string;
     mediaTime?: number;
     words?: number;
-    requiredSkills: SkillExpression;
-    teachingGoals: Skill[];
+    requires: SkillExpression;
+    provides: Skill[];
     suggestedSkills: { weight: number; skill: Skill }[];
 };

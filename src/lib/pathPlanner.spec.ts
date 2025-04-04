@@ -5,9 +5,7 @@ import {
     isCompositeGuard,
     Unit,
     CompositeUnit,
-    isSkill,
-    isLearningUnit,
-    PotentialNode
+    isLearningUnit
 } from "./types";
 import {
     computeSuggestedSkills,
@@ -29,26 +27,26 @@ describe("Path Planer", () => {
     // Skills sorted by IDs to simplify comparisons during tests
     // Flat map
     const firstMap: Skill[] = [
-        { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-        { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-        { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+        { id: "sk:1", children: [] },
+        { id: "sk:2", children: [] },
+        { id: "sk:3", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
     // Flat map, but longer (no conflict with Map1 as they are from a different repository)
     const thirdMap: Skill[] = [
-        { id: "sk:1", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:2", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:3", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:4", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:5", repositoryId: "3", nestedSkills: [] }
+        { id: "sk:1", children: [] },
+        { id: "sk:2", children: [] },
+        { id: "sk:3", children: [] },
+        { id: "sk:4", children: [] },
+        { id: "sk:5", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
     // Skills with nested skills
     const thirdMapHierarchy: Skill[] = [
-        { id: "sk:7", repositoryId: "3", nestedSkills: ["sk:8"] },
-        { id: "sk:8", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:9", repositoryId: "3", nestedSkills: ["sk:10", "sk:11"] },
-        { id: "sk:10", repositoryId: "3", nestedSkills: ["sk:12"] },
-        { id: "sk:11", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:12", repositoryId: "3", nestedSkills: [] }
+        { id: "sk:7", children: ["sk:8"] },
+        { id: "sk:8", children: [] },
+        { id: "sk:9", children: ["sk:10", "sk:11"] },
+        { id: "sk:10", children: ["sk:12"] },
+        { id: "sk:11", children: [] },
+        { id: "sk:12", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
     // LearningUnits
     const straightPathOfLus: LearningUnit[] = [
@@ -81,22 +79,8 @@ describe("Path Planer", () => {
         });
     });
 
-    describe("check skill type", () => {
-        it("check skill", () => {
-            const elements = [...firstMap, ...straightPathOfLus];
-
-            // Check Skill to be true
-            expect(isSkill(elements[0])).toBeTruthy();
-
-            // Check Skill to be false
-            expect(isSkill(elements[3])).toBeFalsy();
-        });
-    });
-
     describe("check cycles in learning units and skills ", () => {
         it("check cycles", () => {
-            const elements = [...firstMap, ...straightPathOfLus];
-
             // Should be no cycles (false)
             expect(isAcyclic(thirdMapHierarchy, structuredPathOfLus)).toBeFalsy();
         });
@@ -334,12 +318,12 @@ describe("Path Planer", () => {
                             break;
                         case path.path[1].origin!.id:
                             expect(missingSkills).toEqual(
-                                path.path[0].origin!.teachingGoals.map(skill => skill.id)
+                                path.path[0].origin!.provides.map(skill => skill.id)
                             );
                             break;
                         case path.path[2].origin!.id:
                             expect(missingSkills).toEqual(
-                                path.path[1].origin!.teachingGoals.map(skill => skill.id)
+                                path.path[1].origin!.provides.map(skill => skill.id)
                             );
                             break;
                     }
@@ -426,11 +410,11 @@ describe("Path Planer", () => {
     describe("find Cycles", () => {
         it("find cycles in skills -> There are no cycles", () => {
             const structuredMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:5", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: ["sk:4", "sk:5"] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: [] },
+                { id: "sk:5", children: [] }
             ];
 
             const cycles = findCycles(structuredMap);
@@ -439,11 +423,11 @@ describe("Path Planer", () => {
 
         it("find cycles in skills -> There are cycles", () => {
             const structuredMap: Skill[] = [
-                { id: "sk:1", repositoryId: "1", nestedSkills: ["sk:2", "sk:3"] },
-                { id: "sk:2", repositoryId: "1", nestedSkills: ["sk:4", "sk:5"] },
-                { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "1", nestedSkills: ["sk:1"] },
-                { id: "sk:5", repositoryId: "1", nestedSkills: [] }
+                { id: "sk:1", children: ["sk:2", "sk:3"] },
+                { id: "sk:2", children: ["sk:4", "sk:5"] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: ["sk:1"] },
+                { id: "sk:5", children: [] }
             ];
 
             const cycles = findCycles(structuredMap);
@@ -469,8 +453,8 @@ function sortExpectedElements(expectedElements: (Skill | LearningUnit)[]) {
 function newLearningUnit(
     map: Skill[],
     id: string,
-    requiredSkills: string[],
-    teachingGoals: string[],
+    requires: string[],
+    provides: string[],
     suggestedSkills: { weight: number; skill: string }[] = []
 ): LearningUnit {
     const suggestions: { weight: number; skill: Skill }[] = [];
@@ -484,15 +468,15 @@ function newLearningUnit(
     }
 
     const variables = map
-        .filter(skill => requiredSkills.includes(skill.id))
+        .filter(skill => requires.includes(skill.id))
         .map(skill => new Variable(skill));
 
     const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,
-        requiredSkills: skillExpression,
-        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        requires: skillExpression,
+        provides: map.filter(skill => provides.includes(skill.id)),
         suggestedSkills: suggestions
     };
 }

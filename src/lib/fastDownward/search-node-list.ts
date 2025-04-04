@@ -8,7 +8,7 @@ type ListItem<LU extends LearningUnit> = {
 };
 
 /**
- * Stores the SearchNodes and provides:
+ * Stores the SearchNodes and requires:
  * - Access to the cheapest SearchNode by means of the heuristic (public access)
  * - Access by equal states to facilitate replacement of SearchNodes (internal access)
  * @author Sascha El-Sharkawy

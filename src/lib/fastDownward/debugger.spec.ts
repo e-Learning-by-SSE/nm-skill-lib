@@ -15,10 +15,10 @@ import { State } from "./state";
 describe("toString() methods", () => {
     // Test data to be used across al tests
     const skills: Skill[] = [
-        { id: "parent:1", repositoryId: "Map 1", nestedSkills: ["child:1", "child:2"] },
-        { id: "child:1", repositoryId: "Map 1", nestedSkills: [] },
-        { id: "child:2", repositoryId: "Map 1", nestedSkills: [] },
-        { id: "skill:1", repositoryId: "Map 1", nestedSkills: [] }
+        { id: "parent:1", children: ["child:1", "child:2"] },
+        { id: "child:1", children: [] },
+        { id: "child:2", children: [] },
+        { id: "skill:1", children: [] }
     ];
     const units: LearningUnit[] = [
         newLearningUnit(skills, "unit:1", [], ["child:1"]),
@@ -102,22 +102,17 @@ describe("toString() methods", () => {
     });
 });
 
-function newLearningUnit(
-    map: Skill[],
-    id: string,
-    requiredSkills: string[],
-    teachingGoals: string[]
-) {
+function newLearningUnit(map: Skill[], id: string, requires: string[], provides: string[]) {
     const variables = map
-        .filter(skill => requiredSkills.includes(skill.id))
+        .filter(skill => requires.includes(skill.id))
         .map(skill => new Variable(skill));
 
     const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,
-        requiredSkills: skillExpression,
-        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        requires: skillExpression,
+        provides: map.filter(skill => provides.includes(skill.id)),
         suggestedSkills: []
     };
 }

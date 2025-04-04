@@ -8,18 +8,18 @@ import { Empty } from "../ast/empty";
 describe("Backward Search Tests", () => {
     describe("a graph for a goal(s)", () => {
         const firstMap: Skill[] = [
-            { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+            { id: "sk:1", children: [] },
+            { id: "sk:2", children: [] },
+            { id: "sk:3", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
         // Skills with nested skills
         const thirdMapHierarchy: Skill[] = [
-            { id: "sk:7", repositoryId: "3", nestedSkills: ["sk:8"] },
-            { id: "sk:8", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:9", repositoryId: "3", nestedSkills: ["sk:10", "sk:11"] },
-            { id: "sk:10", repositoryId: "3", nestedSkills: ["sk:12"] },
-            { id: "sk:11", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:12", repositoryId: "3", nestedSkills: [] }
+            { id: "sk:7", children: ["sk:8"] },
+            { id: "sk:8", children: [] },
+            { id: "sk:9", children: ["sk:10", "sk:11"] },
+            { id: "sk:10", children: ["sk:12"] },
+            { id: "sk:11", children: [] },
+            { id: "sk:12", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
         // lu:7 and lu:8 must be learned to understand sk:9 (which is group of sk:10 and sk:11)
         const structuredPathOfLus: LearningUnit[] = [
@@ -108,26 +108,26 @@ describe("Backward Search Tests", () => {
 
     describe("missing skills test", () => {
         const firstMap: Skill[] = [
-            { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+            { id: "sk:1", children: [] },
+            { id: "sk:2", children: [] },
+            { id: "sk:3", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
         // Flat map, but longer (no conflict with Map1 as they are from a different repository)
         const thirdMap: Skill[] = [
-            { id: "sk:1", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:2", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:3", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:4", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:5", repositoryId: "3", nestedSkills: [] }
+            { id: "sk:1", children: [] },
+            { id: "sk:2", children: [] },
+            { id: "sk:3", children: [] },
+            { id: "sk:4", children: [] },
+            { id: "sk:5", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
         // Skills with nested skills
         const thirdMapHierarchy: Skill[] = [
-            { id: "sk:7", repositoryId: "3", nestedSkills: ["sk:8"] },
-            { id: "sk:8", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:9", repositoryId: "3", nestedSkills: ["sk:10", "sk:11"] },
-            { id: "sk:10", repositoryId: "3", nestedSkills: ["sk:12"] },
-            { id: "sk:11", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:12", repositoryId: "3", nestedSkills: [] }
+            { id: "sk:7", children: ["sk:8"] },
+            { id: "sk:8", children: [] },
+            { id: "sk:9", children: ["sk:10", "sk:11"] },
+            { id: "sk:10", children: ["sk:12"] },
+            { id: "sk:11", children: [] },
+            { id: "sk:12", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
         // lu:7 and lu:8 must be learned to understand sk:9 (which is group of sk:10 and sk:11)
         const structuredPathOfLus: LearningUnit[] = [
@@ -288,12 +288,12 @@ describe("Backward Search Tests", () => {
 
         it("Analysis missing skills with nested skills", () => {
             const thirdNestedMap: Skill[] = [
-                { id: "sk:1", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "3", nestedSkills: ["sk:1", "sk:2", "sk:6"] },
-                { id: "sk:5", repositoryId: "3", nestedSkills: ["sk:4", "sk:3"] },
-                { id: "sk:6", repositoryId: "3", nestedSkills: [] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: ["sk:1", "sk:2", "sk:6"] },
+                { id: "sk:5", children: ["sk:4", "sk:3"] },
+                { id: "sk:6", children: [] }
             ].sort((a, b) => a.id.localeCompare(b.id));
 
             const multipleRequirementsOfLuNested: LearningUnit[] = [
@@ -321,16 +321,16 @@ describe("Backward Search Tests", () => {
 
         it("Analysis missing skills with multiple nested skills", () => {
             const thirdNestedMap: Skill[] = [
-                { id: "sk:1", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:2", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:3", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:4", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:5", repositoryId: "3", nestedSkills: [] },
-                { id: "sk:6", repositoryId: "3", nestedSkills: ["sk:7", "sk:9"] },
-                { id: "sk:7", repositoryId: "3", nestedSkills: ["sk:13", "sk:9"] },
-                { id: "sk:8", repositoryId: "3", nestedSkills: ["sk:6", "sk:2"] },
-                { id: "sk:9", repositoryId: "3", nestedSkills: ["sk:1", "sk:4"] },
-                { id: "sk:13", repositoryId: "3", nestedSkills: [] }
+                { id: "sk:1", children: [] },
+                { id: "sk:2", children: [] },
+                { id: "sk:3", children: [] },
+                { id: "sk:4", children: [] },
+                { id: "sk:5", children: [] },
+                { id: "sk:6", children: ["sk:7", "sk:9"] },
+                { id: "sk:7", children: ["sk:13", "sk:9"] },
+                { id: "sk:8", children: ["sk:6", "sk:2"] },
+                { id: "sk:9", children: ["sk:1", "sk:4"] },
+                { id: "sk:13", children: [] }
             ].sort((a, b) => a.id.localeCompare(b.id));
 
             const multipleRequirementsOfLuNested: LearningUnit[] = [
@@ -367,29 +367,29 @@ describe("Backward Search Tests", () => {
         const largeLearningUnits: LearningUnit[] = [];
 
         for (let index = 1; index < 1001; index++) {
-            largeSkillMap.push({ id: "sk:" + index, repositoryId: "1", nestedSkills: [] });
+            largeSkillMap.push({ id: "sk:" + index, children: [] });
             largeLearningUnits.push(
                 newLearningUnit(largeSkillMap, "lu:" + index, [], ["sk:" + index])
             );
         }
 
         for (let index = 1; index < 100; index++) {
-            largeLearningUnits[index].requiredSkills = new Variable(largeSkillMap[index - 1]);
+            largeLearningUnits[index].requires = new Variable(largeSkillMap[index - 1]);
         }
 
         const parentSkillMap: Skill[] = [
-            { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:3", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:4", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:5", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:6", repositoryId: "1", nestedSkills: ["sk:1", "sk:2"] },
-            { id: "sk:7", repositoryId: "1", nestedSkills: ["sk:3", "sk:4"] },
-            { id: "sk:8", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:9", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:10", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:11", repositoryId: "1", nestedSkills: [] },
-            { id: "sk:12", repositoryId: "1", nestedSkills: [] }
+            { id: "sk:1", children: [] },
+            { id: "sk:2", children: [] },
+            { id: "sk:3", children: [] },
+            { id: "sk:4", children: [] },
+            { id: "sk:5", children: [] },
+            { id: "sk:6", children: ["sk:1", "sk:2"] },
+            { id: "sk:7", children: ["sk:3", "sk:4"] },
+            { id: "sk:8", children: [] },
+            { id: "sk:9", children: [] },
+            { id: "sk:10", children: [] },
+            { id: "sk:11", children: [] },
+            { id: "sk:12", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
 
         const parentLearningUnit: LearningUnit[] = [
@@ -490,8 +490,8 @@ describe("Backward Search Tests", () => {
 function newLearningUnit(
     map: Skill[],
     id: string,
-    requiredSkills: string[],
-    teachingGoals: string[],
+    requires: string[],
+    provides: string[],
     suggestedSkills: { weight: number; skill: string }[] = []
 ): LearningUnit {
     const suggestions: { weight: number; skill: Skill }[] = [];
@@ -505,15 +505,15 @@ function newLearningUnit(
     }
 
     const variables = map
-        .filter(skill => requiredSkills.includes(skill.id))
+        .filter(skill => requires.includes(skill.id))
         .map(skill => new Variable(skill));
 
     const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,
-        requiredSkills: skillExpression,
-        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        requires: skillExpression,
+        provides: map.filter(skill => provides.includes(skill.id)),
         suggestedSkills: suggestions
     };
 }

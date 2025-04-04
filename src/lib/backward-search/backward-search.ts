@@ -1,4 +1,4 @@
-import { isSkill, LearningUnit, PotentialNode, Skill, AnalyzedPath, Unit } from "../..";
+import { LearningUnit, PotentialNode, Skill, AnalyzedPath, Unit, isLearningUnit } from "../..";
 import { GlobalKnowledge } from "../fastDownward/global-knowledge";
 import { Graph as GraphLib } from "@dagrejs/graphlib";
 
@@ -215,10 +215,10 @@ export function createGoalsGraph<LU extends LearningUnit>(
         }
 
         // Check which type of backward tracing we should preform, learning units or skills
-        if (isSkill(node!)) {
-            backSearchSkill(node);
+        if (isLearningUnit(node!)) {
+            backSearchLu(node, suggestions);
         } else {
-            backSearchLu(node!, suggestions);
+            backSearchSkill(node!);
         }
 
         // Add the node (learning units and skills) to the processed list
@@ -234,7 +234,7 @@ export function createGoalsGraph<LU extends LearningUnit>(
         // find potential learning units using the goals for the them
         if (allUnits) {
             const potentialGoalsUnits = allUnits.filter(lu =>
-                lu.teachingGoals.some(sk => sk.id == skill.id)
+                lu.provides.some(sk => sk.id == skill.id)
             );
 
             // Create a node in the graph for each potential learning units
@@ -251,7 +251,7 @@ export function createGoalsGraph<LU extends LearningUnit>(
         // Create a node in the graph for each nested skills
         // Create a edge from the skill (source) to each nested skills (sink)
         // Add the new nodes (nested skills) to the nodes list for analyzing
-        skill.nestedSkills.forEach(child => {
+        skill.children.forEach(child => {
             const childSkill = allSkills.find(sk => sk.id == child);
             const childName = "sk" + child;
             if (childSkill) {
@@ -264,7 +264,7 @@ export function createGoalsGraph<LU extends LearningUnit>(
         // Get the parents for the skill (skill with multiple parents in considered)
         const parentSkills = globalKnowledge
             .getAllParents()
-            .filter(sk => sk.nestedSkills.includes(skill.id));
+            .filter(sk => sk.children.includes(skill.id));
 
         // Create a node in the graph for each parent skills
         // Create a edge from the parent skills (source) to the skill (sink)
@@ -286,7 +286,7 @@ export function createGoalsGraph<LU extends LearningUnit>(
         // Create a node in the graph for each required skills
         // Create a edge from the learning unit (source) to each required skills (sink)
         // Add the new nodes (required skills) to the nodes list for analyzing
-        lu.requiredSkills.extractSkills().forEach(req => {
+        lu.requires.extractSkills().forEach(req => {
             const SkillName = "sk" + req.id;
             graph.setNode(SkillName, req);
             graph.setEdge(luName, SkillName);

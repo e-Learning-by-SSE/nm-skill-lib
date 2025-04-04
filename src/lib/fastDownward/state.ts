@@ -35,7 +35,7 @@ export class State {
         const allParents = globalKnowledge.getAllParents();
         // Filters for parents for which all children are known (this is not recursive)
         const relevantParents = allParents.filter(parent =>
-            parent.nestedSkills.every(child => this.learnedSkills.includes(child))
+            parent.children.every(child => this.learnedSkills.includes(child))
         );
         // Filters for learned parents that are not stored in state
         const missedParents = relevantParents.filter(
@@ -54,7 +54,7 @@ export class State {
         const allLearnedParents = globalKnowledge
             .getAllParents()
             .filter(parent => this.learnedSkills.includes(parent.id));
-        const allLearnedChildren = allLearnedParents.map(parent => parent.nestedSkills).flat();
+        const allLearnedChildren = allLearnedParents.map(parent => parent.children).flat();
         const missedChildren = allLearnedChildren.filter(
             child => !this.learnedSkills.includes(child)
         );
@@ -78,16 +78,12 @@ export class State {
     }
 
     deriveState(operator: LearningUnit, globalKnowledge: GlobalKnowledge) {
-        //const mergedSkills = arrayUnique(
-        //	this.learnedSkills.concat(operator.teachingGoals.map(goal => goal.id))
-        //);
-
         const mergedSkills: string[] = [];
         this.learnedSkills.forEach(skill => {
             mergedSkills.push(skill);
         });
 
-        operator.teachingGoals.forEach(goal => {
+        operator.provides.forEach(goal => {
             if (!mergedSkills.includes(goal.id)) {
                 mergedSkills.push(goal.id);
             }

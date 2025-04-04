@@ -5,8 +5,8 @@ import { CycledSkills, LearningUnit, Skill } from "./types";
 /**
  * Detects cycles in the given set of Skills and LearningUnits.
  * However, there exist corner cases that are not covered by this function.
- * @param skills The Skills to check. Will also check for cycles in the nestedSkills.
- * @param learningUnits The LearningUnits to check. Will check for cycles among the requiredSkills/suggestions and teachingGoals.
+ * @param skills The Skills to check. Will also check for cycles in the children.
+ * @param learningUnits The LearningUnits to check. Will check for cycles among the required /suggested Skills and provided Skills.
  * @returns An empty array if no cycles were detected or an array of detected cycles.
  */
 export function detectCycles<S extends Skill, LU extends LearningUnit>(
@@ -47,7 +47,7 @@ export function detectCycles<S extends Skill, LU extends LearningUnit>(
 
 /**
  * Find cycles of nested skills and determines upper skills that (indirectly) contain the cycled skills.
- * @param skills The Skills to check. Will also check for cycles in the nestedSkills.
+ * @param skills The Skills to check. Will also check for cycles in the children.
  * @return A tuple: First parameter is the list of cycles, second parameter is list of upper skills that contain the cycled skills.
  * Or `null` if no cycles found.
  */
@@ -66,9 +66,9 @@ export function findParentsOfCycledSkills<S extends Skill>(
     const parentMap = new Map<string, string[]>();
     skills.forEach(skill => {
         skillMap.set(skill.id, skill);
-        if (skill.nestedSkills) {
+        if (skill.children) {
             const parent = skill.id;
-            skill.nestedSkills.forEach(childId => {
+            skill.children.forEach(childId => {
                 if (!parentMap.has(childId)) {
                     parentMap.set(childId, []);
                 }

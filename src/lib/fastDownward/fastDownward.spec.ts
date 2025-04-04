@@ -20,26 +20,26 @@ describe("FastDownward v2", () => {
     // Skills sorted by IDs to simplify comparisons during tests
     // Flat map
     const firstMap: Skill[] = [
-        { id: "sk:1", repositoryId: "1", nestedSkills: [] },
-        { id: "sk:2", repositoryId: "1", nestedSkills: [] },
-        { id: "sk:3", repositoryId: "1", nestedSkills: [] }
+        { id: "sk:1", children: [] },
+        { id: "sk:2", children: [] },
+        { id: "sk:3", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
     // Flat map, but longer (no conflict with Map1 as they are from a different repository)
     const thirdMap: Skill[] = [
-        { id: "sk:1", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:2", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:3", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:4", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:5", repositoryId: "3", nestedSkills: [] }
+        { id: "sk:1", children: [] },
+        { id: "sk:2", children: [] },
+        { id: "sk:3", children: [] },
+        { id: "sk:4", children: [] },
+        { id: "sk:5", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
     // Skills with nested skills
     const thirdMapHierarchy: Skill[] = [
-        { id: "sk:7", repositoryId: "3", nestedSkills: ["sk:8"] },
-        { id: "sk:8", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:9", repositoryId: "3", nestedSkills: ["sk:10", "sk:11"] },
-        { id: "sk:10", repositoryId: "3", nestedSkills: ["sk:12"] },
-        { id: "sk:11", repositoryId: "3", nestedSkills: [] },
-        { id: "sk:12", repositoryId: "3", nestedSkills: [] }
+        { id: "sk:7", children: ["sk:8"] },
+        { id: "sk:8", children: [] },
+        { id: "sk:9", children: ["sk:10", "sk:11"] },
+        { id: "sk:10", children: ["sk:12"] },
+        { id: "sk:11", children: [] },
+        { id: "sk:12", children: [] }
     ].sort((a, b) => a.id.localeCompare(b.id));
     // LearningUnits
     const straightPathOfLus: LearningUnit[] = [
@@ -522,18 +522,15 @@ describe("FastDownward v2", () => {
                 // Create Skills 1-202
                 const digiMediaSkills: Skill[] = [...Array(202).keys()].map(index => ({
                     id: `sk:${index + 1}`,
-                    repositoryId: "1",
-                    nestedSkills: []
+                    children: []
                 }));
                 ch1 = {
                     id: "ch:1",
-                    repositoryId: "1",
-                    nestedSkills: [...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(value => `sk:${value}`)]
+                    children: [...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(value => `sk:${value}`)]
                 };
                 ch2 = {
                     id: "ch:2",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[
                             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
                             31, 32, 33, 34, 35, 36, 37, 38, 39
@@ -542,8 +539,7 @@ describe("FastDownward v2", () => {
                 };
                 ch3 = {
                     id: "ch:3",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51].map(
                             value => `sk:${value}`
                         )
@@ -551,8 +547,7 @@ describe("FastDownward v2", () => {
                 };
                 ch4 = {
                     id: "ch:4",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[
                             52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
                             70, 71, 72, 73, 74, 75, 76, 77
@@ -561,8 +556,7 @@ describe("FastDownward v2", () => {
                 };
                 ch5 = {
                     id: "ch:5",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91].map(
                             value => `sk:${value}`
                         )
@@ -570,8 +564,7 @@ describe("FastDownward v2", () => {
                 };
                 ch6 = {
                     id: "ch:6",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105].map(
                             value => `sk:${value}`
                         )
@@ -579,8 +572,7 @@ describe("FastDownward v2", () => {
                 };
                 ch7 = {
                     id: "ch:7",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[
                             106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
                             120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133,
@@ -590,8 +582,7 @@ describe("FastDownward v2", () => {
                 };
                 ch8 = {
                     id: "ch:8",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150].map(
                             value => `sk:${value}`
                         )
@@ -599,8 +590,7 @@ describe("FastDownward v2", () => {
                 };
                 ch9 = {
                     id: "ch:9",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[151, 152, 153, 154, 155, 156, 157, 158, 159, 160].map(
                             value => `sk:${value}`
                         )
@@ -608,8 +598,7 @@ describe("FastDownward v2", () => {
                 };
                 ch10 = {
                     id: "ch:10",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[
                             161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174,
                             175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185
@@ -618,15 +607,13 @@ describe("FastDownward v2", () => {
                 };
                 ch11 = {
                     id: "ch:11",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[186, 187, 188, 189, 190, 191, 192, 193, 194].map(value => `sk:${value}`)
                     ]
                 };
                 ch12 = {
                     id: "ch:12",
-                    repositoryId: "1",
-                    nestedSkills: [
+                    children: [
                         ...[195, 196, 197, 198, 199, 200, 201, 202].map(value => `sk:${value}`)
                     ]
                 };
@@ -980,13 +967,13 @@ describe("FastDownward v2", () => {
         };
 
         const skillMap: Skill[] = [
-            { id: "sk:1", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:2", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:3", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:4", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:5", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:6", repositoryId: "3", nestedSkills: [] },
-            { id: "sk:7", repositoryId: "3", nestedSkills: [] }
+            { id: "sk:1", children: [] },
+            { id: "sk:2", children: [] },
+            { id: "sk:3", children: [] },
+            { id: "sk:4", children: [] },
+            { id: "sk:5", children: [] },
+            { id: "sk:6", children: [] },
+            { id: "sk:7", children: [] }
         ].sort((a, b) => a.id.localeCompare(b.id));
 
         const lus: (LearningUnitExtra | CompositeUnit<LearningUnitExtra>)[] = [
@@ -1356,14 +1343,14 @@ describe("FastDownward v2", () => {
         const largeLearningUnits: LearningUnit[] = [];
 
         for (let index = 1; index < 5001; index++) {
-            largeSkillMap.push({ id: "sk:" + index, repositoryId: "1", nestedSkills: [] });
+            largeSkillMap.push({ id: "sk:" + index, children: [] });
             largeLearningUnits.push(
                 newLearningUnit(largeSkillMap, "lu:" + index, [], ["sk:" + index])
             );
         }
 
         for (let index = 1; index < 100; index++) {
-            largeLearningUnits[index].requiredSkills = new Variable(largeSkillMap[index - 1]);
+            largeLearningUnits[index].requires = new Variable(largeSkillMap[index - 1]);
         }
 
         it("find a path in a large learning units without knowledge", () => {
@@ -1441,8 +1428,8 @@ function expectPath(
 function newLearningUnit(
     map: Skill[],
     id: string,
-    requiredSkills: string[],
-    teachingGoals: string[],
+    requires: string[],
+    provides: string[],
     suggestedSkills: { weight: number; skill: string }[] = []
 ): LearningUnit {
     const suggestions: { weight: number; skill: Skill }[] = [];
@@ -1456,15 +1443,15 @@ function newLearningUnit(
     }
 
     const variables = map
-        .filter(skill => requiredSkills.includes(skill.id))
+        .filter(skill => requires.includes(skill.id))
         .map(skill => new Variable(skill));
 
     const skillExpression = variables.length > 0 ? new And(variables) : new Empty();
 
     return {
         id: id,
-        requiredSkills: skillExpression,
-        teachingGoals: map.filter(skill => teachingGoals.includes(skill.id)),
+        requires: skillExpression,
+        provides: map.filter(skill => provides.includes(skill.id)),
         suggestedSkills: suggestions
     };
 }

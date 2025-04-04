@@ -61,8 +61,8 @@ export function isAcyclic(
 /**
  * Detects cycles in the given set of Skills and LearningUnits.
  * However, there exist corner cases that are not covered by this function.
- * @param skills The Skills to check. Will also check for cycles in the nestedSkills.
- * @param learningUnits The LearningUnits to check. Will check for cycles among the requiredSkills/suggestions and teachingGoals.
+ * @param skills The Skills to check. Will also check for cycles in the children.
+ * @param learningUnits The LearningUnits to check. Will check for cycles among the required / suggested Skills and provided Skills.
  * @returns An empty array if no cycles were detected or an array of detected cycles.
  */
 export function findCycles<S extends Skill, LU extends LearningUnit>(
@@ -227,18 +227,18 @@ export async function computeSuggestedSkills(
     for (let i = 1; i < learningUnits.length; i++) {
         const previousUnit = learningUnits[i - 1];
         const currentUnit = learningUnits[i];
-        const missingSkills = previousUnit.teachingGoals
+        const missingSkills = previousUnit.provides
             .map(goal => goal.id)
             // Do not copy hard constraints also to soft constraints
             .filter(
                 goalId =>
-                    !currentUnit.requiredSkills
+                    !currentUnit.requires
                         .extractSkills()
                         .map(skill => skill.id)
                         .includes(goalId)
             )
             // Do not copy currently taught skills to avoid cycles
-            .filter(goalId => !currentUnit.teachingGoals.map(skill => skill.id).includes(goalId));
+            .filter(goalId => !currentUnit.provides.map(skill => skill.id).includes(goalId));
 
         await fnUpdate(currentUnit, missingSkills);
     }

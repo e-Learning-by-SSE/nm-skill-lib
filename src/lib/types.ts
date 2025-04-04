@@ -7,12 +7,7 @@ export type Graph = {
 
 export type Skill = {
     id: string;
-    repositoryId: string;
-    nestedSkills: string[];
-};
-
-export const isSkill = (element: Skill | LearningUnit): element is Skill => {
-    return (element as Skill).repositoryId !== undefined;
+    children: string[];
 };
 
 export type Edge = {
@@ -26,8 +21,8 @@ export type LearningUnit = {
     id: string;
     mediaTime?: number;
     words?: number;
-    requiredSkills: SkillExpression;
-    teachingGoals: Skill[];
+    requires: SkillExpression;
+    provides: Skill[];
     suggestedSkills: { weight: number; skill: Skill }[];
 };
 
@@ -42,7 +37,7 @@ export type isCompositeGuard<LU extends LearningUnit> = (
 ) => element is CompositeUnit<LU>;
 
 export const isLearningUnit = (element: Skill | LearningUnit): element is LearningUnit => {
-    return (element as LearningUnit).teachingGoals !== undefined;
+    return (element as LearningUnit).provides !== undefined;
 };
 
 export type Node = {
