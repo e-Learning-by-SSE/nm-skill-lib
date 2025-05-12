@@ -42,7 +42,7 @@ export function sortById(a: IdElement, b: IdElement) {
  * @author Marcel Spark
  */
 
-export class IdSet<T extends IdElement> {
+export class IdSet<T extends IdElement = IdElement> {
     private items: Record<string, T>;
 
     constructor(initialValues: T[] | Set<T> | IdSet<T> = []) {
